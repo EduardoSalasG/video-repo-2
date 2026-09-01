@@ -1,0 +1,35 @@
+{
+  "name": "dance-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dance education platform monorepo — backend + web PWA",
+  "packageManager": "pnpm@10.12.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "verify": "pnpm -r verify",
+    "stack:up": "docker compose up -d --build",
+    "stack:down": "docker compose down",
+    "stack:build": "docker compose build",
+    "db:migrate": "pnpm --filter @dance-platform/backend db:migrate",
+    "db:seed": "pnpm --filter @dance-platform/backend db:seed",
+    "db:generate": "pnpm --filter @dance-platform/backend db:generate",
+    "db:deploy": "pnpm --filter @dance-platform/backend db:deploy"
+  },
+  "devDependencies": {
+    "@fission-ai/openspec": "latest",
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}

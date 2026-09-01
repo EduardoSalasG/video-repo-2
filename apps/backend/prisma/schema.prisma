@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+enum AccessLevel {
+  READ
+  WRITE
+  MAINTAIN
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PrimaryStyle {
+  MAMBO_ON2
+  CASINO
+  SENSUAL_BACHATA
+  MODERN_BACHATA
+}
+
+enum VideoType {
+  STEP
+  SEQUENCE
+  CHOREOGRAPHY
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  firstName    String
+  lastName     String
+  role         Role     @default(STUDENT)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  courseAccess CourseAccess[]
+
+  @@map("users")
+}
+
+model Course {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules      Module[]
+  courseAccess CourseAccess[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+  orderIndex  Int     @default(0)
+  courseId    String
+  course      Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections Section[]
+
+  @@map("modules")
+}
+
+model Section {
+  id              String  @id @default(uuid())
+  title           String
+  description     String?
+  orderIndex      Int     @default(0)
+  moduleId        String
+  module          Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  markdownContent String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  videoFile     VideoFile?    @relation(fields: [videoFileId], references: [id])
+  videoFileId   String?       @unique
+  videoMetadata VideoMetadata?
+
+  @@map("sections")
+}
+
+model VideoFile {
+  id              String  @id @default(uuid())
+  storageKey      String
+  filename        String
+  mimeType        String
+  fileSize        Int?
+  durationSeconds Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  section Section?
+
+  @@map("video_files")
+}
+
+model VideoMetadata {
+  id             String       @id @default(uuid())
+  sectionId      String       @unique
+  section        Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  difficulty     Difficulty
+  primaryStyle   PrimaryStyle
+  videoType      VideoType
+  durationCounts Int
+  steps          String[]
+  influences     String[]
+  tags           String[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("video_metadata")
+}
+
+model CourseAccess {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  accessLevel AccessLevel
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([userId, courseId])
+  @@map("course_access")
+}

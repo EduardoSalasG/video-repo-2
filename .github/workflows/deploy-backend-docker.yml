@@ -1,0 +1,143 @@
+name: Deploy dance-platform backend
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-backend-main
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dance-platform-backend
+  CONTAINER_DIR: /opt/apps/dance-platform
+  PUBLIC_API_HOST: api.dance-platform.eduardosalasg.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.12.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run backend tests
+        run: pnpm --filter @dance-platform/backend test
+
+      - name: Run backend build
+        run: pnpm --filter @dance-platform/backend build
+
+      - name: Normalize image name
+        run: |
+          echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Login to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f apps/backend/Dockerfile \
+            -t $IMAGE_NAME:${{ github.sha }} \
+            -t $IMAGE_NAME:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle_deploy_key
+          chmod 600 ~/.ssh/oracle_deploy_key
+          ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy on Oracle VM
+        run: |
+          ssh -i ~/.ssh/oracle_deploy_key \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} << 'EOF'
+              set -e
+
+              cd "${{ env.CONTAINER_DIR }}"
+
+              echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
+                -u "${{ secrets.GHCR_USERNAME }}" \
+                --password-stdin
+
+              docker compose pull backend
+              docker compose run --rm --no-deps backend npx prisma migrate deploy
+              docker compose run --rm --no-deps backend npx prisma db seed
+              docker compose up -d --force-recreate --remove-orphans backend
+
+              for attempt in $(seq 1 30); do
+                if curl -fsS http://127.0.0.1:3000/health > /dev/null; then
+                  break
+                fi
+
+                if [ "$attempt" -eq 30 ]; then
+                  echo "Backend failed health check after deploy."
+                  docker compose ps
+                  docker logs --tail=200 backend || true
+                  exit 1
+                fi
+
+                sleep 2
+              done
+
+              # A health response alone can come from an older container image.
+              # This protected route must exist and reject the anonymous probe.
+              route_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/auth/me)
+              if [ "$route_status" != "401" ]; then
+                echo "Expected /auth/me to return 401 after deploy; received $route_status."
+                docker compose ps
+                docker logs --tail=200 backend || true
+                exit 1
+              fi
+
+              docker image prune -f
+          EOF
+
+      - name: Reload Nginx and verify its API upstream
+        run: |
+          ssh -i ~/.ssh/oracle_deploy_key \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} \
+            << 'EOF'
+              set -e
+
+              sudo systemctl reload nginx
+
+              # Validate the real HTTPS Nginx virtual host. Port 80 correctly
+              # redirects to HTTPS, so an HTTP probe would report 301 instead of
+              # the expected anonymous 401 from the backend route.
+              proxy_status=$(curl -ks -o /dev/null -w "%{http_code}" \
+                --resolve "${{ env.PUBLIC_API_HOST }}:443:127.0.0.1" \
+                "https://${{ env.PUBLIC_API_HOST }}/auth/me")
+              if [ "$proxy_status" != "401" ]; then
+                echo "Expected Nginx to proxy /auth/me with a 401; received $proxy_status."
+                sudo nginx -T
+                exit 1
+              fi
+          EOF

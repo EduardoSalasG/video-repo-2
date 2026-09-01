@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+.pnpm-store
+
+# Production builds
+dist
+build
+out
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+logs
+
+# Database
+postgres_data
+
+# Uploads / local storage
+uploads
+
+# IDE
+.vscode
+.idea
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage
+
+# Prisma
+prisma/*.db
+
+# Misc
+*.tsbuildinfo
