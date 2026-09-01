@@ -9,6 +9,7 @@ import {
   ISectionRepository,
   IVideoFileRepository,
   IVideoMetadataRepository,
+  VideoSearchResult,
   ICourseAccessRepository,
   CreateUserInput,
   CreateCourseInput,
@@ -262,6 +263,34 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
       primaryStyle: meta.primaryStyle as PrimaryStyle,
       videoType: meta.videoType as VideoType,
     });
+  }
+
+  async findByTags(tags: string[]): Promise<VideoSearchResult[]> {
+    const rows = await this.prisma.videoMetadata.findMany({
+      where: { tags: { hasSome: tags } },
+      include: {
+        section: {
+          include: {
+            module: {
+              include: { course: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return rows.map((row) => ({
+      course: new Course(row.section.module.course),
+      module: new CourseModule(row.section.module),
+      section: new Section(row.section),
+      metadata: new VideoMetadata({
+        ...row,
+        difficulty: row.difficulty as Difficulty,
+        primaryStyle: row.primaryStyle as PrimaryStyle,
+        videoType: row.videoType as VideoType,
+      }),
+    }));
   }
 }
 
