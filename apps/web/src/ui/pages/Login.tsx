@@ -111,8 +111,8 @@ export const Login = () => {
             </Button>
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿No tienes cuenta?{' '}
-              <Button component={Link} to="/app" size="small" sx={{ color: '#007aff' }}>
-                Explorar cursos
+              <Button component={Link} to="/register" size="small" sx={{ color: '#007aff' }}>
+                Regístrate
               </Button>
             </Typography>
           </Box>

@@ -8,6 +8,7 @@ import { Library } from './ui/pages/Library';
 import { Course } from './ui/pages/Course';
 import { Section } from './ui/pages/Section';
 import { Search } from './ui/pages/Search';
+import { Register } from './ui/pages/Register';
 import { Admin } from './ui/pages/Admin';
 
 export const router = createBrowserRouter([
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
   },
   {
     path: '/app',
