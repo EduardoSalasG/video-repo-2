@@ -1,4 +1,4 @@
-import { Navigate, useLocation, Outlet } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
@@ -9,7 +9,7 @@ interface RequireAuthProps {
   children?: ReactNode;
 }
 
-export const RequireAuth = ({ requireAdmin }: RequireAuthProps) => {
+export const RequireAuth = ({ requireAdmin, children }: RequireAuthProps) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -29,5 +29,5 @@ export const RequireAuth = ({ requireAdmin }: RequireAuthProps) => {
     return <Navigate to="/app" replace />;
   }
 
-  return <>{children ?? <Outlet />}</>;
+  return <>{children}</>;
 };
