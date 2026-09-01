@@ -31,3 +31,4 @@ pnpm db:seed
 - Cualquier cambio de esquema requiere `prisma migrate dev`.
 - UI mobile-first y accesible; reutilizar átomos/moléculas en `apps/web/src/ui`.
 - No exponer secrets, JWTs ni hashes en logs o respuestas.
+- Flujo Git: `main` solo recibe versiones estables. Toda feature/hotfix se hace en `feature/*`, se mergea a `dev` y se acumula ahí. Solo se promueve `dev` a `main` cuando se acuerde una versión estable.
