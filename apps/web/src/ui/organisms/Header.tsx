@@ -38,12 +38,23 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
             <MenuIcon />
           </IconButton>
         )}
-        <Typography
-          variant="h6"
-          sx={{ flexGrow: 1, color: '#111111', letterSpacing: '-0.02em' }}
-        >
-          {title}
-        </Typography>
+        {user ? (
+          <Link to="/app" style={{ textDecoration: 'none', flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: '#111111', letterSpacing: '-0.02em' }}
+            >
+              {title}
+            </Typography>
+          </Link>
+        ) : (
+          <Typography
+            variant="h6"
+            sx={{ flexGrow: 1, color: '#111111', letterSpacing: '-0.02em' }}
+          >
+            {title}
+          </Typography>
+        )}
         {user ? (
           <>
             <Button
