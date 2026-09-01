@@ -243,8 +243,8 @@ export class CourseAccessService {
     return this.satisfies(granted.accessLevel, minimum);
   }
 
-  async grant(userId: string, courseId: string, level: AccessLevel): Promise<void> {
-    await this.access.grant(userId, courseId, level);
+  async grant(userId: string, courseId: string, level?: AccessLevel): Promise<void> {
+    await this.access.grant(userId, courseId, level ?? AccessLevel.READ);
   }
 
   private satisfies(level: AccessLevel, minimum: AccessLevel): boolean {

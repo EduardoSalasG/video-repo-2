@@ -161,8 +161,9 @@ export class GrantCourseAccessDto {
   @IsUUID()
   courseId: string;
 
+  @IsOptional()
   @IsEnum(AccessLevel)
-  accessLevel: AccessLevel;
+  accessLevel?: AccessLevel;
 }
 
 export class UpdateUserRoleDto {

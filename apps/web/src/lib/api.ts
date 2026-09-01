@@ -119,7 +119,7 @@ export const api = {
   updateUserRole: (id: string, role: string) =>
     request<User>('PATCH', `/users/${id}/role`, { role }),
 
-  grantAccess: (courseId: string, data: { userId: string; courseId: string; accessLevel: string }) =>
+  grantAccess: (courseId: string, data: { userId: string; courseId: string }) =>
     request<{ ok: boolean }>('POST', `/courses/${courseId}/access`, data),
 
   getAccesses: (_courseId?: string) => {

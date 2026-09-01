@@ -14,7 +14,7 @@ import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import type { Course, CourseModule, Section, Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../types';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType } from '../../types';
 
 const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios', 'accesos'];
 
@@ -54,7 +54,6 @@ const roleSchema = z.object({
 const accessSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
   courseId: z.string().min(1, 'Selecciona un curso'),
-  accessLevel: z.enum(['READ', 'WRITE', 'MAINTAIN']),
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
@@ -118,7 +117,7 @@ export const Admin = () => {
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
 
-  const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '', accessLevel: 'READ' });
+  const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '' });
   const [accessErrors, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
 
   const showSuccess = (message: string) => {
@@ -370,7 +369,6 @@ export const Admin = () => {
       setAccessErrors({
         userId: fieldErrors.userId?.[0],
         courseId: fieldErrors.courseId?.[0],
-        accessLevel: fieldErrors.accessLevel?.[0],
       });
       return;
     }
@@ -379,10 +377,9 @@ export const Admin = () => {
       .grantAccess(result.data.courseId, {
         userId: result.data.userId,
         courseId: result.data.courseId,
-        accessLevel: result.data.accessLevel as AccessLevel,
       })
       .then(() => {
-        setAccessForm({ userId: '', courseId: '', accessLevel: 'READ' });
+        setAccessForm({ userId: '', courseId: '' });
         showSuccess('Acceso concedido');
       })
       .catch((err: unknown) => {
@@ -801,19 +798,6 @@ export const Admin = () => {
               {renderCourseSelect(accessForm.courseId, (value) =>
                 setAccessForm((f) => ({ ...f, courseId: value }))
               )}
-              <FormField
-                select
-                label="Nivel de acceso"
-                value={accessForm.accessLevel}
-                onChange={(event) =>
-                  setAccessForm((f) => ({ ...f, accessLevel: event.target.value as AccessLevel }))
-                }
-                fieldError={accessErrors.accessLevel}
-              >
-                <MenuItem value="READ">Lectura</MenuItem>
-                <MenuItem value="WRITE">Escritura</MenuItem>
-                <MenuItem value="MAINTAIN">Mantenimiento</MenuItem>
-              </FormField>
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                 Conceder acceso
               </Button>
