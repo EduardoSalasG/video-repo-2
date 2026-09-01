@@ -19,7 +19,6 @@ import SchoolIcon from '@mui/icons-material/School';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import PeopleIcon from '@mui/icons-material/People';
-import LockIcon from '@mui/icons-material/Lock';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
@@ -39,17 +38,6 @@ const MENU = [
   { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon /> },
   { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon /> },
   { label: 'Usuarios', path: '/admin/usuarios', icon: <PeopleIcon /> },
-  { label: 'Accesos', path: '/admin/accesos', icon: <LockIcon /> },
-];
-
-const MORE_MENU = [
-  { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
-  { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon /> },
-  { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon /> },
-  { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon /> },
-  { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon /> },
-  { label: 'Usuarios', path: '/admin/usuarios', icon: <PeopleIcon /> },
-  { label: 'Accesos', path: '/admin/accesos', icon: <LockIcon /> },
 ];
 
 export const AdminLayout = () => {
@@ -86,7 +74,7 @@ export const AdminLayout = () => {
     navigate(MENU[newValue].path);
   };
 
-  const moreItems = MORE_MENU.slice(3);
+  const moreItems = MENU.slice(3);
 
   return (
     <Box sx={{ display: 'flex' }}>

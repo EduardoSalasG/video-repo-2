@@ -16,7 +16,7 @@ import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType } from '../../types';
 
-const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios', 'accesos'];
+const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
 
 const courseSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -118,7 +118,8 @@ export const Admin = () => {
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
 
   const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '' });
-  const [accessErrors, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
+  const [, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
+  const [selectedUserId, setSelectedUserId] = useState('');
 
   const showSuccess = (message: string) => {
     setSuccess(message);
@@ -352,6 +353,7 @@ export const Admin = () => {
     api
       .updateUserRole(result.data.userId, result.data.role as Role)
       .then(() => {
+        setSelectedUserId('');
         setRoleForm({ userId: '', role: 'STUDENT' });
         showSuccess('Rol actualizado');
       })
@@ -379,6 +381,7 @@ export const Admin = () => {
         courseId: result.data.courseId,
       })
       .then(() => {
+        setSelectedUserId('');
         setAccessForm({ userId: '', courseId: '' });
         showSuccess('Acceso concedido');
       })
@@ -754,54 +757,53 @@ export const Admin = () => {
         {activeTab === 4 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
-              Cambiar rol
+              Mantenedor de usuarios
             </Typography>
-            <Box component="form" onSubmit={submitRole} noValidate>
-              <UserAutocomplete
-                value={roleForm.userId}
-                onChange={(userId) => setRoleForm((f) => ({ ...f, userId }))}
-                label="Buscar usuario"
-                error={roleErrors.userId}
-              />
-              <FormField
-                select
-                label="Nuevo rol"
-                value={roleForm.role}
-                onChange={(event) =>
-                  setRoleForm((f) => ({ ...f, role: event.target.value as Role }))
-                }
-                fieldError={roleErrors.role}
-              >
-                <MenuItem value="STUDENT">Estudiante</MenuItem>
-                <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
-                <MenuItem value="ADMIN">Admin</MenuItem>
-              </FormField>
-              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Actualizar rol
-              </Button>
-            </Box>
-          </Stack>
-        )}
-
-        {activeTab === 5 && (
-          <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
-              Conceder acceso
-            </Typography>
-            <Box component="form" onSubmit={submitAccess} noValidate>
-              <UserAutocomplete
-                value={accessForm.userId}
-                onChange={(userId) => setAccessForm((f) => ({ ...f, userId }))}
-                label="Buscar usuario"
-                error={accessErrors.userId}
-              />
-              {renderCourseSelect(accessForm.courseId, (value) =>
-                setAccessForm((f) => ({ ...f, courseId: value }))
-              )}
-              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Conceder acceso
-              </Button>
-            </Box>
+            <UserAutocomplete
+              value={selectedUserId}
+              onChange={(userId) => {
+                setSelectedUserId(userId);
+                setRoleForm((f) => ({ ...f, userId }));
+                setAccessForm((f) => ({ ...f, userId }));
+              }}
+              label="Buscar usuario"
+            />
+            {selectedUserId && (
+              <>
+                <Box component="form" onSubmit={submitRole} noValidate>
+                  <Typography variant="h6" component="h3">
+                    Cambiar rol
+                  </Typography>
+                  <FormField
+                    select
+                    label="Nuevo rol"
+                    value={roleForm.role}
+                    onChange={(event) =>
+                      setRoleForm((f) => ({ ...f, role: event.target.value as Role }))
+                    }
+                    fieldError={roleErrors.role}
+                  >
+                    <MenuItem value="STUDENT">Estudiante</MenuItem>
+                    <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
+                    <MenuItem value="ADMIN">Admin</MenuItem>
+                  </FormField>
+                  <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                    Actualizar rol
+                  </Button>
+                </Box>
+                <Box component="form" onSubmit={submitAccess} noValidate>
+                  <Typography variant="h6" component="h3">
+                    Acceso a cursos
+                  </Typography>
+                  {renderCourseSelect(accessForm.courseId, (value) =>
+                    setAccessForm((f) => ({ ...f, courseId: value }))
+                  )}
+                  <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                    Conceder acceso
+                  </Button>
+                </Box>
+              </>
+            )}
           </Stack>
         )}
       </Box>
