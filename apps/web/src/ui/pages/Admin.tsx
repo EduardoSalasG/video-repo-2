@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import List from '@mui/material/List';
@@ -9,6 +11,7 @@ import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
+import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import type { Course, CourseModule, Section, Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../types';
@@ -38,9 +41,9 @@ const videoSchema = z.object({
   primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
   videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
-  steps: z.string().optional(),
-  influences: z.string().optional(),
-  tags: z.string().optional(),
+  steps: z.array(z.string()).default([]),
+  influences: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
 });
 
 const roleSchema = z.object({
@@ -105,9 +108,9 @@ export const Admin = () => {
     primaryStyle: 'MAMBO_ON2',
     videoType: 'STEP',
     durationCounts: 0,
-    steps: '',
-    influences: '',
-    tags: '',
+    steps: [],
+    influences: [],
+    tags: [],
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -305,23 +308,15 @@ export const Admin = () => {
       return;
     }
 
-    const parseList = (value: string | undefined) =>
-      value
-        ? value
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean)
-        : [];
-
     api
       .uploadVideo(videoSection, videoFile, {
         difficulty: result.data.difficulty as Difficulty,
         primaryStyle: result.data.primaryStyle as PrimaryStyle,
         videoType: result.data.videoType as VideoType,
         durationCounts: result.data.durationCounts,
-        steps: parseList(result.data.steps),
-        influences: parseList(result.data.influences),
-        tags: parseList(result.data.tags),
+        steps: result.data.steps,
+        influences: result.data.influences,
+        tags: result.data.tags,
       })
       .then(() => {
         setVideoFile(null);
@@ -330,9 +325,9 @@ export const Admin = () => {
           primaryStyle: 'MAMBO_ON2',
           videoType: 'STEP',
           durationCounts: 0,
-          steps: '',
-          influences: '',
-          tags: '',
+          steps: [],
+          influences: [],
+          tags: [],
         });
         setVideoSection('');
         showSuccess('Video subido');
@@ -710,20 +705,32 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.durationCounts}
               />
-              <FormField
-                label="Pasos (separados por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.steps}
-                onChange={(event) => setVideoForm((f) => ({ ...f, steps: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, steps: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Pasos" placeholder="Escribe y presiona Enter" />}
               />
-              <FormField
-                label="Influencias (separadas por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.influences}
-                onChange={(event) => setVideoForm((f) => ({ ...f, influences: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, influences: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Influencias" placeholder="Escribe y presiona Enter" />}
               />
-              <FormField
-                label="Tags (separados por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.tags}
-                onChange={(event) => setVideoForm((f) => ({ ...f, tags: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, tags: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Tags" placeholder="Escribe y presiona Enter" />}
               />
               <Box sx={{ my: 2 }}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
@@ -753,11 +760,11 @@ export const Admin = () => {
               Cambiar rol
             </Typography>
             <Box component="form" onSubmit={submitRole} noValidate>
-              <FormField
-                label="ID de usuario (UUID)"
+              <UserAutocomplete
                 value={roleForm.userId}
-                onChange={(event) => setRoleForm((f) => ({ ...f, userId: event.target.value }))}
-                fieldError={roleErrors.userId}
+                onChange={(userId) => setRoleForm((f) => ({ ...f, userId }))}
+                label="Buscar usuario"
+                error={roleErrors.userId}
               />
               <FormField
                 select
@@ -785,11 +792,11 @@ export const Admin = () => {
               Conceder acceso
             </Typography>
             <Box component="form" onSubmit={submitAccess} noValidate>
-              <FormField
-                label="ID de usuario (UUID)"
+              <UserAutocomplete
                 value={accessForm.userId}
-                onChange={(event) => setAccessForm((f) => ({ ...f, userId: event.target.value }))}
-                fieldError={accessErrors.userId}
+                onChange={(userId) => setAccessForm((f) => ({ ...f, userId }))}
+                label="Buscar usuario"
+                error={accessErrors.userId}
               />
               {renderCourseSelect(accessForm.courseId, (value) =>
                 setAccessForm((f) => ({ ...f, courseId: value }))

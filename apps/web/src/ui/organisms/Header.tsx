@@ -3,9 +3,10 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
+import PersonIcon from '@mui/icons-material/Person';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 interface HeaderProps {
@@ -14,13 +15,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/', { replace: true });
-  };
+  const { user } = useAuth();
 
   return (
     <AppBar
@@ -70,20 +65,21 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
                 Admin
               </Button>
             )}
+            <Button
+              component={Link}
+              to="/app/profile"
+              color="inherit"
+              startIcon={<PersonIcon />}
+              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+            >
+              Perfil
+            </Button>
             <Typography
               variant="body2"
               sx={{ mr: 2, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}
             >
               {user.email}
             </Typography>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleLogout}
-              sx={{ borderRadius: 8, px: 2 }}
-            >
-              Cerrar sesión
-            </Button>
           </>
         ) : (
           <Button

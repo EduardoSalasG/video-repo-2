@@ -269,4 +269,9 @@ export class UserService {
     const user = await this.users.updateRole(id, role);
     return stripPassword(user);
   }
+
+  async search(query: string): Promise<SafeUser[]> {
+    const users = await this.users.search(query);
+    return users.map(stripPassword);
+  }
 }

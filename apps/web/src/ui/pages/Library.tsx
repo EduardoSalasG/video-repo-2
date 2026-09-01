@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import CircularProgress from '@mui/material/CircularProgress';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Box from '@mui/material/Box';
 import { Typography } from '../atoms/Typography';
 import { CourseList } from '../organisms/CourseList';
@@ -31,6 +32,9 @@ export const Library = () => {
 
   return (
     <>
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Typography color="text.primary">Biblioteca</Typography>
+      </Breadcrumbs>
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Biblioteca

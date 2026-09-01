@@ -104,13 +104,7 @@ export const api = {
   ) => {
     const formData = new FormData();
     formData.append('video', file);
-    formData.append('difficulty', metadata.difficulty);
-    formData.append('primaryStyle', metadata.primaryStyle);
-    formData.append('videoType', metadata.videoType);
-    formData.append('durationCounts', String(metadata.durationCounts));
-    metadata.steps.forEach((step) => formData.append('steps', step));
-    metadata.influences.forEach((influence) => formData.append('influences', influence));
-    metadata.tags.forEach((tag) => formData.append('tags', tag));
+    formData.append('metadata', JSON.stringify(metadata));
     return request<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>(
       'POST',
       `/sections/${sectionId}/videos`,
@@ -118,6 +112,8 @@ export const api = {
       true,
     );
   },
+
+  searchUsers: (q: string) => request<User[]>('GET', `/users?q=${encodeURIComponent(q)}`),
 
   getUser: (id: string) => request<User>('GET', `/users/${id}`),
   updateUserRole: (id: string, role: string) =>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -52,6 +53,12 @@ export const Search = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Link to="/app" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Biblioteca
+        </Link>
+        <Typography color="text.primary">Buscar</Typography>
+      </Breadcrumbs>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         <Paper
           elevation={0}

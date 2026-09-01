@@ -41,6 +41,24 @@ export class PrismaUserRepository implements IUserRepository {
     return user ? new User({ ...user, role: user.role as Role }) : null;
   }
 
+  async search(query: string): Promise<User[]> {
+    const q = query.trim();
+    const where: Record<string, unknown> = {};
+    if (q) {
+      where.OR = [
+        { email: { contains: q, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    const rows = await this.prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return rows.map((row) => new User({ ...row, role: row.role as Role }));
+  }
+
   async create(input: CreateUserInput, passwordHash: string): Promise<User> {
     const user = await this.prisma.user.create({
       data: {

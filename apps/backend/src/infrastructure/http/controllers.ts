@@ -6,6 +6,7 @@ import {
   Get,
   Inject,
   MaxFileSizeValidator,
+  BadRequestException,
   NotFoundException,
   Param,
   ParseFilePipe,
@@ -20,6 +21,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { AuthService, CourseService, CourseAccessService, ModuleService, SectionService, UserService, VideoService } from '../../application/services';
 import { Role, AccessLevel } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -79,6 +82,14 @@ export class AuthController {
 @Controller('users')
 export class UsersController {
   constructor(private readonly users: UserService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async search(@Query('q') q: string) {
+    return this.users.search(q ?? '');
+  }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
@@ -282,14 +293,27 @@ export class VideosController {
       }),
     )
     file: Express.Multer.File,
-    @Body() dto: CreateVideoMetadataDto,
+    @Body('metadata') metadata: string,
   ) {
+    if (!metadata) {
+      throw new BadRequestException('metadata is required');
+    }
+    let parsed: CreateVideoMetadataDto;
+    try {
+      parsed = plainToInstance(CreateVideoMetadataDto, JSON.parse(metadata));
+    } catch {
+      throw new BadRequestException('metadata must be a valid JSON');
+    }
+    const errors = await validate(parsed);
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
     return this.videos.upload(sectionId, {
       originalname: file.originalname,
       mimetype: file.mimetype,
       buffer: file.buffer,
       size: file.size,
-    }, { ...dto, sectionId });
+    }, { ...parsed, sectionId });
   }
 }
 

@@ -78,6 +78,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByUsername(username: string): Promise<User | null>;
+  search(query: string): Promise<User[]>;
   create(input: CreateUserInput, passwordHash: string): Promise<User>;
   updateRole(id: string, role: Role): Promise<User>;
 }

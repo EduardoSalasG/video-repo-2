@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -67,9 +68,15 @@ export const Course = () => {
 
   return (
     <Box>
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Link to="/app" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Biblioteca
+        </Link>
+        <Typography color="text.primary">{course?.name}</Typography>
+      </Breadcrumbs>
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          {course.name}
+          {course?.name}
         </Typography>
         <Typography color="text.secondary" paragraph>
           {course.description}
