@@ -56,10 +56,20 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               to="/app/search"
               color="inherit"
               startIcon={<SearchIcon />}
-              sx={{ color: '#007aff', fontWeight: 600 }}
+              sx={{ color: '#007aff', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Buscar
             </Button>
+            {(user.role === 'ADMIN' || user.role === 'INSTRUCTOR') && (
+              <Button
+                component={Link}
+                to="/admin"
+                color="inherit"
+                sx={{ color: '#007aff', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              >
+                Admin
+              </Button>
+            )}
             <Typography
               variant="body2"
               sx={{ mr: 2, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}
