@@ -252,8 +252,18 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateVideoMetadataInput): Promise<VideoMetadata> {
-    const meta = await this.prisma.videoMetadata.create({
-      data: {
+    const meta = await this.prisma.videoMetadata.upsert({
+      where: { sectionId: input.sectionId },
+      update: {
+        difficulty: input.difficulty,
+        primaryStyle: input.primaryStyle,
+        videoType: input.videoType,
+        durationCounts: input.durationCounts,
+        steps: input.steps,
+        influences: input.influences,
+        tags: input.tags,
+      },
+      create: {
         sectionId: input.sectionId,
         difficulty: input.difficulty,
         primaryStyle: input.primaryStyle,

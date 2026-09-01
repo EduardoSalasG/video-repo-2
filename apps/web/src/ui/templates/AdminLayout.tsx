@@ -82,6 +82,7 @@ export const AdminLayout = () => {
   })();
 
   const handleMobileNav = (_: unknown, newValue: number) => {
+    if (newValue < 0 || newValue >= 3) return;
     navigate(MENU[newValue].path);
   };
 
@@ -167,6 +168,25 @@ export const AdminLayout = () => {
           <Divider />
           <List sx={{ px: 1 }}>
             <ListItemButton
+              component={Link}
+              to="/app"
+              sx={{
+                borderRadius: 2,
+                minHeight: 48,
+                justifyContent: open ? 'initial' : 'center',
+                px: open ? 2 : 1,
+                mb: 0.5,
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 0, mr: open ? 2 : 'auto', justifyContent: 'center' }}>
+                <ArrowBackIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary="Volver a la librería"
+                sx={{ opacity: open ? 1 : 0, width: open ? 'auto' : 0, overflow: 'hidden', transition: 'opacity 200ms ease' }}
+              />
+            </ListItemButton>
+            <ListItemButton
               onClick={handleLogout}
               sx={{
                 borderRadius: 2,
@@ -232,7 +252,6 @@ export const AdminLayout = () => {
               label="Más"
               icon={<MoreHorizIcon />}
               onClick={handleMoreOpen}
-              value={-1}
             />
           </BottomNavigation>
           <Menu
