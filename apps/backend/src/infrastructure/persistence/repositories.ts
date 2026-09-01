@@ -355,7 +355,22 @@ export class PrismaCourseAccessRepository implements ICourseAccessRepository {
   }
 
   async findByUser(userId: string): Promise<CourseAccess[]> {
-    const rows = await this.prisma.courseAccess.findMany({ where: { userId } });
-    return rows.map((row) => new CourseAccess({ ...row, accessLevel: row.accessLevel as AccessLevel }));
+    const rows = await this.prisma.courseAccess.findMany({
+      where: { userId },
+      include: { course: true },
+    });
+    return rows.map((row) =>
+      new CourseAccess({
+        ...row,
+        course: row.course ? new Course(row.course) : undefined,
+        accessLevel: row.accessLevel as AccessLevel,
+      })
+    );
+  }
+
+  async revoke(userId: string, courseId: string): Promise<void> {
+    await this.prisma.courseAccess.delete({
+      where: { userId_courseId: { userId, courseId } },
+    });
   }
 }

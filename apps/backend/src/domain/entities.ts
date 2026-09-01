@@ -97,6 +97,7 @@ export class CourseAccess {
   userId: string;
   courseId: string;
   accessLevel: AccessLevel;
+  course?: Course;
   createdAt: Date;
   updatedAt: Date;
 

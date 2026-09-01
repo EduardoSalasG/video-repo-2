@@ -126,8 +126,11 @@ export const api = {
   searchUsers: (q: string) => request<User[]>('GET', `/users?q=${encodeURIComponent(q)}`),
 
   getUser: (id: string) => request<User>('GET', `/users/${id}`),
+  getUserAccesses: (id: string) => request<CourseAccess[]>('GET', `/users/${id}/accesses`),
   updateUserRole: (id: string, role: string) =>
     request<User>('PATCH', `/users/${id}/role`, { role }),
+  revokeAccess: (userId: string, courseId: string) =>
+    request<void>('DELETE', `/users/${userId}/accesses/${courseId}`),
 
   grantAccess: (courseId: string, data: { userId: string; courseId: string }) =>
     request<{ ok: boolean }>('POST', `/courses/${courseId}/access`, data),

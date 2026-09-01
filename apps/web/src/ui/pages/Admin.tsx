@@ -6,16 +6,19 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType } from '../../types';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
 const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
 
@@ -123,11 +126,29 @@ export const Admin = () => {
   const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '' });
   const [, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userAccesses, setUserAccesses] = useState<CourseAccess[]>([]);
 
   const showSuccess = (message: string) => {
     setSuccess(message);
     setTimeout(() => setSuccess(null), 3000);
   };
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setSelectedUser(null);
+      setUserAccesses([]);
+      return;
+    }
+    api
+      .getUser(selectedUserId)
+      .then(setSelectedUser)
+      .catch(() => setSelectedUser(null));
+    api
+      .getUserAccesses(selectedUserId)
+      .then(setUserAccesses)
+      .catch(() => setUserAccesses([]));
+  }, [selectedUserId]);
 
   useEffect(() => {
     setLoadingCourses(true);
@@ -410,9 +431,11 @@ export const Admin = () => {
     api
       .updateUserRole(result.data.userId, result.data.role as Role)
       .then(() => {
-        setSelectedUserId('');
-        setRoleForm({ userId: '', role: 'STUDENT' });
+        setRoleForm({ userId: selectedUserId, role: 'STUDENT' });
         showSuccess('Rol actualizado');
+        if (selectedUserId) {
+          api.getUser(selectedUserId).then(setSelectedUser).catch(() => setSelectedUser(null));
+        }
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al actualizar rol';
@@ -438,14 +461,27 @@ export const Admin = () => {
         courseId: result.data.courseId,
       })
       .then(() => {
-        setSelectedUserId('');
-        setAccessForm({ userId: '', courseId: '' });
+        setAccessForm({ userId: selectedUserId, courseId: '' });
         showSuccess('Acceso concedido');
+        if (selectedUserId) {
+          api.getUserAccesses(selectedUserId).then(setUserAccesses).catch(() => setUserAccesses([]));
+        }
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al conceder acceso';
         setAccessErrors({ courseId: message });
       });
+  };
+
+  const handleRevokeAccess = (courseId: string) => {
+    if (!selectedUserId) return;
+    api
+      .revokeAccess(selectedUserId, courseId)
+      .then(() => {
+        setUserAccesses((prev) => prev.filter((a) => a.courseId !== courseId));
+        showSuccess('Acceso revocado');
+      })
+      .catch(() => showSuccess('Error al revocar acceso'));
   };
 
   const handleDeleteCourse = (courseId: string) => {
@@ -843,6 +879,17 @@ export const Admin = () => {
               }}
               label="Buscar usuario"
             />
+            {selectedUser && (
+              <Paper sx={{ p: 2, borderRadius: 2 }}>
+                <Typography variant="h6" component="h3" gutterBottom>
+                  Datos del usuario
+                </Typography>
+                <Typography><strong>Nombre:</strong> {selectedUser.firstName} {selectedUser.lastName}</Typography>
+                <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
+                <Typography><strong>Usuario:</strong> {selectedUser.username}</Typography>
+                <Typography><strong>Rol:</strong> {selectedUser.role}</Typography>
+              </Paper>
+            )}
             {selectedUserId && (
               <>
                 <Box component="form" onSubmit={submitRole} noValidate>
@@ -866,9 +913,36 @@ export const Admin = () => {
                     Actualizar rol
                   </Button>
                 </Box>
+                <Box>
+                  <Typography variant="h6" component="h3" gutterBottom>
+                    Cursos con acceso
+                  </Typography>
+                  <List>
+                    {userAccesses.length === 0 && (
+                      <ListItem>
+                        <ListItemText primary="Sin accesos" />
+                      </ListItem>
+                    )}
+                    {userAccesses.map((access) => (
+                      <ListItem
+                        key={access.courseId}
+                        secondaryAction={
+                          <IconButton edge="end" onClick={() => handleRevokeAccess(access.courseId)} color="error">
+                            <CloseIcon />
+                          </IconButton>
+                        }
+                      >
+                        <ListItemText
+                          primary={access.course?.name ?? access.courseId}
+                          secondary={access.accessLevel}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
                 <Box component="form" onSubmit={submitAccess} noValidate>
                   <Typography variant="h6" component="h3">
-                    Acceso a cursos
+                    Conceder acceso
                   </Typography>
                   {renderCourseSelect(accessForm.courseId, (value) =>
                     setAccessForm((f) => ({ ...f, courseId: value }))

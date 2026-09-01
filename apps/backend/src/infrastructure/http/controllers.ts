@@ -82,7 +82,10 @@ export class AuthController {
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly users: UserService) {}
+  constructor(
+    private readonly users: UserService,
+    private readonly courseAccess: CourseAccessService,
+  ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -100,6 +103,23 @@ export class UsersController {
       return { error: 'Forbidden' };
     }
     return this.users.getById(id);
+  }
+
+  @Get(':id/accesses')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async getAccesses(@Param('id') id: string) {
+    return this.courseAccess.getByUser(id);
+  }
+
+  @Delete(':id/accesses/:courseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async revokeAccess(@Param('id') id: string, @Param('courseId') courseId: string) {
+    await this.courseAccess.revoke(id, courseId);
+    return { ok: true };
   }
 
   @Patch(':id/role')

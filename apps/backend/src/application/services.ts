@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Role, AccessLevel } from '../domain/enums';
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata } from '../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
   IUserRepository,
@@ -261,6 +261,14 @@ export class CourseAccessService {
 
   async grant(userId: string, courseId: string, level?: AccessLevel): Promise<void> {
     await this.access.grant(userId, courseId, level ?? AccessLevel.READ);
+  }
+
+  async getByUser(userId: string): Promise<CourseAccess[]> {
+    return this.access.findByUser(userId);
+  }
+
+  async revoke(userId: string, courseId: string): Promise<void> {
+    await this.access.revoke(userId, courseId);
   }
 
   private satisfies(level: AccessLevel, minimum: AccessLevel): boolean {

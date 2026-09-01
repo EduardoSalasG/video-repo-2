@@ -75,6 +75,7 @@ export interface CourseAccess {
   userId: string;
   courseId: string;
   accessLevel: AccessLevel;
+  course?: Course;
   createdAt: string;
   updatedAt: string;
 }
