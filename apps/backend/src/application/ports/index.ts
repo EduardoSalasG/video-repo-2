@@ -133,6 +133,7 @@ export interface ICourseAccessRepository {
   findByUserAndCourse(userId: string, courseId: string): Promise<CourseAccess | null>;
   grant(userId: string, courseId: string, level: AccessLevel): Promise<CourseAccess>;
   findByUser(userId: string): Promise<CourseAccess[]>;
+  findByCourse(courseId: string): Promise<CourseAccess[]>;
   revoke(userId: string, courseId: string): Promise<void>;
 }
 

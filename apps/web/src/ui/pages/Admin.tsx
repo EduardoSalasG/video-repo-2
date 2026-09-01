@@ -20,7 +20,7 @@ import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
-const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
+const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
 
 const courseSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -70,7 +70,7 @@ type AccessFormData = z.infer<typeof accessSchema>;
 export const Admin = () => {
   const { tab } = useParams<{ tab?: string }>();
   const activeTab = useMemo(() => {
-    const index = TABS.indexOf(tab ?? 'cursos');
+    const index = TABS.indexOf(tab ?? 'dashboard');
     return Math.max(0, index);
   }, [tab]);
 
@@ -95,6 +95,7 @@ export const Admin = () => {
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [dashboard, setDashboard] = useState({ courses: 0, users: 0 });
 
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
   const [courseErrors, setCourseErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
@@ -161,6 +162,13 @@ export const Admin = () => {
       .then(setCourses)
       .catch(() => setCourses([]))
       .finally(() => setLoadingCourses(false));
+  }, []);
+
+  useEffect(() => {
+    api
+      .getDashboard()
+      .then(setDashboard)
+      .catch(() => setDashboard({ courses: 0, users: 0 }));
   }, []);
 
   useEffect(() => {
@@ -649,6 +657,28 @@ export const Admin = () => {
         {activeTab === 0 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
+              Dashboard
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                <Typography color="text.secondary" variant="body2">
+                  Cursos que administro
+                </Typography>
+                <Typography variant="h3">{dashboard.courses}</Typography>
+              </Paper>
+              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                <Typography color="text.secondary" variant="body2">
+                  Usuarios que administro
+                </Typography>
+                <Typography variant="h3">{dashboard.users}</Typography>
+              </Paper>
+            </Box>
+          </Stack>
+        )}
+
+        {activeTab === 1 && (
+          <Stack spacing={3}>
+            <Typography variant="h5" component="h2">
               Cursos
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
@@ -708,7 +738,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 1 && (
+        {activeTab === 2 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Módulos
@@ -783,7 +813,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 2 && (
+        {activeTab === 3 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Secciones
@@ -869,7 +899,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 3 && (
+        {activeTab === 4 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Subir video
@@ -997,7 +1027,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 4 && (
+        {activeTab === 5 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Mantenedor de usuarios

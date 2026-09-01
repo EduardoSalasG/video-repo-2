@@ -267,6 +267,10 @@ export class CourseAccessService {
     return this.access.findByUser(userId);
   }
 
+  async getByCourse(courseId: string): Promise<CourseAccess[]> {
+    return this.access.findByCourse(courseId);
+  }
+
   async revoke(userId: string, courseId: string): Promise<void> {
     await this.access.revoke(userId, courseId);
   }
@@ -297,5 +301,37 @@ export class UserService {
   async search(query: string): Promise<SafeUser[]> {
     const users = await this.users.search(query);
     return users.map(stripPassword);
+  }
+}
+
+@Injectable()
+export class DashboardService {
+  constructor(
+    @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
+    @Inject(InjectionTokens.COURSE_REPOSITORY) private readonly courses: ICourseRepository,
+    @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
+  ) {}
+
+  async getDashboard(userId: string, role: Role): Promise<{ courses: number; users: number }> {
+    if (role === Role.ADMIN) {
+      const [courseList, userList] = await Promise.all([
+        this.courses.findAll(),
+        this.users.search(''),
+      ]);
+      return { courses: courseList.length, users: userList.length };
+    }
+
+    if (role === Role.INSTRUCTOR) {
+      const myAccess = await this.access.findByUser(userId);
+      const courseIds = [...new Set(myAccess.map((a) => a.courseId))];
+      const members = await Promise.all(courseIds.map((id) => this.access.findByCourse(id)));
+      const userIds = new Set<string>();
+      members.flat().forEach((a) => {
+        if (a.userId !== userId) userIds.add(a.userId);
+      });
+      return { courses: courseIds.length, users: userIds.size };
+    }
+
+    return { courses: 0, users: 0 };
   }
 }

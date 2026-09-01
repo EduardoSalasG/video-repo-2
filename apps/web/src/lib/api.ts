@@ -69,6 +69,8 @@ export const api = {
 
   me: () => request<{ userId: string; email: string; role: string }>('GET', '/auth/me'),
 
+  getDashboard: () => request<{ courses: number; users: number }>('GET', '/admin/dashboard'),
+
   getCourses: () => request<Course[]>('GET', '/courses'),
   getCourse: (courseId: string) => request<Course>('GET', `/courses/${courseId}`),
   createCourse: (data: { name: string; description?: string }) =>

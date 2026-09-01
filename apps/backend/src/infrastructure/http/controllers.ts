@@ -23,7 +23,7 @@ import { Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, ModuleService, SectionService, UserService, VideoService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, SectionService, UserService, VideoService } from '../../application/services';
 import { Role, AccessLevel } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
 import {
@@ -387,5 +387,19 @@ export class VideoSearchController {
     }
     const results = await this.videos.searchByTags(tagList);
     return { results };
+  }
+}
+
+@ApiTags('admin')
+@Controller('admin')
+export class DashboardController {
+  constructor(private readonly dashboard: DashboardService) {}
+
+  @Get('dashboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async getDashboard(@CurrentUser() user: AuthUser) {
+    return this.dashboard.getDashboard(user.userId, user.role as Role);
   }
 }
