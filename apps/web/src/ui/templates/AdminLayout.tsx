@@ -170,7 +170,7 @@ export const AdminLayout = () => {
                 <ArrowBackIcon />
               </ListItemIcon>
               <ListItemText
-                primary="Volver a la librería"
+                primary="Volver a la biblioteca"
                 sx={{ opacity: open ? 1 : 0, width: open ? 'auto' : 0, overflow: 'hidden', transition: 'opacity 200ms ease' }}
               />
             </ListItemButton>
@@ -264,7 +264,7 @@ export const AdminLayout = () => {
             ))}
             <Divider />
             <MenuItem component={Link} to="/app" onClick={handleMoreClose}>
-              <ArrowBackIcon fontSize="small" sx={{ mr: 1 }} /> Volver a la librería
+              <ArrowBackIcon fontSize="small" sx={{ mr: 1 }} /> Volver a la biblioteca
             </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Cerrar sesión
