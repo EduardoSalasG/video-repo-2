@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { z } from 'zod';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import List from '@mui/material/List';
@@ -64,7 +62,6 @@ type RoleFormData = z.infer<typeof roleSchema>;
 type AccessFormData = z.infer<typeof accessSchema>;
 
 export const Admin = () => {
-  const navigate = useNavigate();
   const { tab } = useParams<{ tab?: string }>();
   const activeTab = useMemo(() => {
     const index = TABS.indexOf(tab ?? 'cursos');
@@ -199,10 +196,6 @@ export const Admin = () => {
       .catch(() => setSections([]))
       .finally(() => setLoadingSections(false));
   }, [videoModule]);
-
-  const handleTabChange = (_: unknown, newValue: number) => {
-    navigate(`/admin/${TABS[newValue]}`);
-  };
 
   const submitCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -483,18 +476,6 @@ export const Admin = () => {
 
   return (
     <Box>
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        aria-label="Pestañas de administración"
-      >
-        {TABS.map((t) => (
-          <Tab key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} />
-        ))}
-      </Tabs>
-
       {success && (
         <Typography color="success.main" sx={{ mt: 2 }}>
           {success}

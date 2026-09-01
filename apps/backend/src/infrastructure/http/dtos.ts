@@ -70,9 +70,6 @@ export class CreateModuleDto {
   @IsOptional()
   @Type(() => Number)
   orderIndex?: number;
-
-  @IsUUID()
-  courseId: string;
 }
 
 export class UpdateModuleDto {
@@ -108,9 +105,6 @@ export class CreateSectionDto {
   @IsString()
   @IsOptional()
   markdownContent?: string;
-
-  @IsUUID()
-  moduleId: string;
 }
 
 export class UpdateSectionDto {
