@@ -11,6 +11,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseGuards,
@@ -312,5 +313,23 @@ export class HealthController {
   @Get()
   check() {
     return { status: 'ok' };
+  }
+}
+
+@ApiTags('search')
+@Controller('videos')
+export class VideoSearchController {
+  constructor(private readonly videos: VideoService) {}
+
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async search(@Query('tags') tags?: string) {
+    const tagList = tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
+    if (tagList.length === 0) {
+      return { results: [] };
+    }
+    const results = await this.videos.searchByTags(tagList);
+    return { results };
   }
 }

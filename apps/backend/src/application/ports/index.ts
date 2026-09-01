@@ -114,9 +114,17 @@ export interface IVideoFileRepository {
   delete(id: string): Promise<void>;
 }
 
+export interface VideoSearchResult {
+  course: Course;
+  module: CourseModule;
+  section: Section;
+  metadata: VideoMetadata;
+}
+
 export interface IVideoMetadataRepository {
   create(input: CreateVideoMetadataInput): Promise<VideoMetadata>;
   findBySectionId(sectionId: string): Promise<VideoMetadata | null>;
+  findByTags(tags: string[]): Promise<VideoSearchResult[]>;
 }
 
 export interface ICourseAccessRepository {

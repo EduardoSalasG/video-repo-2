@@ -23,6 +23,7 @@ import {
   UpdateSectionInput,
   CreateVideoMetadataInput,
   StorageFile,
+  VideoSearchResult,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -202,6 +203,10 @@ export class VideoService {
     const file = await this.videoFiles.findById(videoFileId);
     if (!file) throw new NotFoundException('Video file not found');
     return this.storage.getUrl(file.storageKey);
+  }
+
+  async searchByTags(tags: string[]): Promise<VideoSearchResult[]> {
+    return this.videoMetadata.findByTags(tags);
   }
 }
 
