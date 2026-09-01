@@ -92,6 +92,10 @@ export const Admin = () => {
   const [videoModule, setVideoModule] = useState('');
   const [videoSection, setVideoSection] = useState('');
 
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
   const [courseErrors, setCourseErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
 
@@ -236,6 +240,21 @@ export const Admin = () => {
       return;
     }
     setCourseErrors({});
+    if (editingCourseId) {
+      api
+        .updateCourse(editingCourseId, result.data)
+        .then((updated) => {
+          setCourses((prev) => prev.map((c) => (c.id === editingCourseId ? updated : c)));
+          setCourseForm({ name: '', description: '' });
+          setEditingCourseId(null);
+          showSuccess('Curso actualizado');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar curso';
+          setCourseErrors({ name: message });
+        });
+      return;
+    }
     api
       .createCourse(result.data)
       .then((newCourse) => {
@@ -266,6 +285,21 @@ export const Admin = () => {
       return;
     }
     setModuleErrors({});
+    if (editingModuleId) {
+      api
+        .updateModule(editingModuleId, result.data)
+        .then((updated) => {
+          setModules((prev) => prev.map((m) => (m.id === editingModuleId ? updated : m)));
+          setModuleForm({ title: '', description: '', orderIndex: undefined });
+          setEditingModuleId(null);
+          showSuccess('Módulo actualizado');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar módulo';
+          setModuleErrors({ title: message });
+        });
+      return;
+    }
     api
       .createModule(moduleCourse, result.data)
       .then((newModule) => {
@@ -297,6 +331,21 @@ export const Admin = () => {
       return;
     }
     setSectionErrors({});
+    if (editingSectionId) {
+      api
+        .updateSection(editingSectionId, result.data)
+        .then((updated) => {
+          setSections((prev) => prev.map((s) => (s.id === editingSectionId ? updated : s)));
+          setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+          setEditingSectionId(null);
+          showSuccess('Sección actualizada');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar sección';
+          setSectionErrors({ title: message });
+        });
+      return;
+    }
     api
       .createSection(sectionModule, result.data)
       .then((newSection) => {
@@ -484,6 +533,32 @@ export const Admin = () => {
       .catch(() => showSuccess('Error al revocar acceso'));
   };
 
+  const startEditCourse = (c: Course) => {
+    setEditingCourseId(c.id);
+    setCourseForm({ name: c.name, description: c.description ?? '' });
+  };
+
+  const startEditModule = (m: CourseModule) => {
+    setModuleCourse(m.courseId);
+    setEditingModuleId(m.id);
+    setModuleForm({
+      title: m.title,
+      description: m.description ?? '',
+      orderIndex: m.orderIndex,
+    });
+  };
+
+  const startEditSection = (s: Section) => {
+    setSectionModule(s.moduleId);
+    setEditingSectionId(s.id);
+    setSectionForm({
+      title: s.title,
+      description: s.description ?? '',
+      orderIndex: s.orderIndex,
+      markdownContent: s.markdownContent ?? '',
+    });
+  };
+
   const handleDeleteCourse = (courseId: string) => {
     api
       .deleteCourse(courseId)
@@ -577,6 +652,9 @@ export const Admin = () => {
               Cursos
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingCourseId ? 'Editar curso' : 'Crear curso'}
+              </Typography>
               <FormField
                 label="Nombre"
                 value={courseForm.name}
@@ -590,8 +668,21 @@ export const Admin = () => {
                 fieldError={courseErrors.description}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear curso
+                {editingCourseId ? 'Guardar cambios' : 'Crear curso'}
               </Button>
+              {editingCourseId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                    sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingCourseId(null);
+                    setCourseForm({ name: '', description: '' });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingCourses ? (
               <Typography color="text.secondary">Cargando cursos...</Typography>
@@ -601,9 +692,12 @@ export const Admin = () => {
                   <ListItem
                     key={course.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteCourse(course.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditCourse(course)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteCourse(course.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={course.name} secondary={course.description ?? ''} />
@@ -621,6 +715,9 @@ export const Admin = () => {
             </Typography>
             {renderCourseSelect(moduleCourse, setModuleCourse)}
             <Box component="form" onSubmit={submitModule} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingModuleId ? 'Editar módulo' : 'Crear módulo'}
+              </Typography>
               <FormField
                 label="Título"
                 value={moduleForm.title}
@@ -646,8 +743,21 @@ export const Admin = () => {
                 fieldError={moduleErrors.orderIndex}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear módulo
+                {editingModuleId ? 'Guardar cambios' : 'Crear módulo'}
               </Button>
+              {editingModuleId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingModuleId(null);
+                    setModuleForm({ title: '', description: '', orderIndex: undefined });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingModules ? (
               <Typography color="text.secondary">Cargando módulos...</Typography>
@@ -657,9 +767,12 @@ export const Admin = () => {
                   <ListItem
                     key={module.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteModule(module.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditModule(module)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteModule(module.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={module.title} />
@@ -678,6 +791,9 @@ export const Admin = () => {
             {renderCourseSelect(sectionCourse, setSectionCourse)}
             {renderModuleSelect(sectionModule, setSectionModule)}
             <Box component="form" onSubmit={submitSection} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingSectionId ? 'Editar sección' : 'Crear sección'}
+              </Typography>
               <FormField
                 label="Título"
                 value={sectionForm.title}
@@ -713,8 +829,21 @@ export const Admin = () => {
                 fieldError={sectionErrors.markdownContent}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear sección
+                {editingSectionId ? 'Guardar cambios' : 'Crear sección'}
               </Button>
+              {editingSectionId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingSectionId(null);
+                    setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingSections ? (
               <Typography color="text.secondary">Cargando secciones...</Typography>
@@ -724,9 +853,12 @@ export const Admin = () => {
                   <ListItem
                     key={section.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteSection(section.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditSection(section)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteSection(section.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={section.title} />
