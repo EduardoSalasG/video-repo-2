@@ -113,7 +113,7 @@ export const Course = () => {
                   >
                     <ListItemText
                       primary={
-                        <Typography variant="body1" sx={{ color: '#007aff' }}>
+                        <Typography variant="body1" sx={{ color: '#111111' }}>
                           {section.title}
                         </Typography>
                       }

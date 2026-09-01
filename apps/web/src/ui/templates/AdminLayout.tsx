@@ -107,7 +107,7 @@ export const AdminLayout = () => {
                   minWidth: 0,
                   mr: open ? 2 : 'auto',
                   justifyContent: 'center',
-                  color: isActive(item.path) ? '#007aff' : 'inherit',
+                  color: isActive(item.path) ? '#111111' : 'inherit',
                 }}
               >
                 {item.icon}

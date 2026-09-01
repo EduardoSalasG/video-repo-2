@@ -76,7 +76,7 @@ export const Section = () => {
             preload="metadata"
             width="100%"
             aria-label={`Video de ${section.title}`}
-            style={{ borderRadius: 14, display: 'block' }}
+            style={{ borderRadius: 8, display: 'block' }}
           />
         </Paper>
       )}

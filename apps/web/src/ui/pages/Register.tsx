@@ -159,7 +159,7 @@ export const Register = () => {
               variant="contained"
               fullWidth
               disabled={submitting}
-              sx={{ mt: 3, py: 1.5, borderRadius: 14 }}
+              sx={{ mt: 3, py: 1.5, borderRadius: 8 }}
             >
               {submitting ? 'Creando cuenta...' : 'Registrarme'}
             </Button>
@@ -168,7 +168,7 @@ export const Register = () => {
               sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}
             >
               ¿Ya tienes cuenta?{' '}
-              <Button component={Link} to="/login" size="small" sx={{ color: '#007aff' }}>
+              <Button component={Link} to="/login" size="small" sx={{ color: '#111111' }}>
                 Iniciar sesión
               </Button>
             </Typography>

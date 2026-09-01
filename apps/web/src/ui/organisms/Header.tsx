@@ -38,14 +38,14 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
             color="inherit"
             onClick={onMenu}
             aria-label="Abrir menú"
-            sx={{ color: '#1c1c1e' }}
+            sx={{ color: '#111111' }}
           >
             <MenuIcon />
           </IconButton>
         )}
         <Typography
           variant="h6"
-          sx={{ flexGrow: 1, color: '#1c1c1e', letterSpacing: '-0.02em' }}
+          sx={{ flexGrow: 1, color: '#111111', letterSpacing: '-0.02em' }}
         >
           {title}
         </Typography>
@@ -56,7 +56,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               to="/app/search"
               color="inherit"
               startIcon={<SearchIcon />}
-              sx={{ color: '#007aff', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Buscar
             </Button>
@@ -65,7 +65,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
                 component={Link}
                 to="/admin"
                 color="inherit"
-                sx={{ color: '#007aff', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+                sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
               >
                 Admin
               </Button>
@@ -80,7 +80,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               variant="contained"
               size="small"
               onClick={handleLogout}
-              sx={{ borderRadius: 10, px: 2 }}
+              sx={{ borderRadius: 8, px: 2 }}
             >
               Cerrar sesión
             </Button>
@@ -91,7 +91,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
             component={Link}
             to="/login"
             size="small"
-            sx={{ borderRadius: 10, px: 2 }}
+            sx={{ borderRadius: 8, px: 2 }}
           >
             Entrar
           </Button>

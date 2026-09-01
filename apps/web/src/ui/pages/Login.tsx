@@ -105,13 +105,13 @@ export const Login = () => {
               variant="contained"
               fullWidth
               disabled={submitting}
-              sx={{ mt: 3, py: 1.5, borderRadius: 14 }}
+              sx={{ mt: 3, py: 1.5, borderRadius: 8 }}
             >
               {submitting ? 'Entrando...' : 'Entrar'}
             </Button>
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿No tienes cuenta?{' '}
-              <Button component={Link} to="/register" size="small" sx={{ color: '#007aff' }}>
+              <Button component={Link} to="/register" size="small" sx={{ color: '#111111' }}>
                 Regístrate
               </Button>
             </Typography>

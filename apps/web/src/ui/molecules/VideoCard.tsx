@@ -44,7 +44,7 @@ export const VideoCard = ({ course }: VideoCardProps) => {
       </CardContent>
       <motion.div
         layout
-        style={{ height: 2, background: '#007aff', transformOrigin: 'left' }}
+        style={{ height: 2, background: '#111111', transformOrigin: 'left' }}
         initial={{ scaleX: 0 }}
         whileHover={{ scaleX: 1 }}
         transition={{ duration: shouldReduceMotion ? 0 : 0.25 }}
