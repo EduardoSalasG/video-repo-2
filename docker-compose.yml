@@ -61,5 +61,3 @@ volumes:
   postgres_data:
   minio_data:
   uploads_data:
-  postgres_data:
-  minio_data:
