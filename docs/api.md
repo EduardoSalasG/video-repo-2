@@ -119,6 +119,7 @@ La API del backend está documentada automáticamente con Swagger en `/api/docs`
 |--------|------|-------------|-------------------|
 | `POST` | `/sections/:sectionId/videos` | Subir video y metadatos | MAINTAIN en el curso |
 | `GET` | `/video-files/:videoFileId` | Obtener URL firmada/pública del video | Autenticado (JWT) |
+| `GET` | `/videos/search?tags=salsa,on2` | Buscar videos cuyos metadatos contengan al menos uno de los tags (operador `hasSome`) | Autenticado (JWT) |
 
 Este endpoint espera `multipart/form-data` con:
 
@@ -136,6 +137,43 @@ Este endpoint espera `multipart/form-data` con:
   "steps": ["pausa", "break", "giro"],
   "influences": ["Eddie Torres"],
   "tags": ["timing", "on2"]
+}
+```
+
+#### Ejemplo búsqueda por tags
+
+**Request:**
+
+```http
+GET /videos/search?tags=salsa,on2
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "results": [
+    {
+      "course": {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Salsa On2 Avanzada"
+      },
+      "module": {
+        "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+        "title": "Timing y contratiempo"
+      },
+      "section": {
+        "id": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+        "title": "Ejercicio 1: pausa en 2"
+      },
+      "metadata": {
+        "difficulty": "INTERMEDIATE",
+        "primaryStyle": "MAMBO_ON2",
+        "videoType": "STEP",
+        "tags": ["salsa", "on2"]
+      }
+    }
+  ]
 }
 ```
 

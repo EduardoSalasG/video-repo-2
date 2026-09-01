@@ -39,6 +39,9 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
         </Typography>
         {user ? (
           <>
+            <Button component={Link} to="/app/search" color="inherit" sx={{ mr: 1 }}>
+              Buscar
+            </Button>
             <Typography variant="body2" sx={{ mr: 2 }}>
               {user.email}
             </Typography>

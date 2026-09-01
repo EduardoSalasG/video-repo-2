@@ -3,7 +3,7 @@ import Container from '@mui/material/Container';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import SchoolIcon from '@mui/icons-material/School';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import SearchIcon from '@mui/icons-material/Search';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useState, useEffect } from 'react';
@@ -19,15 +19,19 @@ export const MainLayout = () => {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
-    if (location.pathname === '/app') setValue(0);
-    else if (location.pathname.startsWith('/app/courses')) setValue(0);
-    else if (location.pathname.startsWith('/app/sections')) setValue(0);
+    if (location.pathname === '/app' || location.pathname.startsWith('/app/courses')) {
+      setValue(0);
+    } else if (location.pathname === '/app/search') {
+      setValue(1);
+    } else {
+      setValue(0);
+    }
   }, [location.pathname]);
 
   const handleChange = (_: unknown, newValue: number) => {
     setValue(newValue);
     if (newValue === 0) navigate('/app');
-    else if (newValue === 1) navigate('/login');
+    else if (newValue === 1) navigate('/app/search');
   };
 
   return (
@@ -43,7 +47,7 @@ export const MainLayout = () => {
           sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }}
         >
           <BottomNavigationAction label="Cursos" icon={<SchoolIcon />} />
-          <BottomNavigationAction label="Perfil" icon={<AccountCircleIcon />} />
+          <BottomNavigationAction label="Buscar" icon={<SearchIcon />} />
         </BottomNavigation>
       )}
     </Box>

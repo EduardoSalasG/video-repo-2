@@ -6,6 +6,7 @@ import type {
   VideoMetadata,
   User,
   CourseAccess,
+  VideoSearchResult,
 } from '../types';
 
 import { ApiError } from './error';
@@ -129,4 +130,10 @@ export const api = {
     void _courseId;
     return Promise.resolve([] as CourseAccess[]);
   },
+
+  searchVideos: (tags: string[]) =>
+    request<{ results: VideoSearchResult[] }>(
+      'GET',
+      `/videos/search?tags=${encodeURIComponent(tags.join(','))}`,
+    ).then((data) => data.results),
 };

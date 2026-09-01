@@ -77,3 +77,10 @@ export interface CourseAccess {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface VideoSearchResult {
+  course: Course;
+  module: CourseModule;
+  section: Section;
+  metadata: VideoMetadata;
+}

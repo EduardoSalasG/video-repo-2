@@ -7,6 +7,7 @@ import { Login } from './ui/pages/Login';
 import { Library } from './ui/pages/Library';
 import { Course } from './ui/pages/Course';
 import { Section } from './ui/pages/Section';
+import { Search } from './ui/pages/Search';
 import { Admin } from './ui/pages/Admin';
 
 export const router = createBrowserRouter([
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Library /> },
       { path: 'courses/:courseId', element: <Course /> },
       { path: 'sections/:sectionId', element: <Section /> },
+      { path: 'search', element: <Search /> },
     ],
   },
   {
