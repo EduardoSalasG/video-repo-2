@@ -105,3 +105,17 @@ export class CourseAccess {
     Object.assign(this, partial);
   }
 }
+
+export class UserSectionProgress {
+  id: string;
+  userId: string;
+  sectionId: string;
+  completed: boolean;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  constructor(partial: Partial<UserSectionProgress>) {
+    Object.assign(this, partial);
+  }
+}

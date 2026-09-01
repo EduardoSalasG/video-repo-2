@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
 import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
 import {
   IUserRepository,
@@ -11,6 +11,7 @@ import {
   IVideoMetadataRepository,
   VideoSearchResult,
   ICourseAccessRepository,
+  IProgressRepository,
   CreateUserInput,
   CreateCourseInput,
   UpdateCourseInput,
@@ -385,6 +386,43 @@ export class PrismaCourseAccessRepository implements ICourseAccessRepository {
   async revoke(userId: string, courseId: string): Promise<void> {
     await this.prisma.courseAccess.delete({
       where: { userId_courseId: { userId, courseId } },
+    });
+  }
+}
+
+@Injectable()
+export class PrismaProgressRepository implements IProgressRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null> {
+    const row = await this.prisma.userSectionProgress.findUnique({
+      where: { userId_sectionId: { userId, sectionId } },
+    });
+    return row
+      ? new UserSectionProgress({
+          ...row,
+          completedAt: row.completedAt ?? null,
+        })
+      : null;
+  }
+
+  async markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress> {
+    const row = await this.prisma.userSectionProgress.upsert({
+      where: { userId_sectionId: { userId, sectionId } },
+      create: {
+        userId,
+        sectionId,
+        completed: true,
+        completedAt: new Date(),
+      },
+      update: {
+        completed: true,
+        completedAt: new Date(),
+      },
+    });
+    return new UserSectionProgress({
+      ...row,
+      completedAt: row.completedAt ?? null,
     });
   }
 }

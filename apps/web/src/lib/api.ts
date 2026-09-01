@@ -125,6 +125,10 @@ export const api = {
       metadata,
     }),
 
+  getSectionProgress: (sectionId: string) => request<{ completed: boolean }>('GET', `/sections/${sectionId}/progress`),
+  markSectionProgress: (sectionId: string) =>
+    request<{ completed: boolean }>('POST', `/sections/${sectionId}/progress`),
+
   searchUsers: (q: string) => request<User[]>('GET', `/users?q=${encodeURIComponent(q)}`),
 
   getUser: (id: string) => request<User>('GET', `/users/${id}`),

@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Role, AccessLevel } from '../domain/enums';
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
   IUserRepository,
@@ -10,6 +10,7 @@ import {
   IVideoFileRepository,
   IVideoMetadataRepository,
   ICourseAccessRepository,
+  IProgressRepository,
   IVideoStorage,
   IPasswordHasher,
   ITokenService,
@@ -230,6 +231,7 @@ export class VideoService {
 export class CourseAccessService {
   constructor(
     @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
+    @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
   ) {}
 
   async requireAccess(userId: string, courseId: string, minimum: AccessLevel): Promise<void> {
@@ -259,8 +261,26 @@ export class CourseAccessService {
     return this.satisfies(granted.accessLevel, minimum);
   }
 
-  async grant(userId: string, courseId: string, level?: AccessLevel): Promise<void> {
-    await this.access.grant(userId, courseId, level ?? AccessLevel.READ);
+  async grant(
+    actor: { userId: string; role: Role },
+    targetUserId: string,
+    courseId: string,
+    level?: AccessLevel,
+  ): Promise<void> {
+    if (actor.role === Role.INSTRUCTOR) {
+      if (actor.userId === targetUserId) {
+        throw new UnauthorizedException('Instructor cannot grant access to themselves');
+      }
+      const target = await this.users.findById(targetUserId);
+      if (!target || target.role !== Role.STUDENT) {
+        throw new UnauthorizedException('Instructor can only grant access to students');
+      }
+      const myAccess = await this.access.findByUserAndCourse(actor.userId, courseId);
+      if (!myAccess) {
+        throw new UnauthorizedException('Instructor does not have access to this course');
+      }
+    }
+    await this.access.grant(targetUserId, courseId, level ?? AccessLevel.READ);
   }
 
   async getByUser(userId: string): Promise<CourseAccess[]> {
@@ -269,6 +289,17 @@ export class CourseAccessService {
 
   async getByCourse(courseId: string): Promise<CourseAccess[]> {
     return this.access.findByCourse(courseId);
+  }
+
+  async getInstructorStudentIds(instructorId: string): Promise<Set<string>> {
+    const myAccess = await this.access.findByUser(instructorId);
+    const courseIds = [...new Set(myAccess.map((a) => a.courseId))];
+    const members = await Promise.all(courseIds.map((id) => this.access.findByCourse(id)));
+    const userIds = new Set<string>();
+    members.flat().forEach((a) => {
+      if (a.userId !== instructorId) userIds.add(a.userId);
+    });
+    return userIds;
   }
 
   async revoke(userId: string, courseId: string): Promise<void> {
@@ -301,6 +332,21 @@ export class UserService {
   async search(query: string): Promise<SafeUser[]> {
     const users = await this.users.search(query);
     return users.map(stripPassword);
+  }
+}
+
+@Injectable()
+export class ProgressService {
+  constructor(
+    @Inject(InjectionTokens.PROGRESS_REPOSITORY) private readonly progress: IProgressRepository,
+  ) {}
+
+  async getProgress(userId: string, sectionId: string): Promise<UserSectionProgress | null> {
+    return this.progress.findByUserAndSection(userId, sectionId);
+  }
+
+  async markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress> {
+    return this.progress.markCompleted(userId, sectionId);
   }
 }
 

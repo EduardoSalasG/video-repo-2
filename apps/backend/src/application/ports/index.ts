@@ -1,4 +1,4 @@
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
 import { AccessLevel, Difficulty, PrimaryStyle, Role, VideoType } from '../../domain/enums';
 
 export interface CreateUserInput {
@@ -135,6 +135,11 @@ export interface ICourseAccessRepository {
   findByUser(userId: string): Promise<CourseAccess[]>;
   findByCourse(courseId: string): Promise<CourseAccess[]>;
   revoke(userId: string, courseId: string): Promise<void>;
+}
+
+export interface IProgressRepository {
+  findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
+  markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress>;
 }
 
 export interface IVideoStorage {

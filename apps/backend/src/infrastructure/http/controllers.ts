@@ -23,7 +23,7 @@ import { Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, SectionService, UserService, VideoService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
 import { Role, AccessLevel } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
 import {
@@ -91,33 +91,50 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiCookieAuth()
-  async search(@Query('q') q: string) {
-    return this.users.search(q ?? '');
+  async search(@CurrentUser() user: AuthUser, @Query('q') q: string) {
+    const results = await this.users.search(q ?? '');
+    if (user.role === Role.ADMIN) return results;
+    const allowedIds = await this.courseAccess.getInstructorStudentIds(user.userId);
+    return results.filter((u) => u.role === Role.STUDENT && allowedIds.has(u.id));
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
   async get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    if (user.role !== Role.ADMIN && user.userId !== id) {
-      return { error: 'Forbidden' };
+    if (user.role === Role.ADMIN || user.userId === id) {
+      return this.users.getById(id);
     }
-    return this.users.getById(id);
+    if (user.role === Role.INSTRUCTOR) {
+      const allowedIds = await this.courseAccess.getInstructorStudentIds(user.userId);
+      if (allowedIds.has(id)) {
+        return this.users.getById(id);
+      }
+    }
+    return { error: 'Forbidden' };
   }
 
   @Get(':id/accesses')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiCookieAuth()
-  async getAccesses(@Param('id') id: string) {
-    return this.courseAccess.getByUser(id);
+  async getAccesses(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    const accesses = await this.courseAccess.getByUser(id);
+    if (user.role === Role.ADMIN) return accesses;
+    const myCourses = new Set((await this.courseAccess.getByUser(user.userId)).map((a) => a.courseId));
+    return accesses.filter((a) => myCourses.has(a.courseId));
   }
 
   @Delete(':id/accesses/:courseId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiCookieAuth()
-  async revokeAccess(@Param('id') id: string, @Param('courseId') courseId: string) {
+  async revokeAccess(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('courseId') courseId: string) {
+    if (user.role === Role.INSTRUCTOR) {
+      const myAccess = await this.courseAccess.getByUser(user.userId);
+      const hasCourse = myAccess.some((a) => a.courseId === courseId);
+      if (!hasCourse) return { error: 'Forbidden' };
+    }
     await this.courseAccess.revoke(id, courseId);
     return { ok: true };
   }
@@ -183,8 +200,12 @@ export class CoursesController {
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @RequiredAccess(AccessLevel.MAINTAIN)
   @ApiCookieAuth()
-  async grant(@Param('courseId') courseId: string, @Body() dto: GrantCourseAccessDto) {
-    await this.courseAccess.grant(dto.userId, courseId, dto.accessLevel);
+  async grant(
+    @CurrentUser() user: AuthUser,
+    @Param('courseId') courseId: string,
+    @Body() dto: GrantCourseAccessDto,
+  ) {
+    await this.courseAccess.grant({ userId: user.userId, role: user.role as Role }, dto.userId, courseId, dto.accessLevel);
     return { ok: true };
   }
 }
@@ -266,7 +287,10 @@ export class SectionsController {
 @ApiTags('sections')
 @Controller('sections')
 export class SectionDetailController {
-  constructor(private readonly sections: SectionService) {}
+  constructor(
+    private readonly sections: SectionService,
+    private readonly progress: ProgressService,
+  ) {}
 
   @Get(':sectionId')
   @UseGuards(JwtAuthGuard, CourseAccessGuard)
@@ -274,6 +298,24 @@ export class SectionDetailController {
   @ApiCookieAuth()
   async get(@Param('sectionId') sectionId: string) {
     return this.sections.getById(sectionId);
+  }
+
+  @Get(':sectionId/progress')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.READ)
+  @ApiCookieAuth()
+  async getProgress(@CurrentUser() user: AuthUser, @Param('sectionId') sectionId: string) {
+    const progress = await this.progress.getProgress(user.userId, sectionId);
+    return { completed: progress?.completed ?? false };
+  }
+
+  @Post(':sectionId/progress')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.READ)
+  @ApiCookieAuth()
+  async markProgress(@CurrentUser() user: AuthUser, @Param('sectionId') sectionId: string) {
+    const progress = await this.progress.markCompleted(user.userId, sectionId);
+    return { completed: progress.completed };
   }
 
   @Patch(':sectionId')

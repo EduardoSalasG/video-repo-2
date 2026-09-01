@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import { Typography } from '../atoms/Typography';
@@ -16,6 +17,7 @@ export const Section = () => {
   const [module, setModule] = useState<CourseModule | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,6 +35,12 @@ export const Section = () => {
           } catch {
             setVideoUrl(null);
           }
+        }
+        try {
+          const progress = await api.getSectionProgress(sectionId);
+          setCompleted(progress.completed);
+        } catch {
+          setCompleted(false);
         }
         setError(null);
       })
@@ -57,6 +65,14 @@ export const Section = () => {
       })
       .catch(() => setModule(null));
   }, [section]);
+
+  const handleVideoEnded = () => {
+    if (!sectionId) return;
+    api
+      .markSectionProgress(sectionId)
+      .then((progress) => setCompleted(progress.completed))
+      .catch(() => {});
+  };
 
   if (loading) {
     return (
@@ -90,6 +106,10 @@ export const Section = () => {
         </Typography>
       </motion.div>
 
+      {completed && (
+        <Chip label="Visto" color="success" size="small" sx={{ mb: 2 }} />
+      )}
+
       {videoUrl && (
         <Paper
           elevation={0}
@@ -106,6 +126,7 @@ export const Section = () => {
             controls
             preload="metadata"
             width="100%"
+            onEnded={handleVideoEnded}
             aria-label={`Video de ${section.title}`}
             style={{ borderRadius: 8, display: 'block' }}
           />

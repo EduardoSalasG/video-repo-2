@@ -65,7 +65,7 @@ export class CourseAccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     if (!user) return false;
-    if (user.role === Role.ADMIN || user.role === Role.INSTRUCTOR) return true;
+    if (user.role === Role.ADMIN) return true;
 
     const courseId = await this.resolveCourseId(request.params);
     if (!courseId) return false;
