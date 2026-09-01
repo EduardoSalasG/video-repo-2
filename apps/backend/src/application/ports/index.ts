@@ -139,6 +139,7 @@ export interface ICourseAccessRepository {
 
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
+  findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;
   markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress>;
 }
 

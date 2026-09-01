@@ -5,11 +5,13 @@ import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Collapse from '@mui/material/Collapse';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Typography } from '../atoms/Typography';
 import { api } from '../../lib/api';
 import type { Course as CourseType, CourseModule, Section } from '../../types';
@@ -19,6 +21,7 @@ export const Course = () => {
   const [course, setCourse] = useState<CourseType | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [sectionsByModule, setSectionsByModule] = useState<Record<string, Section[]>>({});
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,10 +29,11 @@ export const Course = () => {
   useEffect(() => {
     if (!courseId) return;
     setLoading(true);
-    Promise.all([api.getCourse(courseId), api.getModules(courseId)])
-      .then(([courseData, modulesData]) => {
+    Promise.all([api.getCourse(courseId), api.getModules(courseId), api.getCourseProgress(courseId)])
+      .then(([courseData, modulesData, progress]) => {
         setCourse(courseData);
         setModules(modulesData);
+        setCompletedIds(new Set(progress.completedSectionIds));
         setError(null);
       })
       .catch((err) => {
@@ -112,20 +116,24 @@ export const Course = () => {
             <Collapse in={expanded === module.id} timeout="auto" unmountOnExit>
               <List disablePadding>
                 {(sectionsByModule[module.id] ?? []).map((section) => (
-                  <ListItemButton
-                    key={section.id}
-                    component={Link}
-                    to={`/app/sections/${section.id}`}
-                    sx={{ pl: 4, py: 1.5 }}
-                  >
-                    <ListItemText
-                      primary={
-                        <Typography variant="body1" sx={{ color: '#111111' }}>
-                          {section.title}
-                        </Typography>
-                      }
-                    />
-                  </ListItemButton>
+                  <ListItem key={section.id} disablePadding>
+                    <ListItemButton
+                      component={Link}
+                      to={`/app/sections/${section.id}`}
+                      sx={{ pl: 4, py: 1.5 }}
+                    >
+                      <ListItemText
+                        primary={
+                          <Typography variant="body1" sx={{ color: '#111111' }}>
+                            {section.title}
+                          </Typography>
+                        }
+                      />
+                      {completedIds.has(section.id) && (
+                        <CheckCircleIcon color="success" />
+                      )}
+                    </ListItemButton>
+                  </ListItem>
                 ))}
               </List>
             </Collapse>

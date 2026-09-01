@@ -73,6 +73,8 @@ export const api = {
 
   getCourses: () => request<Course[]>('GET', '/courses'),
   getCourse: (courseId: string) => request<Course>('GET', `/courses/${courseId}`),
+  getCourseProgress: (courseId: string) =>
+    request<{ completedSectionIds: string[] }>('GET', `/courses/${courseId}/progress`),
   createCourse: (data: { name: string; description?: string }) =>
     request<Course>('POST', '/courses', data),
   updateCourse: (courseId: string, data: { name?: string; description?: string }) =>

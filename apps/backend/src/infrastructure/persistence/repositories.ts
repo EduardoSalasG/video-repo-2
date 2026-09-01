@@ -406,6 +406,18 @@ export class PrismaProgressRepository implements IProgressRepository {
       : null;
   }
 
+  async findCompletedByCourse(userId: string, courseId: string): Promise<string[]> {
+    const rows = await this.prisma.userSectionProgress.findMany({
+      where: {
+        userId,
+        completed: true,
+        section: { module: { courseId } },
+      },
+      select: { sectionId: true },
+    });
+    return rows.map((r) => r.sectionId);
+  }
+
   async markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress> {
     const row = await this.prisma.userSectionProgress.upsert({
       where: { userId_sectionId: { userId, sectionId } },

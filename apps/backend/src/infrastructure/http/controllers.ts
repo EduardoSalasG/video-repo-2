@@ -155,6 +155,7 @@ export class CoursesController {
   constructor(
     private readonly courses: CourseService,
     private readonly courseAccess: CourseAccessService,
+    private readonly progress: ProgressService,
   ) {}
 
   @Get()
@@ -176,6 +177,15 @@ export class CoursesController {
   @ApiCookieAuth()
   async get(@Param('courseId') courseId: string) {
     return this.courses.getById(courseId);
+  }
+
+  @Get(':courseId/progress')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.READ)
+  @ApiCookieAuth()
+  async getProgress(@CurrentUser() user: AuthUser, @Param('courseId') courseId: string) {
+    const completed = await this.progress.getCompletedByCourse(user.userId, courseId);
+    return { completedSectionIds: completed };
   }
 
   @Post()

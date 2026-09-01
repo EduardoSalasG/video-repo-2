@@ -345,6 +345,10 @@ export class ProgressService {
     return this.progress.findByUserAndSection(userId, sectionId);
   }
 
+  async getCompletedByCourse(userId: string, courseId: string): Promise<string[]> {
+    return this.progress.findCompletedByCourse(userId, courseId);
+  }
+
   async markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress> {
     return this.progress.markCompleted(userId, sectionId);
   }
