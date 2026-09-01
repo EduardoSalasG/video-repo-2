@@ -237,6 +237,18 @@ export class PrismaVideoFileRepository implements IVideoFileRepository {
     return new VideoFile(videoFile);
   }
 
+  async createFromUrl(url: string): Promise<VideoFile> {
+    const videoFile = await this.prisma.videoFile.create({
+      data: {
+        storageKey: '',
+        url,
+        filename: 'external',
+        mimeType: 'video/mp4',
+      },
+    });
+    return new VideoFile(videoFile);
+  }
+
   async findById(id: string): Promise<VideoFile | null> {
     const file = await this.prisma.videoFile.findUnique({ where: { id } });
     return file ? new VideoFile(file) : null;

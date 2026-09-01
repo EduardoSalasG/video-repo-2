@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsInt, IsArray, IsUUID } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsInt, IsArray, IsUUID, ValidateNested, IsUrl } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
 
@@ -152,6 +152,15 @@ export class CreateVideoMetadataDto {
   @IsArray()
   @IsString({ each: true })
   tags: string[];
+}
+
+export class LinkVideoDto {
+  @IsUrl()
+  url: string;
+
+  @ValidateNested()
+  @Type(() => CreateVideoMetadataDto)
+  metadata: CreateVideoMetadataDto;
 }
 
 export class GrantCourseAccessDto {

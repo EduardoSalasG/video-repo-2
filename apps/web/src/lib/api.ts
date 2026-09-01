@@ -113,6 +113,16 @@ export const api = {
     );
   },
 
+  attachVideoLink: (
+    sectionId: string,
+    url: string,
+    metadata: Omit<VideoMetadata, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>,
+  ) =>
+    request<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>('POST', `/sections/${sectionId}/videos/link`, {
+      url,
+      metadata,
+    }),
+
   searchUsers: (q: string) => request<User[]>('GET', `/users?q=${encodeURIComponent(q)}`),
 
   getUser: (id: string) => request<User>('GET', `/users/${id}`),

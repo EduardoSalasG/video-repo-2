@@ -199,9 +199,25 @@ export class VideoService {
     return { videoFile, videoMetadata };
   }
 
+  async attachLink(sectionId: string, url: string, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
+    const section = await this.sections.findById(sectionId);
+    if (!section) throw new NotFoundException('Section not found');
+
+    const videoFile = await this.videoFiles.createFromUrl(url);
+    await this.sections.attachVideoFile(sectionId, videoFile.id);
+
+    const videoMetadata = await this.videoMetadata.create({
+      ...metadata,
+      sectionId,
+    });
+
+    return { videoFile, videoMetadata };
+  }
+
   async getSignedUrl(videoFileId: string): Promise<string> {
     const file = await this.videoFiles.findById(videoFileId);
     if (!file) throw new NotFoundException('Video file not found');
+    if (file.url) return file.url;
     return this.storage.getUrl(file.storageKey);
   }
 

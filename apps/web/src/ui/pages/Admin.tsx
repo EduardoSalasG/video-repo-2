@@ -5,6 +5,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
@@ -113,6 +114,8 @@ export const Admin = () => {
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoLink, setVideoLink] = useState('');
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -335,6 +338,60 @@ export const Admin = () => {
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al subir video';
         setVideoErrors({ difficulty: message });
+      });
+  };
+
+  const submitLink = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setVideoLinkError(null);
+    if (!videoSection) {
+      setVideoLinkError('Selecciona una sección');
+      return;
+    }
+    const result = videoSchema.safeParse(videoForm);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setVideoErrors({
+        difficulty: fieldErrors.difficulty?.[0],
+        primaryStyle: fieldErrors.primaryStyle?.[0],
+        videoType: fieldErrors.videoType?.[0],
+        durationCounts: fieldErrors.durationCounts?.[0],
+      });
+      return;
+    }
+    if (!videoLink.trim()) {
+      setVideoLinkError('Pega una URL de video');
+      return;
+    }
+
+    api
+      .attachVideoLink(videoSection, videoLink, {
+        difficulty: result.data.difficulty as Difficulty,
+        primaryStyle: result.data.primaryStyle as PrimaryStyle,
+        videoType: result.data.videoType as VideoType,
+        durationCounts: result.data.durationCounts,
+        steps: result.data.steps,
+        influences: result.data.influences,
+        tags: result.data.tags,
+      })
+      .then(() => {
+        setVideoLink('');
+        setVideoLinkError(null);
+        setVideoForm({
+          difficulty: 'BEGINNER',
+          primaryStyle: 'MAMBO_ON2',
+          videoType: 'STEP',
+          durationCounts: 0,
+          steps: [],
+          influences: [],
+          tags: [],
+        });
+        setVideoSection('');
+        showSuccess('Enlace guardado');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al guardar enlace';
+        setVideoLinkError(message);
       });
   };
 
@@ -749,6 +806,24 @@ export const Admin = () => {
               )}
               <Button type="submit" variant="contained" fullWidth>
                 Subir video
+              </Button>
+            </Box>
+            <Divider />
+            <Box component="form" onSubmit={submitLink} noValidate>
+              <FormField
+                label="URL del video"
+                placeholder="https://..."
+                value={videoLink}
+                onChange={(event) => setVideoLink(event.target.value)}
+                fieldError={videoLinkError ?? undefined}
+              />
+              {videoLinkError && (
+                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                  {videoLinkError}
+                </Typography>
+              )}
+              <Button type="submit" variant="outlined" fullWidth sx={{ mt: 2 }}>
+                Guardar enlace
               </Button>
             </Box>
           </Stack>

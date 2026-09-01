@@ -111,6 +111,7 @@ export interface ISectionRepository {
 
 export interface IVideoFileRepository {
   create(file: UploadedFile): Promise<VideoFile>;
+  createFromUrl(url: string): Promise<VideoFile>;
   findById(id: string): Promise<VideoFile | null>;
   delete(id: string): Promise<void>;
 }

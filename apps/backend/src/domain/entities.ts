@@ -61,6 +61,7 @@ export class Section {
 export class VideoFile {
   id: string;
   storageKey: string;
+  url: string | null;
   filename: string;
   mimeType: string;
   fileSize: number | null;

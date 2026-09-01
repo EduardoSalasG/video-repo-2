@@ -36,6 +36,7 @@ import {
   CreateSectionDto,
   UpdateSectionDto,
   CreateVideoMetadataDto,
+  LinkVideoDto,
   GrantCourseAccessDto,
   UpdateUserRoleDto,
 } from './dtos';
@@ -314,6 +315,17 @@ export class VideosController {
       buffer: file.buffer,
       size: file.size,
     }, { ...parsed, sectionId });
+  }
+
+  @Post('link')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.MAINTAIN)
+  @ApiCookieAuth()
+  async link(
+    @Param('sectionId') sectionId: string,
+    @Body() dto: LinkVideoDto,
+  ) {
+    return this.videos.attachLink(sectionId, dto.url, { ...dto.metadata, sectionId });
   }
 }
 

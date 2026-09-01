@@ -103,6 +103,7 @@ model Section {
 model VideoFile {
   id              String  @id @default(uuid())
   storageKey      String
+  url             String?
   filename        String
   mimeType        String
   fileSize        Int?
