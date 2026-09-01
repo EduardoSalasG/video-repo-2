@@ -121,7 +121,7 @@ export const AdminLayout = () => {
           >
             {open && (
               <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
-                Admin
+                Administración
               </Typography>
             )}
             <IconButton onClick={() => setOpen(!open)} size="small" aria-label="Contraer menú">

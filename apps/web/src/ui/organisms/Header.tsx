@@ -62,7 +62,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
                 color="inherit"
                 sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
               >
-                Admin
+                Administración
               </Button>
             )}
             <Button
