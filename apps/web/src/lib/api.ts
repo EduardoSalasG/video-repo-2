@@ -8,18 +8,11 @@ import type {
   CourseAccess,
 } from '../types';
 
+import { ApiError } from './error';
+
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
 
-export class ApiError extends Error {
-  status: number;
-  data: unknown;
-
-  constructor(status: number, data: unknown, message?: string) {
-    super(message ?? `HTTP ${status}`);
-    this.status = status;
-    this.data = data;
-  }
-}
+export { ApiError } from './error';
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
