@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
+import Paper from '@mui/material/Paper';
 import { Typography } from '../atoms/Typography';
 import { Markdown } from '../atoms/Markdown';
 import { api } from '../../lib/api';
@@ -51,22 +53,42 @@ export const Section = () => {
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        {section.title}
-      </Typography>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          {section.title}
+        </Typography>
+      </motion.div>
+
       {videoUrl && (
-        <Box sx={{ mb: 3 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1,
+            mb: 3,
+            borderRadius: 4,
+            border: '1px solid rgba(0,0,0,0.06)',
+            overflow: 'hidden',
+          }}
+        >
           <video
             src={videoUrl}
             controls
             preload="metadata"
             width="100%"
             aria-label={`Video de ${section.title}`}
-            style={{ borderRadius: 8 }}
+            style={{ borderRadius: 14, display: 'block' }}
           />
-        </Box>
+        </Paper>
       )}
-      {section.markdownContent && <Markdown source={section.markdownContent} />}
+
+      {section.markdownContent && (
+        <Paper
+          elevation={0}
+          sx={{ p: 3, borderRadius: 4, border: '1px solid rgba(0,0,0,0.06)' }}
+        >
+          <Markdown source={section.markdownContent} />
+        </Paper>
+      )}
     </Box>
   );
 };

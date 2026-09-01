@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import { Typography } from '../atoms/Typography';
@@ -30,9 +31,14 @@ export const Library = () => {
 
   return (
     <>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Biblioteca de cursos
-      </Typography>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Biblioteca
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Explora los cursos disponibles y continúa tu entrenamiento.
+        </Typography>
+      </motion.div>
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress />
