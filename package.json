@@ -15,7 +15,7 @@
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "verify": "pnpm -r verify",
-    "stack:up": "docker compose up -d --build",
+    "stack:up": "docker compose up -d --build postgres minio",
     "stack:down": "docker compose down",
     "stack:build": "docker compose build",
     "db:migrate": "pnpm --filter @dance-platform/backend db:migrate",

@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "Dance platform NestJS API",
-  "main": "dist/main.js",
+  "main": "dist/src/main.js",
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/src/main",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

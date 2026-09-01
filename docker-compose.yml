@@ -17,7 +17,7 @@ services:
       - "5433:5432"
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
     container_name: dance-platform-minio
     command: server /data --console-address ":9001"
     environment:
