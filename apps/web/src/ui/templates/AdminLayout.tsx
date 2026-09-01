@@ -6,12 +6,20 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import AppBar from '@mui/material/AppBar';
 import { Typography } from '../atoms/Typography';
+import { Button } from '../atoms/Button';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const DRAWER_WIDTH = 240;
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -20,7 +28,19 @@ export const AdminLayout = () => {
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
       >
         <Toolbar>
-          <Typography variant="h6">Panel de administración</Typography>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Panel de administración
+          </Typography>
+          {user && (
+            <>
+              <Typography variant="body2" sx={{ mr: 2 }}>
+                {user.email}
+              </Typography>
+              <Button color="inherit" onClick={handleLogout}>
+                Logout
+              </Button>
+            </>
+          )}
         </Toolbar>
       </AppBar>
       <Drawer

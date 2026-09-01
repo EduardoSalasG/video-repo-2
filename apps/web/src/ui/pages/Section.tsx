@@ -1,29 +1,52 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { Typography } from '../atoms/Typography';
 import { Markdown } from '../atoms/Markdown';
-import { MOCK_COURSES } from '../../data/mock';
-
-const findSection = (id: string) => {
-  for (const course of MOCK_COURSES) {
-    for (const module of course.modules) {
-      const section = module.sections.find((s) => s.id === id);
-      if (section) return section;
-    }
-  }
-  return undefined;
-};
+import { api } from '../../lib/api';
+import type { Section as SectionType } from '../../types';
 
 export const Section = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
-  const section = useMemo(
-    () => (sectionId ? findSection(sectionId) : undefined),
-    [sectionId]
-  );
+  const [section, setSection] = useState<SectionType | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!section) {
-    return <Typography>Sección no encontrada</Typography>;
+  useEffect(() => {
+    if (!sectionId) return;
+    setLoading(true);
+    api
+      .getSection(sectionId)
+      .then(async (data) => {
+        setSection(data);
+        if (data.videoFileId) {
+          try {
+            const { url } = await api.getVideoUrl(data.videoFileId);
+            setVideoUrl(url);
+          } catch {
+            setVideoUrl(null);
+          }
+        }
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Error al cargar la sección');
+      })
+      .finally(() => setLoading(false));
+  }, [sectionId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !section) {
+    return <Typography>{error ?? 'Sección no encontrada'}</Typography>;
   }
 
   return (
@@ -31,17 +54,19 @@ export const Section = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         {section.title}
       </Typography>
-      <Box sx={{ mb: 3 }}>
-        <video
-          src={section.videoUrl}
-          controls
-          preload="metadata"
-          width="100%"
-          aria-label={`Video de ${section.title}`}
-          style={{ borderRadius: 8 }}
-        />
-      </Box>
-      <Markdown source={section.content} />
+      {videoUrl && (
+        <Box sx={{ mb: 3 }}>
+          <video
+            src={videoUrl}
+            controls
+            preload="metadata"
+            width="100%"
+            aria-label={`Video de ${section.title}`}
+            style={{ borderRadius: 8 }}
+          />
+        </Box>
+      )}
+      {section.markdownContent && <Markdown source={section.markdownContent} />}
     </Box>
   );
 };

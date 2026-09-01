@@ -88,8 +88,6 @@ jobs:
                 --password-stdin
 
               docker compose pull backend
-              docker compose run --rm --no-deps backend npx prisma migrate deploy
-              docker compose run --rm --no-deps backend npx prisma db seed
               docker compose up -d --force-recreate --remove-orphans backend
 
               for attempt in $(seq 1 30); do

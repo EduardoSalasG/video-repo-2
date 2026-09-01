@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import Tabs from '@mui/material/Tabs';
@@ -12,43 +12,55 @@ import MenuItem from '@mui/material/MenuItem';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
-import { SectionForm } from '../organisms/SectionForm';
-import { MOCK_COURSES, MOCK_USERS, MOCK_ACCESSES } from '../../data/mock';
-import type { Course, Section, User, Access, VideoMetadata } from '../../types';
+import { api } from '../../lib/api';
+import type { Course, CourseModule, Section, Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../types';
 
-const TABS = ['cursos', 'modulos', 'secciones', 'metadatos', 'usuarios', 'accesos'];
+const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios', 'accesos'];
 
 const courseSchema = z.object({
-  title: z.string().min(1, 'El título es obligatorio'),
-  description: z.string().min(1, 'La descripción es obligatoria'),
+  name: z.string().min(1, 'El nombre es obligatorio'),
+  description: z.string().optional(),
 });
 
 const moduleSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
-  courseId: z.string().min(1, 'Selecciona un curso'),
+  description: z.string().optional(),
+  orderIndex: z.coerce.number().optional(),
 });
 
-const metadataSchema = z.object({
-  sectionId: z.string().min(1, 'El ID de sección es obligatorio'),
-  fileSize: z.coerce.number().min(1, 'El tamaño debe ser mayor a 0'),
-  mimeType: z.string().min(1, 'El tipo MIME es obligatorio'),
-  resolution: z.string().min(1, 'La resolución es obligatoria'),
-  duration: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
+const sectionSchema = z.object({
+  title: z.string().min(1, 'El título es obligatorio'),
+  description: z.string().optional(),
+  orderIndex: z.coerce.number().optional(),
+  markdownContent: z.string().optional(),
 });
 
-const userSchema = z.object({
-  email: z.string().email('Email no válido'),
-  name: z.string().min(1, 'El nombre es obligatorio'),
-  role: z.enum(['student', 'admin']),
+const videoSchema = z.object({
+  difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
+  videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
+  durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
+  steps: z.string().optional(),
+  influences: z.string().optional(),
+  tags: z.string().optional(),
+});
+
+const roleSchema = z.object({
+  userId: z.string().min(1, 'El ID de usuario es obligatorio'),
+  role: z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']),
 });
 
 const accessSchema = z.object({
-  userId: z.string().min(1, 'Selecciona un usuario'),
+  userId: z.string().min(1, 'El ID de usuario es obligatorio'),
   courseId: z.string().min(1, 'Selecciona un curso'),
+  accessLevel: z.enum(['READ', 'WRITE', 'MAINTAIN']),
 });
 
-type MetadataFormData = z.infer<typeof metadataSchema>;
-type UserFormData = z.infer<typeof userSchema>;
+type CourseFormData = z.infer<typeof courseSchema>;
+type ModuleFormData = z.infer<typeof moduleSchema>;
+type SectionFormData = z.infer<typeof sectionSchema>;
+type VideoFormData = z.infer<typeof videoSchema>;
+type RoleFormData = z.infer<typeof roleSchema>;
 type AccessFormData = z.infer<typeof accessSchema>;
 
 export const Admin = () => {
@@ -59,33 +71,134 @@ export const Admin = () => {
     return Math.max(0, index);
   }, [tab]);
 
-  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
-  const [modules, setModules] = useState<{ id: string; title: string; courseId: string }[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+
+  const [moduleCourse, setModuleCourse] = useState('');
+  const [modules, setModules] = useState<CourseModule[]>([]);
+  const [loadingModules, setLoadingModules] = useState(false);
+
+  const [sectionCourse, setSectionCourse] = useState('');
+  const [sectionModule, setSectionModule] = useState('');
   const [sections, setSections] = useState<Section[]>([]);
-  const [metadataList, setMetadataList] = useState<VideoMetadata[]>([]);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [accesses, setAccesses] = useState<Access[]>(MOCK_ACCESSES);
+  const [loadingSections, setLoadingSections] = useState(false);
 
-  const [courseForm, setCourseForm] = useState({ title: '', description: '' });
-  const [courseErrors, setCourseErrors] = useState<Partial<Record<'title' | 'description', string>>>({});
+  const [videoCourse, setVideoCourse] = useState('');
+  const [videoModule, setVideoModule] = useState('');
+  const [videoSection, setVideoSection] = useState('');
 
-  const [moduleForm, setModuleForm] = useState({ title: '', courseId: '' });
-  const [moduleErrors, setModuleErrors] = useState<Partial<Record<'title' | 'courseId', string>>>({});
+  const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
+  const [courseErrors, setCourseErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
 
-  const [metadataForm, setMetadataForm] = useState({
-    sectionId: '',
-    fileSize: '',
-    mimeType: 'video/mp4',
-    resolution: '1920x1080',
-    duration: '',
+  const [moduleForm, setModuleForm] = useState<ModuleFormData>({ title: '', description: '', orderIndex: undefined });
+  const [moduleErrors, setModuleErrors] = useState<Partial<Record<keyof ModuleFormData, string>>>({});
+
+  const [sectionForm, setSectionForm] = useState<SectionFormData>({
+    title: '',
+    description: '',
+    orderIndex: undefined,
+    markdownContent: '',
   });
-  const [metadataErrors, setMetadataErrors] = useState<Partial<Record<keyof MetadataFormData, string>>>({});
+  const [sectionErrors, setSectionErrors] = useState<Partial<Record<keyof SectionFormData, string>>>({});
 
-  const [userForm, setUserForm] = useState<UserFormData>({ email: '', name: '', role: 'student' });
-  const [userErrors, setUserErrors] = useState<Partial<Record<keyof UserFormData, string>>>({});
+  const [videoForm, setVideoForm] = useState<VideoFormData>({
+    difficulty: 'BEGINNER',
+    primaryStyle: 'MAMBO_ON2',
+    videoType: 'STEP',
+    durationCounts: 0,
+    steps: '',
+    influences: '',
+    tags: '',
+  });
+  const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
-  const [accessForm, setAccessForm] = useState({ userId: '', courseId: '' });
+  const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
+  const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
+
+  const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '', accessLevel: 'READ' });
   const [accessErrors, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
+
+  const showSuccess = (message: string) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  useEffect(() => {
+    setLoadingCourses(true);
+    api
+      .getCourses()
+      .then(setCourses)
+      .catch(() => setCourses([]))
+      .finally(() => setLoadingCourses(false));
+  }, []);
+
+  useEffect(() => {
+    if (!moduleCourse) {
+      setModules([]);
+      return;
+    }
+    setLoadingModules(true);
+    api
+      .getModules(moduleCourse)
+      .then(setModules)
+      .catch(() => setModules([]))
+      .finally(() => setLoadingModules(false));
+  }, [moduleCourse]);
+
+  useEffect(() => {
+    if (!sectionCourse) {
+      setModules([]);
+      return;
+    }
+    setLoadingModules(true);
+    api
+      .getModules(sectionCourse)
+      .then(setModules)
+      .catch(() => setModules([]))
+      .finally(() => setLoadingModules(false));
+  }, [sectionCourse]);
+
+  useEffect(() => {
+    if (!sectionModule) {
+      setSections([]);
+      return;
+    }
+    setLoadingSections(true);
+    api
+      .getSections(sectionModule)
+      .then(setSections)
+      .catch(() => setSections([]))
+      .finally(() => setLoadingSections(false));
+  }, [sectionModule]);
+
+  useEffect(() => {
+    if (!videoCourse) {
+      setModules([]);
+      return;
+    }
+    setLoadingModules(true);
+    api
+      .getModules(videoCourse)
+      .then(setModules)
+      .catch(() => setModules([]))
+      .finally(() => setLoadingModules(false));
+  }, [videoCourse]);
+
+  useEffect(() => {
+    if (!videoModule) {
+      setSections([]);
+      return;
+    }
+    setLoadingSections(true);
+    api
+      .getSections(videoModule)
+      .then(setSections)
+      .catch(() => setSections([]))
+      .finally(() => setLoadingSections(false));
+  }, [videoModule]);
 
   const handleTabChange = (_: unknown, newValue: number) => {
     navigate(`/admin/${TABS[newValue]}`);
@@ -97,82 +210,168 @@ export const Admin = () => {
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
       setCourseErrors({
-        title: fieldErrors.title?.[0],
+        name: fieldErrors.name?.[0],
         description: fieldErrors.description?.[0],
       });
       return;
     }
     setCourseErrors({});
-    const newCourse: Course = {
-      id: crypto.randomUUID(),
-      ...result.data,
-      thumbnail: '/icon.svg',
-      modules: [],
-    };
-    setCourses((prev) => [...prev, newCourse]);
-    setCourseForm({ title: '', description: '' });
+    api
+      .createCourse(result.data)
+      .then((newCourse) => {
+        setCourses((prev) => [...prev, newCourse]);
+        setCourseForm({ name: '', description: '' });
+        showSuccess('Curso creado');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al crear curso';
+        setCourseErrors({ name: message });
+      });
   };
 
   const submitModule = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!moduleCourse) {
+      setModuleErrors({ ...moduleErrors, title: 'Selecciona un curso' });
+      return;
+    }
     const result = moduleSchema.safeParse(moduleForm);
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
       setModuleErrors({
         title: fieldErrors.title?.[0],
-        courseId: fieldErrors.courseId?.[0],
+        description: fieldErrors.description?.[0],
+        orderIndex: fieldErrors.orderIndex?.[0],
       });
       return;
     }
     setModuleErrors({});
-    setModules((prev) => [...prev, { id: crypto.randomUUID(), ...result.data }]);
-    setModuleForm({ title: '', courseId: '' });
+    api
+      .createModule(moduleCourse, result.data)
+      .then((newModule) => {
+        setModules((prev) => [...prev, newModule]);
+        setModuleForm({ title: '', description: '', orderIndex: undefined });
+        showSuccess('Módulo creado');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al crear módulo';
+        setModuleErrors({ title: message });
+      });
   };
 
-  const submitMetadata = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitSection = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = metadataSchema.safeParse({
-      ...metadataForm,
-      fileSize: Number(metadataForm.fileSize),
-      duration: Number(metadataForm.duration),
-    });
+    if (!sectionModule) {
+      setSectionErrors({ ...sectionErrors, title: 'Selecciona un módulo' });
+      return;
+    }
+    const result = sectionSchema.safeParse(sectionForm);
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
-      setMetadataErrors({
-        sectionId: fieldErrors.sectionId?.[0],
-        fileSize: fieldErrors.fileSize?.[0],
-        mimeType: fieldErrors.mimeType?.[0],
-        resolution: fieldErrors.resolution?.[0],
-        duration: fieldErrors.duration?.[0],
+      setSectionErrors({
+        title: fieldErrors.title?.[0],
+        description: fieldErrors.description?.[0],
+        orderIndex: fieldErrors.orderIndex?.[0],
+        markdownContent: fieldErrors.markdownContent?.[0],
       });
       return;
     }
-    setMetadataErrors({});
-    setMetadataList((prev) => [...prev, { ...result.data }]);
-    setMetadataForm({
-      sectionId: '',
-      fileSize: '',
-      mimeType: 'video/mp4',
-      resolution: '1920x1080',
-      duration: '',
-    });
+    setSectionErrors({});
+    api
+      .createSection(sectionModule, result.data)
+      .then((newSection) => {
+        setSections((prev) => [...prev, newSection]);
+        setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+        showSuccess('Sección creada');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al crear sección';
+        setSectionErrors({ title: message });
+      });
   };
 
-  const submitUser = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitVideo = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = userSchema.safeParse(userForm);
+    if (!videoSection) {
+      setVideoErrors({ ...videoErrors, difficulty: 'Selecciona una sección' });
+      return;
+    }
+    const result = videoSchema.safeParse(videoForm);
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
-      setUserErrors({
-        email: fieldErrors.email?.[0],
-        name: fieldErrors.name?.[0],
+      setVideoErrors({
+        difficulty: fieldErrors.difficulty?.[0],
+        primaryStyle: fieldErrors.primaryStyle?.[0],
+        videoType: fieldErrors.videoType?.[0],
+        durationCounts: fieldErrors.durationCounts?.[0],
+      });
+      return;
+    }
+    if (!videoFile) {
+      setVideoErrors({ ...videoErrors, difficulty: 'Selecciona un archivo de video' });
+      return;
+    }
+
+    const parseList = (value: string | undefined) =>
+      value
+        ? value
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : [];
+
+    api
+      .uploadVideo(videoSection, videoFile, {
+        difficulty: result.data.difficulty as Difficulty,
+        primaryStyle: result.data.primaryStyle as PrimaryStyle,
+        videoType: result.data.videoType as VideoType,
+        durationCounts: result.data.durationCounts,
+        steps: parseList(result.data.steps),
+        influences: parseList(result.data.influences),
+        tags: parseList(result.data.tags),
+      })
+      .then(() => {
+        setVideoFile(null);
+        setVideoForm({
+          difficulty: 'BEGINNER',
+          primaryStyle: 'MAMBO_ON2',
+          videoType: 'STEP',
+          durationCounts: 0,
+          steps: '',
+          influences: '',
+          tags: '',
+        });
+        setVideoSection('');
+        showSuccess('Video subido');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al subir video';
+        setVideoErrors({ difficulty: message });
+      });
+  };
+
+  const submitRole = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const result = roleSchema.safeParse(roleForm);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setRoleErrors({
+        userId: fieldErrors.userId?.[0],
         role: fieldErrors.role?.[0],
       });
       return;
     }
-    setUserErrors({});
-    setUsers((prev) => [...prev, { id: crypto.randomUUID(), ...result.data }]);
-    setUserForm({ email: '', name: '', role: 'student' });
+    setRoleErrors({});
+    api
+      .updateUserRole(result.data.userId, result.data.role as Role)
+      .then(() => {
+        setRoleForm({ userId: '', role: 'STUDENT' });
+        showSuccess('Rol actualizado');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al actualizar rol';
+        setRoleErrors({ userId: message });
+      });
   };
 
   const submitAccess = (event: React.FormEvent<HTMLFormElement>) => {
@@ -183,18 +382,104 @@ export const Admin = () => {
       setAccessErrors({
         userId: fieldErrors.userId?.[0],
         courseId: fieldErrors.courseId?.[0],
+        accessLevel: fieldErrors.accessLevel?.[0],
       });
       return;
     }
     setAccessErrors({});
-    const newAccess: Access = {
-      id: crypto.randomUUID(),
-      ...result.data,
-      grantedAt: new Date().toISOString(),
-    };
-    setAccesses((prev) => [...prev, newAccess]);
-    setAccessForm({ userId: '', courseId: '' });
+    api
+      .grantAccess(result.data.courseId, {
+        userId: result.data.userId,
+        courseId: result.data.courseId,
+        accessLevel: result.data.accessLevel as AccessLevel,
+      })
+      .then(() => {
+        setAccessForm({ userId: '', courseId: '', accessLevel: 'READ' });
+        showSuccess('Acceso concedido');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al conceder acceso';
+        setAccessErrors({ courseId: message });
+      });
   };
+
+  const handleDeleteCourse = (courseId: string) => {
+    api
+      .deleteCourse(courseId)
+      .then(() => {
+        setCourses((prev) => prev.filter((c) => c.id !== courseId));
+        showSuccess('Curso eliminado');
+      })
+      .catch(() => showSuccess('Error al eliminar curso'));
+  };
+
+  const handleDeleteModule = (moduleId: string) => {
+    api
+      .deleteModule(moduleId)
+      .then(() => {
+        setModules((prev) => prev.filter((m) => m.id !== moduleId));
+        showSuccess('Módulo eliminado');
+      })
+      .catch(() => showSuccess('Error al eliminar módulo'));
+  };
+
+  const handleDeleteSection = (sectionId: string) => {
+    api
+      .deleteSection(sectionId)
+      .then(() => {
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        showSuccess('Sección eliminada');
+      })
+      .catch(() => showSuccess('Error al eliminar sección'));
+  };
+
+  const renderCourseSelect = (value: string, onChange: (value: string) => void) => (
+    <FormField
+      select
+      label="Curso"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <MenuItem value="">Seleccionar curso</MenuItem>
+      {courses.map((course) => (
+        <MenuItem key={course.id} value={course.id}>
+          {course.name}
+        </MenuItem>
+      ))}
+    </FormField>
+  );
+
+  const renderModuleSelect = (value: string, onChange: (value: string) => void) => (
+    <FormField
+      select
+      label="Módulo"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <MenuItem value="">Seleccionar módulo</MenuItem>
+      {modules.map((module) => (
+        <MenuItem key={module.id} value={module.id}>
+          {module.title}
+        </MenuItem>
+      ))}
+    </FormField>
+  );
+
+  const renderSectionSelect = (value: string, onChange: (value: string) => void) => (
+    <FormField
+      select
+      label="Sección"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <MenuItem value="">Seleccionar sección</MenuItem>
+      {sections.map((section) => (
+        <MenuItem key={section.id} value={section.id}>
+          {section.title}
+        </MenuItem>
+      ))}
+    </FormField>
+  );
 
   return (
     <Box>
@@ -210,6 +495,12 @@ export const Admin = () => {
         ))}
       </Tabs>
 
+      {success && (
+        <Typography color="success.main" sx={{ mt: 2 }}>
+          {success}
+        </Typography>
+      )}
+
       <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
           <Stack spacing={3}>
@@ -218,30 +509,39 @@ export const Admin = () => {
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
               <FormField
-                label="Título"
-                value={courseForm.title}
-                onChange={(e) => setCourseForm((f) => ({ ...f, title: e.target.value }))}
-                fieldError={courseErrors.title}
+                label="Nombre"
+                value={courseForm.name}
+                onChange={(event) => setCourseForm((f) => ({ ...f, name: event.target.value }))}
+                fieldError={courseErrors.name}
               />
               <FormField
                 label="Descripción"
                 value={courseForm.description}
-                onChange={(e) =>
-                  setCourseForm((f) => ({ ...f, description: e.target.value }))
-                }
+                onChange={(event) => setCourseForm((f) => ({ ...f, description: event.target.value }))}
                 fieldError={courseErrors.description}
               />
-              <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                 Crear curso
               </Button>
             </Box>
-            <List>
-              {courses.map((c) => (
-                <ListItem key={c.id}>
-                  <ListItemText primary={c.title} secondary={c.description} />
-                </ListItem>
-              ))}
-            </List>
+            {loadingCourses ? (
+              <Typography color="text.secondary">Cargando cursos...</Typography>
+            ) : (
+              <List>
+                {courses.map((course) => (
+                  <ListItem
+                    key={course.id}
+                    secondaryAction={
+                      <Button color="error" onClick={() => handleDeleteCourse(course.id)}>
+                        Eliminar
+                      </Button>
+                    }
+                  >
+                    <ListItemText primary={course.name} secondary={course.description ?? ''} />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Stack>
         )}
 
@@ -250,39 +550,54 @@ export const Admin = () => {
             <Typography variant="h5" component="h2">
               Módulos
             </Typography>
+            {renderCourseSelect(moduleCourse, setModuleCourse)}
             <Box component="form" onSubmit={submitModule} noValidate>
               <FormField
-                label="Título del módulo"
+                label="Título"
                 value={moduleForm.title}
-                onChange={(e) => setModuleForm((f) => ({ ...f, title: e.target.value }))}
+                onChange={(event) => setModuleForm((f) => ({ ...f, title: event.target.value }))}
                 fieldError={moduleErrors.title}
               />
               <FormField
-                label="Curso"
-                select
-                value={moduleForm.courseId}
-                onChange={(e) =>
-                  setModuleForm((f) => ({ ...f, courseId: e.target.value }))
+                label="Descripción"
+                value={moduleForm.description}
+                onChange={(event) => setModuleForm((f) => ({ ...f, description: event.target.value }))}
+                fieldError={moduleErrors.description}
+              />
+              <FormField
+                label="Orden"
+                type="number"
+                value={moduleForm.orderIndex ?? ''}
+                onChange={(event) =>
+                  setModuleForm((f) => ({
+                    ...f,
+                    orderIndex: event.target.value ? Number(event.target.value) : undefined,
+                  }))
                 }
-                fieldError={moduleErrors.courseId}
-              >
-                {courses.map((c) => (
-                  <MenuItem key={c.id} value={c.id}>
-                    {c.title}
-                  </MenuItem>
-                ))}
-              </FormField>
-              <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+                fieldError={moduleErrors.orderIndex}
+              />
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                 Crear módulo
               </Button>
             </Box>
-            <List>
-              {modules.map((m) => (
-                <ListItem key={m.id}>
-                  <ListItemText primary={m.title} secondary={`Curso: ${m.courseId}`} />
-                </ListItem>
-              ))}
-            </List>
+            {loadingModules ? (
+              <Typography color="text.secondary">Cargando módulos...</Typography>
+            ) : (
+              <List>
+                {modules.map((module) => (
+                  <ListItem
+                    key={module.id}
+                    secondaryAction={
+                      <Button color="error" onClick={() => handleDeleteModule(module.id)}>
+                        Eliminar
+                      </Button>
+                    }
+                  >
+                    <ListItemText primary={module.title} />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Stack>
         )}
 
@@ -291,181 +606,230 @@ export const Admin = () => {
             <Typography variant="h5" component="h2">
               Secciones
             </Typography>
-            <SectionForm
-              onSave={(data) => {
-                setSections((prev) => [...prev, { id: crypto.randomUUID(), ...data }]);
-              }}
-            />
-            <List>
-              {sections.map((s) => (
-                <ListItem key={s.id}>
-                  <ListItemText primary={s.title} />
-                </ListItem>
-              ))}
-            </List>
+            {renderCourseSelect(sectionCourse, setSectionCourse)}
+            {renderModuleSelect(sectionModule, setSectionModule)}
+            <Box component="form" onSubmit={submitSection} noValidate>
+              <FormField
+                label="Título"
+                value={sectionForm.title}
+                onChange={(event) => setSectionForm((f) => ({ ...f, title: event.target.value }))}
+                fieldError={sectionErrors.title}
+              />
+              <FormField
+                label="Descripción"
+                value={sectionForm.description}
+                onChange={(event) => setSectionForm((f) => ({ ...f, description: event.target.value }))}
+                fieldError={sectionErrors.description}
+              />
+              <FormField
+                label="Orden"
+                type="number"
+                value={sectionForm.orderIndex ?? ''}
+                onChange={(event) =>
+                  setSectionForm((f) => ({
+                    ...f,
+                    orderIndex: event.target.value ? Number(event.target.value) : undefined,
+                  }))
+                }
+                fieldError={sectionErrors.orderIndex}
+              />
+              <FormField
+                label="Contenido markdown"
+                multiline
+                rows={4}
+                value={sectionForm.markdownContent}
+                onChange={(event) =>
+                  setSectionForm((f) => ({ ...f, markdownContent: event.target.value }))
+                }
+                fieldError={sectionErrors.markdownContent}
+              />
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                Crear sección
+              </Button>
+            </Box>
+            {loadingSections ? (
+              <Typography color="text.secondary">Cargando secciones...</Typography>
+            ) : (
+              <List>
+                {sections.map((section) => (
+                  <ListItem
+                    key={section.id}
+                    secondaryAction={
+                      <Button color="error" onClick={() => handleDeleteSection(section.id)}>
+                        Eliminar
+                      </Button>
+                    }
+                  >
+                    <ListItemText primary={section.title} />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Stack>
         )}
 
         {activeTab === 3 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
-              Metadatos de video
+              Subir video
             </Typography>
-            <Box component="form" onSubmit={submitMetadata} noValidate>
+            {renderCourseSelect(videoCourse, setVideoCourse)}
+            {renderModuleSelect(videoModule, setVideoModule)}
+            {renderSectionSelect(videoSection, setVideoSection)}
+            <Box component="form" onSubmit={submitVideo} noValidate>
               <FormField
-                label="ID de sección"
-                value={metadataForm.sectionId}
-                onChange={(e) =>
-                  setMetadataForm((f) => ({ ...f, sectionId: e.target.value }))
+                select
+                label="Dificultad"
+                value={videoForm.difficulty}
+                onChange={(event) =>
+                  setVideoForm((f) => ({ ...f, difficulty: event.target.value as Difficulty }))
                 }
-                fieldError={metadataErrors.sectionId}
-              />
+                fieldError={videoErrors.difficulty}
+              >
+                <MenuItem value="BEGINNER">Principiante</MenuItem>
+                <MenuItem value="INTERMEDIATE">Intermedio</MenuItem>
+                <MenuItem value="ADVANCED">Avanzado</MenuItem>
+              </FormField>
               <FormField
-                label="Tamaño (bytes)"
+                select
+                label="Estilo principal"
+                value={videoForm.primaryStyle}
+                onChange={(event) =>
+                  setVideoForm((f) => ({ ...f, primaryStyle: event.target.value as PrimaryStyle }))
+                }
+                fieldError={videoErrors.primaryStyle}
+              >
+                <MenuItem value="MAMBO_ON2">Mambo On2</MenuItem>
+                <MenuItem value="CASINO">Casino</MenuItem>
+                <MenuItem value="SENSUAL_BACHATA">Bachata Sensual</MenuItem>
+                <MenuItem value="MODERN_BACHATA">Bachata Moderna</MenuItem>
+              </FormField>
+              <FormField
+                select
+                label="Tipo de video"
+                value={videoForm.videoType}
+                onChange={(event) =>
+                  setVideoForm((f) => ({ ...f, videoType: event.target.value as VideoType }))
+                }
+                fieldError={videoErrors.videoType}
+              >
+                <MenuItem value="STEP">Paso</MenuItem>
+                <MenuItem value="SEQUENCE">Secuencia</MenuItem>
+                <MenuItem value="CHOREOGRAPHY">Coreografía</MenuItem>
+              </FormField>
+              <FormField
+                label="Duración (counts)"
                 type="number"
-                value={metadataForm.fileSize}
-                onChange={(e) =>
-                  setMetadataForm((f) => ({ ...f, fileSize: e.target.value }))
+                value={String(videoForm.durationCounts)}
+                onChange={(event) =>
+                  setVideoForm((f) => ({
+                    ...f,
+                    durationCounts: event.target.value ? Number(event.target.value) : 0,
+                  }))
                 }
-                fieldError={metadataErrors.fileSize}
+                fieldError={videoErrors.durationCounts}
               />
               <FormField
-                label="MIME type"
-                value={metadataForm.mimeType}
-                onChange={(e) =>
-                  setMetadataForm((f) => ({ ...f, mimeType: e.target.value }))
-                }
-                fieldError={metadataErrors.mimeType}
+                label="Pasos (separados por coma)"
+                value={videoForm.steps}
+                onChange={(event) => setVideoForm((f) => ({ ...f, steps: event.target.value }))}
               />
               <FormField
-                label="Resolución"
-                value={metadataForm.resolution}
-                onChange={(e) =>
-                  setMetadataForm((f) => ({ ...f, resolution: e.target.value }))
-                }
-                fieldError={metadataErrors.resolution}
+                label="Influencias (separadas por coma)"
+                value={videoForm.influences}
+                onChange={(event) => setVideoForm((f) => ({ ...f, influences: event.target.value }))}
               />
               <FormField
-                label="Duración (s)"
-                type="number"
-                value={metadataForm.duration}
-                onChange={(e) =>
-                  setMetadataForm((f) => ({ ...f, duration: e.target.value }))
-                }
-                fieldError={metadataErrors.duration}
+                label="Tags (separados por coma)"
+                value={videoForm.tags}
+                onChange={(event) => setVideoForm((f) => ({ ...f, tags: event.target.value }))}
               />
-              <Button type="submit" variant="contained" sx={{ mt: 2 }}>
-                Guardar metadatos
+              <Box sx={{ my: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Archivo de video
+                </Typography>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(event) => setVideoFile(event.target.files?.[0] ?? null)}
+                />
+              </Box>
+              {videoErrors.difficulty && (
+                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                  {videoErrors.difficulty}
+                </Typography>
+              )}
+              <Button type="submit" variant="contained" fullWidth>
+                Subir video
               </Button>
             </Box>
-            <List>
-              {metadataList.map((m) => (
-                <ListItem key={m.sectionId}>
-                  <ListItemText
-                    primary={m.sectionId}
-                    secondary={`${m.resolution} | ${m.mimeType} | ${m.duration}s`}
-                  />
-                </ListItem>
-              ))}
-            </List>
           </Stack>
         )}
 
         {activeTab === 4 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
-              Usuarios
+              Cambiar rol
             </Typography>
-            <Box component="form" onSubmit={submitUser} noValidate>
+            <Box component="form" onSubmit={submitRole} noValidate>
               <FormField
-                label="Nombre"
-                value={userForm.name}
-                onChange={(e) => setUserForm((f) => ({ ...f, name: e.target.value }))}
-                fieldError={userErrors.name}
+                label="ID de usuario (UUID)"
+                value={roleForm.userId}
+                onChange={(event) => setRoleForm((f) => ({ ...f, userId: event.target.value }))}
+                fieldError={roleErrors.userId}
               />
               <FormField
-                label="Email"
-                type="email"
-                value={userForm.email}
-                onChange={(e) => setUserForm((f) => ({ ...f, email: e.target.value }))}
-                fieldError={userErrors.email}
-              />
-              <FormField
-                label="Rol"
                 select
-                value={userForm.role}
-                onChange={(e) =>
-                  setUserForm((f) => ({ ...f, role: e.target.value as 'student' | 'admin' }))
+                label="Nuevo rol"
+                value={roleForm.role}
+                onChange={(event) =>
+                  setRoleForm((f) => ({ ...f, role: event.target.value as Role }))
                 }
-                fieldError={userErrors.role}
+                fieldError={roleErrors.role}
               >
-                <MenuItem value="student">Estudiante</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="STUDENT">Estudiante</MenuItem>
+                <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
+                <MenuItem value="ADMIN">Admin</MenuItem>
               </FormField>
-              <Button type="submit" variant="contained" sx={{ mt: 2 }}>
-                Crear usuario
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                Actualizar rol
               </Button>
             </Box>
-            <List>
-              {users.map((u) => (
-                <ListItem key={u.id}>
-                  <ListItemText primary={u.name} secondary={`${u.email} · ${u.role}`} />
-                </ListItem>
-              ))}
-            </List>
           </Stack>
         )}
 
         {activeTab === 5 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
-              Accesos
+              Conceder acceso
             </Typography>
             <Box component="form" onSubmit={submitAccess} noValidate>
               <FormField
-                label="Usuario"
-                select
+                label="ID de usuario (UUID)"
                 value={accessForm.userId}
-                onChange={(e) =>
-                  setAccessForm((f) => ({ ...f, userId: e.target.value }))
-                }
+                onChange={(event) => setAccessForm((f) => ({ ...f, userId: event.target.value }))}
                 fieldError={accessErrors.userId}
-              >
-                {users.map((u) => (
-                  <MenuItem key={u.id} value={u.id}>
-                    {u.name}
-                  </MenuItem>
-                ))}
-              </FormField>
+              />
+              {renderCourseSelect(accessForm.courseId, (value) =>
+                setAccessForm((f) => ({ ...f, courseId: value }))
+              )}
               <FormField
-                label="Curso"
                 select
-                value={accessForm.courseId}
-                onChange={(e) =>
-                  setAccessForm((f) => ({ ...f, courseId: e.target.value }))
+                label="Nivel de acceso"
+                value={accessForm.accessLevel}
+                onChange={(event) =>
+                  setAccessForm((f) => ({ ...f, accessLevel: event.target.value as AccessLevel }))
                 }
-                fieldError={accessErrors.courseId}
+                fieldError={accessErrors.accessLevel}
               >
-                {courses.map((c) => (
-                  <MenuItem key={c.id} value={c.id}>
-                    {c.title}
-                  </MenuItem>
-                ))}
+                <MenuItem value="READ">Lectura</MenuItem>
+                <MenuItem value="WRITE">Escritura</MenuItem>
+                <MenuItem value="MAINTAIN">Mantenimiento</MenuItem>
               </FormField>
-              <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                 Conceder acceso
               </Button>
             </Box>
-            <List>
-              {accesses.map((a) => (
-                <ListItem key={a.id}>
-                  <ListItemText
-                    primary={`Usuario ${a.userId}`}
-                    secondary={`Curso ${a.courseId} · ${a.grantedAt}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
           </Stack>
         )}
       </Box>

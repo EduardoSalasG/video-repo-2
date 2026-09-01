@@ -4,31 +4,63 @@ import { Role } from '../src/domain/enums';
 
 const prisma = new PrismaClient();
 
+interface SeedUser {
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  password: string;
+}
+
+const defaultUsers: SeedUser[] = [
+  {
+    email: 'admin@dance.com',
+    username: 'admin',
+    firstName: 'Admin',
+    lastName: 'User',
+    role: Role.ADMIN,
+    password: process.env.ADMIN_PASSWORD ?? 'admin123',
+  },
+  {
+    email: 'instructor@dance.com',
+    username: 'instructor',
+    firstName: 'Instructor',
+    lastName: 'User',
+    role: Role.INSTRUCTOR,
+    password: process.env.INSTRUCTOR_PASSWORD ?? 'instructor123',
+  },
+  {
+    email: 'student@dance.com',
+    username: 'student',
+    firstName: 'Student',
+    lastName: 'User',
+    role: Role.STUDENT,
+    password: process.env.STUDENT_PASSWORD ?? 'student123',
+  },
+];
+
 async function main(): Promise<void> {
-  const email = process.env.ADMIN_EMAIL ?? 'admin@dance.com';
-  const username = process.env.ADMIN_USERNAME ?? 'admin';
-  const password = process.env.ADMIN_PASSWORD ?? 'admin123';
+  for (const user of defaultUsers) {
+    const existing = await prisma.user.findUnique({ where: { email: user.email } });
+    if (existing) {
+      console.log(`User ${user.email} already exists`);
+      continue;
+    }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    console.log('Admin already exists');
-    return;
+    const passwordHash = bcrypt.hashSync(user.password, 12);
+    await prisma.user.create({
+      data: {
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        passwordHash,
+      },
+    });
+    console.log(`User ${user.email} created`);
   }
-
-  const passwordHash = bcrypt.hashSync(password, 12);
-
-  await prisma.user.create({
-    data: {
-      email,
-      username,
-      firstName: 'Admin',
-      lastName: 'User',
-      role: Role.ADMIN,
-      passwordHash,
-    },
-  });
-
-  console.log('Admin created');
 }
 
 main()

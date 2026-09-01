@@ -8,8 +8,9 @@ import type { Section } from '../../types';
 
 const sectionSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
-  videoUrl: z.string().url('La URL del video no es válida'),
-  content: z.string().min(1, 'El contenido es obligatorio'),
+  description: z.string().optional(),
+  orderIndex: z.coerce.number().optional(),
+  markdownContent: z.string().optional(),
 });
 
 type SectionFormData = z.infer<typeof sectionSchema>;
@@ -21,19 +22,26 @@ interface SectionFormProps {
 
 export const SectionForm = ({ initial, onSave }: SectionFormProps) => {
   const [title, setTitle] = useState(initial?.title ?? '');
-  const [videoUrl, setVideoUrl] = useState(initial?.videoUrl ?? '');
-  const [content, setContent] = useState(initial?.content ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [orderIndex, setOrderIndex] = useState<string>(initial?.orderIndex != null ? String(initial.orderIndex) : '');
+  const [markdownContent, setMarkdownContent] = useState(initial?.markdownContent ?? '');
   const [errors, setErrors] = useState<Partial<Record<keyof SectionFormData, string>>>({});
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const result = sectionSchema.safeParse({ title, videoUrl, content });
+    const result = sectionSchema.safeParse({
+      title,
+      description: description || undefined,
+      orderIndex: orderIndex ? Number(orderIndex) : undefined,
+      markdownContent: markdownContent || undefined,
+    });
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
       setErrors({
         title: fieldErrors.title?.[0],
-        videoUrl: fieldErrors.videoUrl?.[0],
-        content: fieldErrors.content?.[0],
+        description: fieldErrors.description?.[0],
+        orderIndex: fieldErrors.orderIndex?.[0],
+        markdownContent: fieldErrors.markdownContent?.[0],
       });
       return;
     }
@@ -53,18 +61,25 @@ export const SectionForm = ({ initial, onSave }: SectionFormProps) => {
         fieldError={errors.title}
       />
       <FormField
-        label="URL del video"
-        value={videoUrl}
-        onChange={(event) => setVideoUrl(event.target.value)}
-        fieldError={errors.videoUrl}
+        label="Descripción"
+        value={description}
+        onChange={(event) => setDescription(event.target.value)}
+        fieldError={errors.description}
+      />
+      <FormField
+        label="Orden"
+        type="number"
+        value={orderIndex}
+        onChange={(event) => setOrderIndex(event.target.value)}
+        fieldError={errors.orderIndex}
       />
       <FormField
         label="Contenido (markdown)"
         multiline
         rows={6}
-        value={content}
-        onChange={(event) => setContent(event.target.value)}
-        fieldError={errors.content}
+        value={markdownContent}
+        onChange={(event) => setMarkdownContent(event.target.value)}
+        fieldError={errors.markdownContent}
       />
       <Button type="submit" variant="contained" fullWidth>
         Guardar

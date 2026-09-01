@@ -7,11 +7,13 @@ import { IVideoStorage, StorageFile, UploadedFile } from '../../application/port
 export class S3VideoStorage implements IVideoStorage {
   private readonly client: S3Client;
   private readonly bucket: string;
+  private readonly endpoint: string;
 
   constructor() {
+    this.endpoint = process.env.S3_ENDPOINT ?? '';
     this.client = new S3Client({
       region: process.env.S3_REGION ?? 'us-east-1',
-      endpoint: process.env.S3_ENDPOINT,
+      endpoint: this.endpoint,
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
       credentials: {
         accessKeyId: process.env.S3_ACCESS_KEY ?? '',
@@ -39,6 +41,14 @@ export class S3VideoStorage implements IVideoStorage {
       mimeType: file.mimetype,
       fileSize: file.size,
     };
+  }
+
+  async getUrl(storageKey: string): Promise<string> {
+    const pathStyle = process.env.S3_FORCE_PATH_STYLE === 'true';
+    if (pathStyle) {
+      return `${this.endpoint}/${this.bucket}/${storageKey}`;
+    }
+    return `https://${this.bucket}.s3.${process.env.S3_REGION ?? 'us-east-1'}.amazonaws.com/${storageKey}`;
   }
 
   async delete(key: string): Promise<void> {

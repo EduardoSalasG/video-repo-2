@@ -9,7 +9,7 @@ export class LocalVideoStorage implements IVideoStorage {
   private readonly baseDir: string;
 
   constructor() {
-    this.baseDir = process.env.LOCAL_UPLOAD_DIR ?? 'uploads';
+    this.baseDir = process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads';
   }
 
   async upload(file: StorageFile): Promise<UploadedFile> {
@@ -26,6 +26,10 @@ export class LocalVideoStorage implements IVideoStorage {
       mimeType: file.mimetype,
       fileSize: file.size,
     };
+  }
+
+  async getUrl(storageKey: string): Promise<string> {
+    return `/uploads/${storageKey}`;
   }
 
   async delete(storageKey: string): Promise<void> {
