@@ -59,6 +59,14 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
           <>
             <Button
               component={Link}
+              to="/app"
+              color="inherit"
+              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+            >
+              Biblioteca
+            </Button>
+            <Button
+              component={Link}
               to="/app/search"
               color="inherit"
               startIcon={<SearchIcon />}
