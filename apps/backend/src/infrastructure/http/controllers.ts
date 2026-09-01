@@ -24,6 +24,7 @@ import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
+import { Course } from '../../domain/entities';
 import { Role, AccessLevel } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
 import {
@@ -159,8 +160,14 @@ export class CoursesController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
-  async list() {
-    return this.courses.list();
+  async list(@CurrentUser() user: AuthUser) {
+    if (user.role === Role.ADMIN) {
+      return this.courses.list();
+    }
+    const myAccess = await this.courseAccess.getByUser(user.userId);
+    const courseIds = [...new Set(myAccess.map((a) => a.courseId))];
+    const accessible = await Promise.all(courseIds.map((id) => this.courses.getById(id)));
+    return accessible.filter((c): c is Course => c !== null);
   }
 
   @Get(':courseId')

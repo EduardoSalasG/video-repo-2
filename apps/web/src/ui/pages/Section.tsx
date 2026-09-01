@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Chip from '@mui/material/Chip';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import { Typography } from '../atoms/Typography';
@@ -107,7 +107,12 @@ export const Section = () => {
       </motion.div>
 
       {completed && (
-        <Chip label="Visto" color="success" size="small" sx={{ mb: 2 }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <CheckCircleIcon color="success" />
+          <Typography color="success.main" variant="body2">
+            Visto
+          </Typography>
+        </Box>
       )}
 
       {videoUrl && (
