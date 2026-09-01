@@ -4,7 +4,9 @@ import {
   Delete,
   FileTypeValidator,
   Get,
+  Inject,
   MaxFileSizeValidator,
+  NotFoundException,
   Param,
   ParseFilePipe,
   Patch,
@@ -287,5 +289,19 @@ export class VideosController {
       buffer: file.buffer,
       size: file.size,
     }, { ...dto, sectionId });
+  }
+}
+
+@ApiTags('videos')
+@Controller('video-files')
+export class VideoFilesController {
+  constructor(private readonly videos: VideoService) {}
+
+  @Get(':videoFileId')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async getUrl(@Param('videoFileId') videoFileId: string) {
+    const url = await this.videos.getSignedUrl(videoFileId);
+    return { url };
   }
 }

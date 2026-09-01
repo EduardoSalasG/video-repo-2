@@ -197,6 +197,12 @@ export class VideoService {
 
     return { videoFile, videoMetadata };
   }
+
+  async getSignedUrl(videoFileId: string): Promise<string> {
+    const file = await this.videoFiles.findById(videoFileId);
+    if (!file) throw new NotFoundException('Video file not found');
+    return this.storage.getUrl(file.storageKey);
+  }
 }
 
 @Injectable()

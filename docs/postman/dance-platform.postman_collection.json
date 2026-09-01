@@ -1,0 +1,557 @@
+{
+  "info": {
+    "name": "Dance Platform API",
+    "description": "Colección de endpoints del backend de dance-platform. Configura la variable `apiUrl` (ej. http://localhost:3000) y ejecuta login antes de probar endpoints protegidos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/register",
+              "host": ["{{apiUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"instructor@example.com\",\n  \"username\": \"instructor1\",\n  \"firstName\": \"Ana\",\n  \"lastName\": \"López\",\n  \"password\": \"password123\",\n  \"role\": \"INSTRUCTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/login",
+              "host": ["{{apiUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"instructor@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/auth/logout",
+              "host": ["{{apiUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/auth/me",
+              "host": ["{{apiUrl}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/users/{{userId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "List courses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/courses",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses"]
+            }
+          }
+        },
+        {
+          "name": "Get course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/courses",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsa On2 Avanzada\",\n  \"description\": \"Figuras y timing avanzado de mambo on2.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update course",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Salsa On2 Avanzada 2026\",\n  \"description\": \"Contenido actualizado.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete course",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "item": [
+        {
+          "name": "List modules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}/modules",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}", "modules"]
+            }
+          }
+        },
+        {
+          "name": "Create module",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}/modules",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}", "modules"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Timing y contratiempo\",\n  \"description\": \"Ejercicios de escucha musical.\",\n  \"orderIndex\": 1,\n  \"courseId\": \"{{courseId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get module",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/modules/{{moduleId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["modules", "{{moduleId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update module",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/modules/{{moduleId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["modules", "{{moduleId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Timing y contratiempo actualizado\",\n  \"description\": \"Más ejercicios.\",\n  \"orderIndex\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete module",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/modules/{{moduleId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["modules", "{{moduleId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sections",
+      "item": [
+        {
+          "name": "List sections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/modules/{{moduleId}}/sections",
+              "host": ["{{apiUrl}}"],
+              "path": ["modules", "{{moduleId}}", "sections"]
+            }
+          }
+        },
+        {
+          "name": "Create section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/modules/{{moduleId}}/sections",
+              "host": ["{{apiUrl}}"],
+              "path": ["modules", "{{moduleId}}", "sections"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ejercicio 1: pausa en 2\",\n  \"description\": \"Practicar la pausa del 1 al 2.\",\n  \"orderIndex\": 0,\n  \"markdownContent\": \"## Instrucciones\\n\\n1. Escucha el clave.\\n2. Pisa en 2...\",\n  \"moduleId\": \"{{moduleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get section",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/sections/{{sectionId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["sections", "{{sectionId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update section",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/sections/{{sectionId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["sections", "{{sectionId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ejercicio 1: pausa en 2 (editado)\",\n  \"description\": \"Notas extra.\",\n  \"orderIndex\": 0,\n  \"markdownContent\": \"## Instrucciones\\n\\nPisa en 2 con peso.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/sections/{{sectionId}}",
+              "host": ["{{apiUrl}}"],
+              "path": ["sections", "{{sectionId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Videos",
+      "item": [
+        {
+          "name": "Upload video and metadata",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/sections/{{sectionId}}/videos",
+              "host": ["{{apiUrl}}"],
+              "path": ["sections", "{{sectionId}}", "videos"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": "/path/to/video.mp4"
+                },
+                {
+                  "key": "difficulty",
+                  "value": "INTERMEDIATE",
+                  "type": "text"
+                },
+                {
+                  "key": "primaryStyle",
+                  "value": "MAMBO_ON2",
+                  "type": "text"
+                },
+                {
+                  "key": "videoType",
+                  "value": "STEP",
+                  "type": "text"
+                },
+                {
+                  "key": "durationCounts",
+                  "value": "8",
+                  "type": "text"
+                },
+                {
+                  "key": "steps",
+                  "value": "pausa",
+                  "type": "text"
+                },
+                {
+                  "key": "steps",
+                  "value": "break",
+                  "type": "text"
+                },
+                {
+                  "key": "steps",
+                  "value": "giro",
+                  "type": "text"
+                },
+                {
+                  "key": "influences",
+                  "value": "Eddie Torres",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "timing",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "on2",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin / Access",
+      "item": [
+        {
+          "name": "Grant course access",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/courses/{{courseId}}/access",
+              "host": ["{{apiUrl}}"],
+              "path": ["courses", "{{courseId}}", "access"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{studentUserId}}\",\n  \"courseId\": \"{{courseId}}\",\n  \"accessLevel\": \"READ\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update user role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{apiUrl}}/users/{{userId}}/role",
+              "host": ["{{apiUrl}}"],
+              "path": ["users", "{{userId}}", "role"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"INSTRUCTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "apiUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "courseId",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string"
+    },
+    {
+      "key": "moduleId",
+      "value": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    },
+    {
+      "key": "sectionId",
+      "value": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    },
+    {
+      "key": "studentUserId",
+      "value": "6ba7b813-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    }
+  ]
+}

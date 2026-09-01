@@ -127,6 +127,7 @@ export interface ICourseAccessRepository {
 
 export interface IVideoStorage {
   upload(file: StorageFile): Promise<UploadedFile>;
+  getUrl(key: string): Promise<string>;
   delete(key: string): Promise<void>;
 }
 
