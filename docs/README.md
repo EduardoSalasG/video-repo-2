@@ -10,6 +10,8 @@ Bienvenido a la documentación del monorepo `dance-platform`, una plataforma de 
 | [`architecture.md`](./architecture.md) | Arquitectura hexagonal del backend, capas, adaptadores y decisiones técnicas. |
 | [`processes.md`](./processes.md) | Diagramas Mermaid de flujos clave: auth, creación de contenido, subida de video, estudiante y CI/CD. |
 | [`api.md`](./api.md) | Resumen de endpoints REST con métodos, rutas y ejemplos de request/response. |
+| [`git-workflow.md`](./git-workflow.md) | Flujo de trabajo Git, convención de commits y merge a `main`. |
+| [`deployment.md`](./deployment.md) | Despliegue backend (Docker + OCI), frontend (Netlify) y local. |
 | [`postman/dance-platform.postman_collection.json`](./postman/dance-platform.postman_collection.json) | Colección Postman lista para importar, organizada por dominio. |
 
 ## Repositorio

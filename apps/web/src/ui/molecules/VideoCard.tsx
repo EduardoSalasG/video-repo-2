@@ -17,13 +17,13 @@ export const VideoCard = ({ course }: VideoCardProps) => (
   >
     <Box
       component="img"
-      src={course.thumbnail ?? '/icon.svg'}
-      alt={course.title}
+      src="/icon.svg"
+      alt={course.name}
       sx={{ width: '100%', height: 160, objectFit: 'cover' }}
     />
     <CardContent>
       <Typography variant="h6" noWrap>
-        {course.title}
+        {course.name}
       </Typography>
       <Typography variant="body2" color="text.secondary" noWrap>
         {course.description}

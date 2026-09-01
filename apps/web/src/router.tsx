@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from './ui/templates/MainLayout';
 import { AdminLayout } from './ui/templates/AdminLayout';
+import { RequireAuth } from './ui/templates/RequireAuth';
 import { Landing } from './ui/pages/Landing';
 import { Login } from './ui/pages/Login';
 import { Library } from './ui/pages/Library';
@@ -19,7 +20,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/app',
-    element: <MainLayout />,
+    element: (
+      <RequireAuth>
+        <MainLayout />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Library /> },
       { path: 'courses/:courseId', element: <Course /> },
@@ -28,7 +33,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: (
+      <RequireAuth requireAdmin>
+        <AdminLayout />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <Admin /> },
       { path: ':tab', element: <Admin /> },

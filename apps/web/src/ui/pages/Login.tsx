@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -7,21 +8,27 @@ import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { Typography } from '../atoms/Typography';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 
 const loginSchema = z.object({
   email: z.string().email('Introduce un email válido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
 export const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setApiError(null);
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
@@ -32,6 +39,16 @@ export const Login = () => {
       return;
     }
     setErrors({});
+    setSubmitting(true);
+    try {
+      await login(email, password);
+      navigate('/app', { replace: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      setApiError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -57,7 +74,18 @@ export const Login = () => {
             onChange={(event) => setPassword(event.target.value)}
             fieldError={errors.password}
           />
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+          {apiError && (
+            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              {apiError}
+            </Typography>
+          )}
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={submitting}
+            sx={{ mt: 2 }}
+          >
             Entrar
           </Button>
           <Typography variant="body2" sx={{ mt: 2 }}>

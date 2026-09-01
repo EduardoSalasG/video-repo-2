@@ -118,6 +118,7 @@ La API del backend está documentada automáticamente con Swagger en `/api/docs`
 | Método | Ruta | Descripción | Permiso requerido |
 |--------|------|-------------|-------------------|
 | `POST` | `/sections/:sectionId/videos` | Subir video y metadatos | MAINTAIN en el curso |
+| `GET` | `/video-files/:videoFileId` | Obtener URL firmada/pública del video | Autenticado (JWT) |
 
 Este endpoint espera `multipart/form-data` con:
 
@@ -137,6 +138,12 @@ Este endpoint espera `multipart/form-data` con:
   "tags": ["timing", "on2"]
 }
 ```
+
+### Health
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| `GET` | `/health` | Comprobar estado del servicio | No |
 
 ## Códigos de error comunes
 

@@ -20,8 +20,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/auth/register",
-              "host": ["{{apiUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -46,8 +51,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/auth/login",
-              "host": ["{{apiUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -72,8 +82,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/auth/logout",
-              "host": ["{{apiUrl}}"],
-              "path": ["auth", "logout"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
             }
           }
         },
@@ -84,8 +99,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/auth/me",
-              "host": ["{{apiUrl}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             }
           }
         }
@@ -101,8 +121,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/users/{{userId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["users", "{{userId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
             }
           }
         }
@@ -118,8 +143,12 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/courses",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
             }
           }
         },
@@ -130,8 +159,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}"
+              ]
             }
           }
         },
@@ -147,8 +181,12 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/courses",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -173,8 +211,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -194,8 +237,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}"
+              ]
             }
           }
         }
@@ -211,8 +259,14 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}/modules",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}", "modules"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}",
+                "modules"
+              ]
             }
           }
         },
@@ -228,8 +282,14 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}/modules",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}", "modules"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}",
+                "modules"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -249,8 +309,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/modules/{{moduleId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["modules", "{{moduleId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "modules",
+                "{{moduleId}}"
+              ]
             }
           }
         },
@@ -266,8 +331,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/modules/{{moduleId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["modules", "{{moduleId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "modules",
+                "{{moduleId}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -287,8 +357,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/modules/{{moduleId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["modules", "{{moduleId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "modules",
+                "{{moduleId}}"
+              ]
             }
           }
         }
@@ -304,8 +379,14 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/modules/{{moduleId}}/sections",
-              "host": ["{{apiUrl}}"],
-              "path": ["modules", "{{moduleId}}", "sections"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "modules",
+                "{{moduleId}}",
+                "sections"
+              ]
             }
           }
         },
@@ -321,8 +402,14 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/modules/{{moduleId}}/sections",
-              "host": ["{{apiUrl}}"],
-              "path": ["modules", "{{moduleId}}", "sections"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "modules",
+                "{{moduleId}}",
+                "sections"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -342,8 +429,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/sections/{{sectionId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["sections", "{{sectionId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}"
+              ]
             }
           }
         },
@@ -359,8 +451,13 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/sections/{{sectionId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["sections", "{{sectionId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -380,8 +477,13 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/sections/{{sectionId}}",
-              "host": ["{{apiUrl}}"],
-              "path": ["sections", "{{sectionId}}"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}"
+              ]
             }
           }
         }
@@ -397,8 +499,14 @@
             "header": [],
             "url": {
               "raw": "{{apiUrl}}/sections/{{sectionId}}/videos",
-              "host": ["{{apiUrl}}"],
-              "path": ["sections", "{{sectionId}}", "videos"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "sections",
+                "{{sectionId}}",
+                "videos"
+              ]
             },
             "body": {
               "mode": "formdata",
@@ -461,6 +569,44 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get video URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/video-files/{{videoFileId}}",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "video-files",
+                "{{videoFileId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/health",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
         }
       ]
     },
@@ -479,8 +625,14 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/courses/{{courseId}}/access",
-              "host": ["{{apiUrl}}"],
-              "path": ["courses", "{{courseId}}", "access"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "courses",
+                "{{courseId}}",
+                "access"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -505,8 +657,14 @@
             ],
             "url": {
               "raw": "{{apiUrl}}/users/{{userId}}/role",
-              "host": ["{{apiUrl}}"],
-              "path": ["users", "{{userId}}", "role"]
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}",
+                "role"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -551,6 +709,11 @@
     {
       "key": "studentUserId",
       "value": "6ba7b813-9dad-11d1-80b4-00c04fd430c8",
+      "type": "string"
+    },
+    {
+      "key": "videoFileId",
+      "value": "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
       "type": "string"
     }
   ]
