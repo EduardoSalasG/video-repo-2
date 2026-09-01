@@ -305,3 +305,12 @@ export class VideoFilesController {
     return { url };
   }
 }
+
+@ApiTags('health')
+@Controller('health')
+export class HealthController {
+  @Get()
+  check() {
+    return { status: 'ok' };
+  }
+}
