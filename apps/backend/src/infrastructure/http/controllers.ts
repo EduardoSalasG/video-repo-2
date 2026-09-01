@@ -424,18 +424,26 @@ export class HealthController {
 @ApiTags('search')
 @Controller('videos')
 export class VideoSearchController {
-  constructor(private readonly videos: VideoService) {}
+  constructor(
+    private readonly videos: VideoService,
+    private readonly courseAccess: CourseAccessService,
+  ) {}
 
   @Get('search')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
-  async search(@Query('tags') tags?: string) {
+  async search(@CurrentUser() user: AuthUser, @Query('tags') tags?: string) {
     const tagList = tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
     if (tagList.length === 0) {
       return { results: [] };
     }
     const results = await this.videos.searchByTags(tagList);
-    return { results };
+    if (user.role === Role.ADMIN) {
+      return { results };
+    }
+    const myAccess = await this.courseAccess.getByUser(user.userId);
+    const courseIds = new Set(myAccess.map((a) => a.courseId));
+    return { results: results.filter((r) => courseIds.has(r.course.id)) };
   }
 }
 
