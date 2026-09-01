@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { z } from 'zod';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -7,7 +8,6 @@ import Paper from '@mui/material/Paper';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { Typography } from '../atoms/Typography';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
 const loginSchema = z.object({
@@ -53,49 +53,71 @@ export const Login = () => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={2} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Iniciar sesión
-        </Typography>
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <FormField
-            label="Email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            fieldError={errors.email}
-          />
-          <FormField
-            label="Contraseña"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            fieldError={errors.password}
-          />
-          {apiError && (
-            <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-              {apiError}
-            </Typography>
-          )}
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={submitting}
-            sx={{ mt: 2 }}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', bounce: 0, duration: 0.45 }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 3, sm: 5 },
+            borderRadius: 6,
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.06)',
+          }}
+        >
+          <Typography
+            variant="h3"
+            component="h1"
+            gutterBottom
+            sx={{ fontSize: { xs: '2rem', sm: '2.25rem' } }}
           >
-            Entrar
-          </Button>
-          <Typography variant="body2" sx={{ mt: 2 }}>
-            ¿No tienes cuenta?{' '}
-            <Button component={Link} to="/app" size="small">
-              Explorar cursos
-            </Button>
+            Bienvenido
           </Typography>
-        </Box>
-      </Paper>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Inicia sesión para continuar aprendiendo baile.
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <FormField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              fieldError={errors.email}
+            />
+            <FormField
+              label="Contraseña"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              fieldError={errors.password}
+            />
+            {apiError && (
+              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                {apiError}
+              </Typography>
+            )}
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={submitting}
+              sx={{ mt: 3, py: 1.5, borderRadius: 14 }}
+            >
+              {submitting ? 'Entrando...' : 'Entrar'}
+            </Button>
+            <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
+              ¿No tienes cuenta?{' '}
+              <Button component={Link} to="/app" size="small" sx={{ color: '#007aff' }}>
+                Explorar cursos
+              </Button>
+            </Typography>
+          </Box>
+        </Paper>
+      </motion.div>
     </Container>
   );
 };
