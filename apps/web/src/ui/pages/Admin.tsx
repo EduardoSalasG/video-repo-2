@@ -313,6 +313,7 @@ export const Admin = () => {
       .then((newModule) => {
         setModules((prev) => [...prev, newModule]);
         setModuleForm({ title: '', description: '', orderIndex: undefined });
+        setModuleCourse('');
         showSuccess('Módulo creado');
       })
       .catch((err: unknown) => {
@@ -359,6 +360,8 @@ export const Admin = () => {
       .then((newSection) => {
         setSections((prev) => [...prev, newSection]);
         setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+        setSectionCourse('');
+        setSectionModule('');
         showSuccess('Sección creada');
       })
       .catch((err: unknown) => {
@@ -410,6 +413,8 @@ export const Admin = () => {
           influences: [],
           tags: [],
         });
+        setVideoCourse('');
+        setVideoModule('');
         setVideoSection('');
         showSuccess('Video subido');
       })
@@ -464,6 +469,8 @@ export const Admin = () => {
           influences: [],
           tags: [],
         });
+        setVideoCourse('');
+        setVideoModule('');
         setVideoSection('');
         showSuccess('Enlace guardado');
       })
@@ -970,7 +977,15 @@ export const Admin = () => {
                 value={videoForm.steps}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, steps: value as string[] }))}
                 filterSelectedOptions
-                renderInput={(params) => <TextField {...params} label="Pasos" placeholder="Escribe y presiona Enter" />}
+                ChipProps={{ deleteIcon: <CloseIcon fontSize="small" /> }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Pasos"
+                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
               <Autocomplete
                 multiple
@@ -979,7 +994,15 @@ export const Admin = () => {
                 value={videoForm.influences}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, influences: value as string[] }))}
                 filterSelectedOptions
-                renderInput={(params) => <TextField {...params} label="Influencias" placeholder="Escribe y presiona Enter" />}
+                ChipProps={{ deleteIcon: <CloseIcon fontSize="small" /> }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Influencias"
+                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
               <Autocomplete
                 multiple
@@ -988,7 +1011,15 @@ export const Admin = () => {
                 value={videoForm.tags}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, tags: value as string[] }))}
                 filterSelectedOptions
-                renderInput={(params) => <TextField {...params} label="Tags" placeholder="Escribe y presiona Enter" />}
+                ChipProps={{ deleteIcon: <CloseIcon fontSize="small" /> }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Tags"
+                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
               <Box sx={{ my: 2 }}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
