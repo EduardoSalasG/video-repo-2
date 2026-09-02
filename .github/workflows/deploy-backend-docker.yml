@@ -102,7 +102,16 @@ jobs:
                 --password-stdin
 
               docker compose pull backend
-              docker compose up -d --force-recreate --remove-orphans backend
+
+              echo "--- running prisma migrations one-shot ---"
+              docker run --rm \
+                --env-file .env \
+                -w /app/apps/backend \
+                "${{ env.IMAGE_NAME }}:latest" \
+                npx prisma migrate deploy
+
+              echo "--- recreating backend with new image ---"
+              docker compose up -d --remove-orphans backend
 
               echo "--- backend startup logs ---"
               docker compose logs --tail=50 backend || true
