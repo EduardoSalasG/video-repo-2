@@ -76,8 +76,8 @@ jobs:
           ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
           cat > ~/.ssh/config <<SSHCONF
           Host *
-            ServerAliveInterval 30
-            ServerAliveCountMax 3
+            ServerAliveInterval 15
+            ServerAliveCountMax 60
           SSHCONF
 
       - name: Copy docker-compose.yml to server
@@ -110,7 +110,7 @@ jobs:
               fi
 
               echo "--- running prisma migrations one-shot ---"
-              docker run --rm \
+              timeout 300 docker run --rm \
                 --env-file .env \
                 -e DATABASE_URL="$MIGRATION_DATABASE_URL" \
                 -w /app/apps/backend \
