@@ -10,8 +10,18 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  const rawCors = process.env.CORS_ORIGIN;
+  const allowedOrigins = rawCors ? rawCors.split(',').map((o) => o.trim()) : [];
+  const allowAll = allowedOrigins.includes('*') || allowedOrigins.length === 0;
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? true,
+    origin: (origin, callback) => {
+      if (!origin || allowAll || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 

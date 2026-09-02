@@ -49,6 +49,16 @@ type AuthUser = { userId: string; email: string; role: Role };
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  private cookieOptions() {
+    const sameSite = (process.env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none' | undefined) ?? 'lax';
+    return {
+      httpOnly: true,
+      secure: process.env.COOKIE_SECURE === 'true' || (sameSite === 'none' && process.env.NODE_ENV === 'production'),
+      sameSite,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    };
+  }
+
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.auth.register(dto);
@@ -57,18 +67,13 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { user, token } = await this.auth.login(dto.email, dto.password);
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    });
+    res.cookie('access_token', token, this.cookieOptions());
     return user;
   }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token', { httpOnly: true, path: '/' });
+    res.clearCookie('access_token', this.cookieOptions());
     return { ok: true };
   }
 
