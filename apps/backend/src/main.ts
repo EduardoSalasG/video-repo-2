@@ -9,6 +9,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.setGlobalPrefix('api');
 
   const rawCors = process.env.CORS_ORIGIN;
   const allowedOrigins = rawCors
@@ -38,8 +39,10 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  const uploadsPath = path.resolve(process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads');
-  app.use('/uploads', express.static(uploadsPath));
+  if (process.env.NODE_ENV !== 'production') {
+    const uploadsPath = path.resolve(process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
+  }
 
   const config = new DocumentBuilder()
     .setTitle('Dance Platform API')
@@ -48,7 +51,7 @@ async function bootstrap(): Promise<void> {
     .addCookieAuth('access_token')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document);
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);

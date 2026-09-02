@@ -15,8 +15,8 @@ permissions:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dance-platform-backend
-  CONTAINER_DIR: /opt/apps/dance-platform
-  PUBLIC_API_HOST: api.dance-platform.eduardosalasg.dev
+  CONTAINER_DIR: /opt/apps/video-repo
+  PUBLIC_API_HOST: api.video-repo.eduardosalasg.dev
 
 jobs:
   deploy:
@@ -75,6 +75,15 @@ jobs:
           chmod 600 ~/.ssh/oracle_deploy_key
           ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
 
+      - name: Copy docker-compose.yml to server
+        run: |
+          ssh -i ~/.ssh/oracle_deploy_key \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} \
+            "mkdir -p ${{ env.CONTAINER_DIR }}"
+          scp -i ~/.ssh/oracle_deploy_key \
+            apps/backend/docker-compose.yml \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ env.CONTAINER_DIR }}/docker-compose.yml
+
       - name: Deploy on Oracle VM
         run: |
           ssh -i ~/.ssh/oracle_deploy_key \
@@ -91,7 +100,7 @@ jobs:
               docker compose up -d --force-recreate --remove-orphans backend
 
               for attempt in $(seq 1 30); do
-                if curl -fsS http://127.0.0.1:3000/health > /dev/null; then
+                if curl -fsS http://127.0.0.1:3000/api/health > /dev/null; then
                   break
                 fi
 
@@ -107,9 +116,9 @@ jobs:
 
               # A health response alone can come from an older container image.
               # This protected route must exist and reject the anonymous probe.
-              route_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/auth/me)
+              route_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/api/auth/me)
               if [ "$route_status" != "401" ]; then
-                echo "Expected /auth/me to return 401 after deploy; received $route_status."
+                echo "Expected /api/auth/me to return 401 after deploy; received $route_status."
                 docker compose ps
                 docker logs --tail=200 backend || true
                 exit 1
@@ -132,9 +141,9 @@ jobs:
               # the expected anonymous 401 from the backend route.
               proxy_status=$(curl -ks -o /dev/null -w "%{http_code}" \
                 --resolve "${{ env.PUBLIC_API_HOST }}:443:127.0.0.1" \
-                "https://${{ env.PUBLIC_API_HOST }}/auth/me")
+                "https://${{ env.PUBLIC_API_HOST }}/api/auth/me")
               if [ "$proxy_status" != "401" ]; then
-                echo "Expected Nginx to proxy /auth/me with a 401; received $proxy_status."
+                echo "Expected Nginx to proxy /api/auth/me with a 401; received $proxy_status."
                 sudo nginx -T
                 exit 1
               fi

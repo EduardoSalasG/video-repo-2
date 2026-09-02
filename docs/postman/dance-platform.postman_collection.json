@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Dance Platform API",
-    "description": "Colección de endpoints del backend de dance-platform. Configura la variable `apiUrl` (ej. http://localhost:3000) y ejecuta login antes de probar endpoints protegidos.",
+    "description": "Colección de endpoints del backend de dance-platform. Configura la variable `apiUrl` (ej. http://localhost:3000/api) y ejecuta login antes de probar endpoints protegidos.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -606,6 +606,24 @@
                   "key": "tags",
                   "value": "salsa,on2"
                 }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stream video",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{apiUrl}}/videos/{{videoFileId}}/stream",
+              "host": [
+                "{{apiUrl}}"
+              ],
+              "path": [
+                "videos",
+                "{{videoFileId}}",
+                "stream"
               ]
             }
           }

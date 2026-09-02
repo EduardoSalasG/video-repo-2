@@ -29,12 +29,7 @@ export const Section = () => {
       .then(async (data) => {
         setSection(data);
         if (data.videoFileId) {
-          try {
-            const { url } = await api.getVideoUrl(data.videoFileId);
-            setVideoUrl(url);
-          } catch {
-            setVideoUrl(null);
-          }
+          setVideoUrl(api.getVideoStreamUrl(data.videoFileId));
         }
         try {
           const progress = await api.getSectionProgress(sectionId);
@@ -131,6 +126,7 @@ export const Section = () => {
             controls
             preload="metadata"
             width="100%"
+            crossOrigin="use-credentials"
             onEnded={handleVideoEnded}
             aria-label={`Video de ${section.title}`}
             style={{ borderRadius: 8, display: 'block' }}

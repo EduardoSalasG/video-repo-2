@@ -4,6 +4,12 @@ import * as path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { IVideoStorage, StorageFile, UploadedFile } from '../../application/ports';
 
+function safeExtension(originalName: string): string {
+  const ext = path.extname(path.basename(originalName)).toLowerCase();
+  if (!ext) return '.mp4';
+  return ext;
+}
+
 @Injectable()
 export class LocalVideoStorage implements IVideoStorage {
   private readonly baseDir: string;
@@ -13,7 +19,7 @@ export class LocalVideoStorage implements IVideoStorage {
   }
 
   async upload(file: StorageFile): Promise<UploadedFile> {
-    const key = `${randomUUID()}-${file.originalname}`;
+    const key = `${randomUUID()}${safeExtension(file.originalname)}`;
     const storageKey = `videos/${key}`;
     const target = path.join(this.baseDir, storageKey);
 
@@ -22,7 +28,7 @@ export class LocalVideoStorage implements IVideoStorage {
 
     return {
       storageKey,
-      filename: file.originalname,
+      filename: path.basename(file.originalname),
       mimeType: file.mimetype,
       fileSize: file.size,
     };

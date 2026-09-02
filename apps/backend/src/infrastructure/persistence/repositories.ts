@@ -182,6 +182,19 @@ export class PrismaSectionRepository implements ISectionRepository {
     return rows.map((row) => new Section(row));
   }
 
+  async findByVideoFileId(videoFileId: string): Promise<Section | null> {
+    const section = await this.prisma.section.findUnique({
+      where: { videoFileId },
+      include: { module: true },
+    });
+    return section
+      ? new Section({
+          ...section,
+          module: new CourseModule(section.module),
+        })
+      : null;
+  }
+
   async create(input: CreateSectionInput): Promise<Section> {
     const section = await this.prisma.section.create({
       data: {

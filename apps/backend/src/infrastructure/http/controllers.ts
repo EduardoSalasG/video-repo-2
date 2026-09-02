@@ -471,6 +471,28 @@ export class VideoSearchController {
     const courseIds = new Set(myAccess.map((a) => a.courseId));
     return { results: results.filter((r) => courseIds.has(r.course.id)) };
   }
+
+  @Get(':id/stream')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async stream(
+    @CurrentUser() user: AuthUser,
+    @Param('id') videoFileId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.videos.stream(user.userId, videoFileId);
+    if (result.type === 'url') {
+      return res.redirect(result.url);
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      res.set('X-Accel-Redirect', `/_protected_videos/${result.storageKey}`);
+      res.set('Content-Type', result.mimeType);
+      return res.status(200).end();
+    }
+
+    return res.redirect(`/uploads/${result.storageKey}`);
+  }
 }
 
 @ApiTags('admin')

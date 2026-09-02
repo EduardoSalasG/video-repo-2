@@ -50,6 +50,7 @@ export class Section {
   moduleId: string;
   markdownContent: string | null;
   videoFileId: string | null;
+  module?: CourseModule;
   createdAt: Date;
   updatedAt: Date;
 

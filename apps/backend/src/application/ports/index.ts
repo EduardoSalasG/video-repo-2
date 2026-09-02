@@ -103,6 +103,7 @@ export interface IModuleRepository {
 export interface ISectionRepository {
   findById(id: string): Promise<Section | null>;
   findByModuleId(moduleId: string): Promise<Section[]>;
+  findByVideoFileId(videoFileId: string): Promise<Section | null>;
   create(input: CreateSectionInput): Promise<Section>;
   update(id: string, input: UpdateSectionInput): Promise<Section>;
   delete(id: string): Promise<void>;

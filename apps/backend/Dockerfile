@@ -26,6 +26,7 @@ RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 WORKDIR /app
 ENV NODE_ENV=production
+ENV VIDEO_STORAGE_LOCAL_PATH=/data/video-repo
 
 COPY pnpm-workspace.yaml package.json ./
 COPY --from=builder /app/apps/backend/package.json ./apps/backend/
