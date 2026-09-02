@@ -176,75 +176,6 @@ export class SectionService {
 }
 
 @Injectable()
-export class VideoService {
-  constructor(
-    @Inject(InjectionTokens.VIDEO_STORAGE) private readonly storage: IVideoStorage,
-    @Inject(InjectionTokens.VIDEO_FILE_REPOSITORY) private readonly videoFiles: IVideoFileRepository,
-    @Inject(InjectionTokens.VIDEO_METADATA_REPOSITORY) private readonly videoMetadata: IVideoMetadataRepository,
-    @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
-    private readonly courseAccess: CourseAccessService,
-  ) {}
-
-  async upload(sectionId: string, file: StorageFile, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
-    const section = await this.sections.findById(sectionId);
-    if (!section) throw new NotFoundException('Section not found');
-
-    const uploaded = await this.storage.upload(file);
-    const videoFile = await this.videoFiles.create(uploaded);
-    await this.sections.attachVideoFile(sectionId, videoFile.id);
-
-    const videoMetadata = await this.videoMetadata.create({
-      ...metadata,
-      sectionId,
-    });
-
-    return { videoFile, videoMetadata };
-  }
-
-  async attachLink(sectionId: string, url: string, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
-    const section = await this.sections.findById(sectionId);
-    if (!section) throw new NotFoundException('Section not found');
-
-    const videoFile = await this.videoFiles.createFromUrl(url);
-    await this.sections.attachVideoFile(sectionId, videoFile.id);
-
-    const videoMetadata = await this.videoMetadata.create({
-      ...metadata,
-      sectionId,
-    });
-
-    return { videoFile, videoMetadata };
-  }
-
-  async getSignedUrl(videoFileId: string): Promise<string> {
-    const file = await this.videoFiles.findById(videoFileId);
-    if (!file) throw new NotFoundException('Video file not found');
-    if (file.url) return file.url;
-    return this.storage.getUrl(file.storageKey);
-  }
-
-  async stream(userId: string, videoFileId: string): Promise<{ type: 'url'; url: string } | { type: 'internal'; storageKey: string; mimeType: string }> {
-    const file = await this.videoFiles.findById(videoFileId);
-    if (!file) throw new NotFoundException('Video file not found');
-
-    const section = await this.sections.findByVideoFileId(videoFileId);
-    if (!section || !section.module) throw new NotFoundException('Video section not found');
-
-    await this.courseAccess.requireAccess(userId, section.module.courseId, AccessLevel.READ);
-
-    if (file.url) {
-      return { type: 'url', url: file.url };
-    }
-
-    return { type: 'internal', storageKey: file.storageKey, mimeType: file.mimeType };
-  }
-
-  async searchByTags(tags: string[]): Promise<VideoSearchResult[]> {
-    return this.videoMetadata.findByTags(tags);
-  }
-}
-
-@Injectable()
 export class CourseAccessService {
   constructor(
     @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
@@ -330,9 +261,79 @@ export class CourseAccessService {
 }
 
 @Injectable()
+export class VideoService {
+  constructor(
+    @Inject(InjectionTokens.VIDEO_STORAGE) private readonly storage: IVideoStorage,
+    @Inject(InjectionTokens.VIDEO_FILE_REPOSITORY) private readonly videoFiles: IVideoFileRepository,
+    @Inject(InjectionTokens.VIDEO_METADATA_REPOSITORY) private readonly videoMetadata: IVideoMetadataRepository,
+    @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
+    private readonly courseAccess: CourseAccessService,
+  ) {}
+
+  async upload(sectionId: string, file: StorageFile, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
+    const section = await this.sections.findById(sectionId);
+    if (!section) throw new NotFoundException('Section not found');
+
+    const uploaded = await this.storage.upload(file);
+    const videoFile = await this.videoFiles.create(uploaded);
+    await this.sections.attachVideoFile(sectionId, videoFile.id);
+
+    const videoMetadata = await this.videoMetadata.create({
+      ...metadata,
+      sectionId,
+    });
+
+    return { videoFile, videoMetadata };
+  }
+
+  async attachLink(sectionId: string, url: string, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
+    const section = await this.sections.findById(sectionId);
+    if (!section) throw new NotFoundException('Section not found');
+
+    const videoFile = await this.videoFiles.createFromUrl(url);
+    await this.sections.attachVideoFile(sectionId, videoFile.id);
+
+    const videoMetadata = await this.videoMetadata.create({
+      ...metadata,
+      sectionId,
+    });
+
+    return { videoFile, videoMetadata };
+  }
+
+  async getSignedUrl(videoFileId: string): Promise<string> {
+    const file = await this.videoFiles.findById(videoFileId);
+    if (!file) throw new NotFoundException('Video file not found');
+    if (file.url) return file.url;
+    return this.storage.getUrl(file.storageKey);
+  }
+
+  async stream(userId: string, videoFileId: string): Promise<{ type: 'url'; url: string } | { type: 'internal'; storageKey: string; mimeType: string }> {
+    const file = await this.videoFiles.findById(videoFileId);
+    if (!file) throw new NotFoundException('Video file not found');
+
+    const section = await this.sections.findByVideoFileId(videoFileId);
+    if (!section || !section.module) throw new NotFoundException('Video section not found');
+
+    await this.courseAccess.requireAccess(userId, section.module.courseId, AccessLevel.READ);
+
+    if (file.url) {
+      return { type: 'url', url: file.url };
+    }
+
+    return { type: 'internal', storageKey: file.storageKey, mimeType: file.mimeType };
+  }
+
+  async searchByTags(tags: string[]): Promise<VideoSearchResult[]> {
+    return this.videoMetadata.findByTags(tags);
+  }
+}
+
+@Injectable()
 export class UserService {
   constructor(
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
+    @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
   ) {}
 
   async getById(id: string): Promise<SafeUser> {
@@ -349,6 +350,22 @@ export class UserService {
   async search(query: string): Promise<SafeUser[]> {
     const users = await this.users.search(query);
     return users.map(stripPassword);
+  }
+
+  async changePassword(
+    id: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<SafeUser> {
+    const user = await this.users.findById(id);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const valid = await this.hasher.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+
+    const passwordHash = await this.hasher.hash(newPassword);
+    const updated = await this.users.updatePassword(id, passwordHash);
+    return stripPassword(updated);
   }
 }
 

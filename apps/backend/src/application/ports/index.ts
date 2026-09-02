@@ -81,6 +81,7 @@ export interface IUserRepository {
   search(query: string): Promise<User[]>;
   create(input: CreateUserInput, passwordHash: string): Promise<User>;
   updateRole(id: string, role: Role): Promise<User>;
+  updatePassword(id: string, passwordHash: string): Promise<User>;
 }
 
 export interface ICourseRepository {

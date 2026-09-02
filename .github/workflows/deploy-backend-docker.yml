@@ -6,8 +6,8 @@ on:
       - main
 
 concurrency:
-  group: deploy-backend-main
-  cancel-in-progress: true
+  group: deploy-video-repo-backend-main
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm --filter @dance-platform/backend db:generate
+
       - name: Run backend tests
         run: pnpm --filter @dance-platform/backend test
 
@@ -47,7 +50,9 @@ jobs:
 
       - name: Normalize image name
         run: |
-          echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "BACKEND_IMAGE=$IMAGE_NAME:${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
         run: |
@@ -55,34 +60,39 @@ jobs:
             -u "${{ github.actor }}" \
             --password-stdin
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
-          docker build \
+          docker buildx build \
+            --provenance=false \
+            --push \
             -f apps/backend/Dockerfile \
             -t $IMAGE_NAME:${{ github.sha }} \
             -t $IMAGE_NAME:latest \
             .
 
-      - name: Push Docker image
-        run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest
-
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle_deploy_key
           chmod 600 ~/.ssh/oracle_deploy_key
-          ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<SSHCONF
+          Host *
+            StrictHostKeyChecking accept-new
+            ServerAliveInterval 15
+            ServerAliveCountMax 60
+          SSHCONF
+          chmod 600 ~/.ssh/config
 
       - name: Copy docker-compose.yml to server
         run: |
           ssh -i ~/.ssh/oracle_deploy_key \
             ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} \
             "mkdir -p ${{ env.CONTAINER_DIR }}"
-          scp -i ~/.ssh/oracle_deploy_key \
-            apps/backend/docker-compose.yml \
-            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ env.CONTAINER_DIR }}/docker-compose.yml
+          ssh -i ~/.ssh/oracle_deploy_key \
+            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} \
+            "cat > ${{ env.CONTAINER_DIR }}/docker-compose.yml" \
+            < apps/backend/docker-compose.yml
 
       - name: Deploy on Oracle VM
         run: |
@@ -92,22 +102,65 @@ jobs:
 
               cd "${{ env.CONTAINER_DIR }}"
 
+              exec 9>/tmp/oracle-docker-deploy.lock
+              flock -w 900 9 || {
+                echo "Could not acquire server deploy lock"
+                exit 1
+              }
+
               echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
                 -u "${{ secrets.GHCR_USERNAME }}" \
                 --password-stdin
 
-              docker compose pull backend
+              export BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
+              if [ -z "$BACKEND_IMAGE" ]; then
+                echo "BACKEND_IMAGE is not set"
+                exit 1
+              fi
+
+              MIGRATION_DATABASE_URL="${{ secrets.MIGRATION_DATABASE_URL }}"
+              if [ -z "$MIGRATION_DATABASE_URL" ]; then
+                MIGRATION_DATABASE_URL=$(grep '^MIGRATION_DATABASE_URL=' .env | cut -d '=' -f2-)
+                echo "Warning: MIGRATION_DATABASE_URL secret not set; using value from .env"
+              fi
+              if [ -z "$MIGRATION_DATABASE_URL" ]; then
+                echo "MIGRATION_DATABASE_URL is not set in GitHub secrets or .env"
+                exit 1
+              fi
+
+              echo "--- pulling exact backend image: $BACKEND_IMAGE ---"
+              docker pull "$BACKEND_IMAGE"
+
+              echo "--- running prisma migrations one-shot ---"
+              docker rm -f dance-platform-migrate 2>/dev/null || true
+              if ! timeout 300 docker run \
+                --name dance-platform-migrate \
+                --rm \
+                -e DATABASE_URL="$MIGRATION_DATABASE_URL" \
+                -w /app/apps/backend \
+                "$BACKEND_IMAGE" \
+                npx prisma migrate deploy; then
+                echo "Migration failed or timed out"
+                docker rm -f dance-platform-migrate 2>/dev/null || true
+                exit 1
+              fi
+
+              echo "--- recreating backend with new image ---"
               docker compose up -d --force-recreate --remove-orphans backend
 
-              for attempt in $(seq 1 30); do
-                if curl -fsS http://127.0.0.1:3000/api/health > /dev/null; then
+              echo "--- backend startup logs ---"
+              docker compose logs --tail=50 backend || true
+
+              for attempt in $(seq 1 60); do
+                echo "Health check attempt $attempt/60 ..."
+                if curl -fsS --max-time 5 --connect-timeout 2 http://127.0.0.1:3001/api/health > /dev/null; then
                   break
                 fi
 
-                if [ "$attempt" -eq 30 ]; then
+                if [ "$attempt" -eq 60 ]; then
                   echo "Backend failed health check after deploy."
                   docker compose ps
-                  docker logs --tail=200 backend || true
+                  docker compose logs --tail=100 backend || true
                   exit 1
                 fi
 
@@ -116,14 +169,15 @@ jobs:
 
               # A health response alone can come from an older container image.
               # This protected route must exist and reject the anonymous probe.
-              route_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/api/auth/me)
+              route_status=$(curl -s -o /dev/null --max-time 5 --connect-timeout 2 -w "%{http_code}" http://127.0.0.1:3001/api/auth/me)
               if [ "$route_status" != "401" ]; then
                 echo "Expected /api/auth/me to return 401 after deploy; received $route_status."
                 docker compose ps
-                docker logs --tail=200 backend || true
+                docker compose logs --tail=100 backend || true
                 exit 1
               fi
 
+              echo "--- pruning dangling images ---"
               docker image prune -f
           EOF
 

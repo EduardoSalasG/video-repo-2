@@ -1,19 +1,25 @@
 services:
   backend:
-    image: ghcr.io/eduardosalasg/dance-platform-backend:latest
+    image: ${BACKEND_IMAGE:-ghcr.io/eduardosalasg/dance-platform-backend:latest}
     container_name: backend
     restart: unless-stopped
     env_file:
       - .env
     environment:
       - NODE_ENV=production
+      - PORT=3001
     volumes:
       - /mnt/video-repo:/data/video-repo
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
+      test: ["CMD", "curl", "-fsS", "--max-time", "3", "http://127.0.0.1:3001/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
+      start_period: 30s

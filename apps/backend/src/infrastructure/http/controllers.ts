@@ -7,6 +7,7 @@ import {
   Inject,
   MaxFileSizeValidator,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
   Param,
   ParseFilePipe,
@@ -41,6 +42,7 @@ import {
   LinkVideoDto,
   GrantCourseAccessDto,
   UpdateUserRoleDto,
+  ChangePasswordDto,
 } from './dtos';
 
 type AuthUser = { userId: string; email: string; role: Role };
@@ -162,6 +164,20 @@ export class UsersController {
   @ApiCookieAuth()
   async updateRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) {
     return this.users.updateRole(id, dto.role);
+  }
+
+  @Patch(':id/password')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async changePassword(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    if (user.userId !== id) {
+      throw new ForbiddenException('You can only change your own password');
+    }
+    return this.users.changePassword(id, dto.currentPassword, dto.newPassword);
   }
 }
 

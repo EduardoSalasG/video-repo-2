@@ -78,6 +78,11 @@ export class PrismaUserRepository implements IUserRepository {
     const user = await this.prisma.user.update({ where: { id }, data: { role } });
     return new User({ ...user, role: user.role as Role });
   }
+
+  async updatePassword(id: string, passwordHash: string): Promise<User> {
+    const user = await this.prisma.user.update({ where: { id }, data: { passwordHash } });
+    return new User({ ...user, role: user.role as Role });
+  }
 }
 
 @Injectable()
