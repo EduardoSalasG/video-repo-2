@@ -8,6 +8,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - VIDEO_STORAGE=local
+      - VIDEO_STORAGE_LOCAL_PATH=/data/video-repo
     volumes:
       - /mnt/video-repo:/data/video-repo
     ports:

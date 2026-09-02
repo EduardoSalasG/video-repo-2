@@ -597,12 +597,13 @@ export const Admin = () => {
       .catch(() => showSuccess('Error al eliminar sección'));
   };
 
-  const renderCourseSelect = (value: string, onChange: (value: string) => void) => (
+  const renderCourseSelect = (value: string, onChange: (value: string) => void, disabled = false) => (
     <FormField
       select
       label="Curso"
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      disabled={disabled || courses.length === 0}
     >
       <MenuItem value="">Seleccionar curso</MenuItem>
       {courses.map((course) => (
@@ -613,12 +614,13 @@ export const Admin = () => {
     </FormField>
   );
 
-  const renderModuleSelect = (value: string, onChange: (value: string) => void) => (
+  const renderModuleSelect = (value: string, onChange: (value: string) => void, disabled = false) => (
     <FormField
       select
       label="Módulo"
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      disabled={disabled || modules.length === 0}
     >
       <MenuItem value="">Seleccionar módulo</MenuItem>
       {modules.map((module) => (
@@ -629,12 +631,13 @@ export const Admin = () => {
     </FormField>
   );
 
-  const renderSectionSelect = (value: string, onChange: (value: string) => void) => (
+  const renderSectionSelect = (value: string, onChange: (value: string) => void, disabled = false) => (
     <FormField
       select
       label="Sección"
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      disabled={disabled || sections.length === 0}
     >
       <MenuItem value="">Seleccionar sección</MenuItem>
       {sections.map((section) => (
