@@ -78,15 +78,6 @@ jobs:
           chmod 600 ~/.ssh/oracle_deploy_key
           ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Copy docker-compose.yml to server
-        run: |
-          ssh -i ~/.ssh/oracle_deploy_key \
-            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }} \
-            "mkdir -p ${{ env.CONTAINER_DIR }}"
-          scp -i ~/.ssh/oracle_deploy_key \
-            apps/backend/docker-compose.yml \
-            ${{ secrets.ORACLE_USER }}@${{ secrets.ORACLE_HOST }}:${{ env.CONTAINER_DIR }}/docker-compose.yml
-
       - name: Deploy on Oracle VM
         run: |
           ssh -i ~/.ssh/oracle_deploy_key \
