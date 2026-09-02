@@ -10,6 +10,7 @@ import { Button } from '../atoms/Button';
 import { Typography } from '../atoms/Typography';
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../lib/api';
+import { ApiError } from '../../lib/error';
 
 const registerSchema = z
   .object({
@@ -65,14 +66,22 @@ export const Register = () => {
     setErrors({});
     setSubmitting(true);
     try {
+      const { confirmPassword: _, ...registerData } = result.data;
       await api.register({
-        ...result.data,
+        ...registerData,
         role: 'STUDENT',
       });
-      await login(result.data.email, result.data.password);
+      await login(registerData.email, registerData.password);
       navigate('/app', { replace: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al registrarse';
+      let message = 'Error al registrarse';
+      if (err instanceof ApiError) {
+        const data = err.data as { message?: string | string[] } | null;
+        const raw = data?.message;
+        message = Array.isArray(raw) ? raw.join(', ') : (raw ?? err.message ?? message);
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setApiError(message);
     } finally {
       setSubmitting(false);
