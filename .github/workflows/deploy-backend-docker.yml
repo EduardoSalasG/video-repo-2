@@ -6,8 +6,8 @@ on:
       - main
 
 concurrency:
-  group: deploy-backend-main
-  cancel-in-progress: true
+  group: deploy-video-repo-backend-main
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -50,7 +50,9 @@ jobs:
 
       - name: Normalize image name
         run: |
-          echo "IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          IMAGE_NAME=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "BACKEND_IMAGE=$IMAGE_NAME:${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
         run: |
@@ -100,28 +102,47 @@ jobs:
 
               cd "${{ env.CONTAINER_DIR }}"
 
+              exec 9>/tmp/oracle-docker-deploy.lock
+              flock -w 900 9 || {
+                echo "Could not acquire server deploy lock"
+                exit 1
+              }
+
               echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io \
                 -u "${{ secrets.GHCR_USERNAME }}" \
                 --password-stdin
 
-              docker compose pull backend
-
-              MIGRATION_DATABASE_URL=$(grep '^MIGRATION_DATABASE_URL=' .env | cut -d '=' -f2-)
-              if [ -z "$MIGRATION_DATABASE_URL" ]; then
-                echo "MIGRATION_DATABASE_URL is not set in .env"
+              export BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}"
+              if [ -z "$BACKEND_IMAGE" ]; then
+                echo "BACKEND_IMAGE is not set"
                 exit 1
               fi
 
+              MIGRATION_DATABASE_URL="${{ secrets.MIGRATION_DATABASE_URL }}"
+              if [ -z "$MIGRATION_DATABASE_URL" ]; then
+                echo "MIGRATION_DATABASE_URL secret is not set"
+                exit 1
+              fi
+
+              echo "--- pulling exact backend image: $BACKEND_IMAGE ---"
+              docker pull "$BACKEND_IMAGE"
+
               echo "--- running prisma migrations one-shot ---"
-              timeout 300 docker run --rm \
-                --env-file .env \
+              docker rm -f dance-platform-migrate 2>/dev/null || true
+              if ! timeout 300 docker run \
+                --name dance-platform-migrate \
+                --rm \
                 -e DATABASE_URL="$MIGRATION_DATABASE_URL" \
                 -w /app/apps/backend \
-                "${{ env.IMAGE_NAME }}:latest" \
-                npx prisma migrate deploy
+                "$BACKEND_IMAGE" \
+                npx prisma migrate deploy; then
+                echo "Migration failed or timed out"
+                docker rm -f dance-platform-migrate 2>/dev/null || true
+                exit 1
+              fi
 
               echo "--- recreating backend with new image ---"
-              docker compose up -d --remove-orphans backend
+              docker compose up -d --force-recreate --remove-orphans backend
 
               echo "--- backend startup logs ---"
               docker compose logs --tail=50 backend || true
@@ -152,6 +173,7 @@ jobs:
                 exit 1
               fi
 
+              echo "--- pruning dangling images ---"
               docker image prune -f
           EOF
 
