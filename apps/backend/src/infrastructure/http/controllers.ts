@@ -13,13 +13,14 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -49,11 +50,17 @@ type AuthUser = { userId: string; email: string; role: Role };
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  private cookieOptions() {
-    const sameSite = (process.env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none' | undefined) ?? 'lax';
+  private cookieOptions(origin?: string) {
+    const isLocal = origin?.startsWith('http://localhost');
+    const sameSite = isLocal
+      ? 'lax'
+      : (process.env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none' | undefined) ?? 'lax';
+    const secure = isLocal
+      ? false
+      : process.env.COOKIE_SECURE === 'true' || (sameSite === 'none' && process.env.NODE_ENV === 'production');
     return {
       httpOnly: true,
-      secure: process.env.COOKIE_SECURE === 'true' || (sameSite === 'none' && process.env.NODE_ENV === 'production'),
+      secure,
       sameSite,
       maxAge: 1000 * 60 * 60 * 24 * 7,
     };
@@ -65,15 +72,19 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { user, token } = await this.auth.login(dto.email, dto.password);
-    res.cookie('access_token', token, this.cookieOptions());
+    res.cookie('access_token', token, this.cookieOptions(req.headers.origin));
     return user;
   }
 
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token', this.cookieOptions());
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', this.cookieOptions(req.headers.origin));
     return { ok: true };
   }
 
