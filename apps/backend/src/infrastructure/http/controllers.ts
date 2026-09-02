@@ -56,7 +56,7 @@ export class AuthController {
     const isLocal = origin?.startsWith('http://localhost');
     const sameSite = isLocal
       ? 'lax'
-      : (process.env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none' | undefined) ?? 'lax';
+      : (process.env.COOKIE_SAMESITE as 'strict' | 'lax' | 'none' | undefined) ?? 'none';
     const secure = isLocal
       ? false
       : process.env.COOKIE_SECURE === 'true' || (sameSite === 'none' && process.env.NODE_ENV === 'production');
