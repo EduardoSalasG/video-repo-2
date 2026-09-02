@@ -11,7 +11,9 @@ import type {
 
 import { ApiError } from './error';
 
-const API_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000';
+const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api';
+const isLocal = typeof location !== 'undefined' && location.hostname === 'localhost';
+const API_URL = (isLocal ? 'http://localhost:3000/api' : rawApiUrl).replace(/\/$/, '');
 
 export { ApiError } from './error';
 
@@ -69,8 +71,12 @@ export const api = {
 
   me: () => request<{ userId: string; email: string; role: string }>('GET', '/auth/me'),
 
+  getDashboard: () => request<{ courses: number; users: number }>('GET', '/admin/dashboard'),
+
   getCourses: () => request<Course[]>('GET', '/courses'),
   getCourse: (courseId: string) => request<Course>('GET', `/courses/${courseId}`),
+  getCourseProgress: (courseId: string) =>
+    request<{ completedSectionIds: string[] }>('GET', `/courses/${courseId}/progress`),
   createCourse: (data: { name: string; description?: string }) =>
     request<Course>('POST', '/courses', data),
   updateCourse: (courseId: string, data: { name?: string; description?: string }) =>
@@ -96,6 +102,7 @@ export const api = {
   deleteSection: (sectionId: string) => request<void>('DELETE', `/sections/${sectionId}`),
 
   getVideoUrl: (videoFileId: string) => request<{ url: string }>('GET', `/video-files/${videoFileId}`),
+  getVideoStreamUrl: (videoFileId: string) => `${API_URL}/videos/${videoFileId}/stream`,
 
   uploadVideo: (
     sectionId: string,
@@ -104,13 +111,7 @@ export const api = {
   ) => {
     const formData = new FormData();
     formData.append('video', file);
-    formData.append('difficulty', metadata.difficulty);
-    formData.append('primaryStyle', metadata.primaryStyle);
-    formData.append('videoType', metadata.videoType);
-    formData.append('durationCounts', String(metadata.durationCounts));
-    metadata.steps.forEach((step) => formData.append('steps', step));
-    metadata.influences.forEach((influence) => formData.append('influences', influence));
-    metadata.tags.forEach((tag) => formData.append('tags', tag));
+    formData.append('metadata', JSON.stringify(metadata));
     return request<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>(
       'POST',
       `/sections/${sectionId}/videos`,
@@ -119,11 +120,30 @@ export const api = {
     );
   },
 
+  attachVideoLink: (
+    sectionId: string,
+    url: string,
+    metadata: Omit<VideoMetadata, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>,
+  ) =>
+    request<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>('POST', `/sections/${sectionId}/videos/link`, {
+      url,
+      metadata,
+    }),
+
+  getSectionProgress: (sectionId: string) => request<{ completed: boolean }>('GET', `/sections/${sectionId}/progress`),
+  markSectionProgress: (sectionId: string) =>
+    request<{ completed: boolean }>('POST', `/sections/${sectionId}/progress`),
+
+  searchUsers: (q: string) => request<User[]>('GET', `/users?q=${encodeURIComponent(q)}`),
+
   getUser: (id: string) => request<User>('GET', `/users/${id}`),
+  getUserAccesses: (id: string) => request<CourseAccess[]>('GET', `/users/${id}/accesses`),
   updateUserRole: (id: string, role: string) =>
     request<User>('PATCH', `/users/${id}/role`, { role }),
+  revokeAccess: (userId: string, courseId: string) =>
+    request<void>('DELETE', `/users/${userId}/accesses/${courseId}`),
 
-  grantAccess: (courseId: string, data: { userId: string; courseId: string; accessLevel: string }) =>
+  grantAccess: (courseId: string, data: { userId: string; courseId: string }) =>
     request<{ ok: boolean }>('POST', `/courses/${courseId}/access`, data),
 
   getAccesses: (_courseId?: string) => {

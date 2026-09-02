@@ -37,6 +37,7 @@ export interface Section {
 export interface VideoFile {
   id: string;
   storageKey: string;
+  url?: string | null;
   filename: string;
   mimeType: string;
   fileSize: number | null;
@@ -74,6 +75,7 @@ export interface CourseAccess {
   userId: string;
   courseId: string;
   accessLevel: AccessLevel;
+  course?: Course;
   createdAt: string;
   updatedAt: string;
 }

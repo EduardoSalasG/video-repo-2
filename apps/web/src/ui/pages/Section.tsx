@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import { Typography } from '../atoms/Typography';
 import { Markdown } from '../atoms/Markdown';
 import { api } from '../../lib/api';
-import type { Section as SectionType } from '../../types';
+import type { Section as SectionType, Course, CourseModule } from '../../types';
 
 export const Section = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
   const [section, setSection] = useState<SectionType | null>(null);
+  const [module, setModule] = useState<CourseModule | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,12 +29,13 @@ export const Section = () => {
       .then(async (data) => {
         setSection(data);
         if (data.videoFileId) {
-          try {
-            const { url } = await api.getVideoUrl(data.videoFileId);
-            setVideoUrl(url);
-          } catch {
-            setVideoUrl(null);
-          }
+          setVideoUrl(api.getVideoStreamUrl(data.videoFileId));
+        }
+        try {
+          const progress = await api.getSectionProgress(sectionId);
+          setCompleted(progress.completed);
+        } catch {
+          setCompleted(false);
         }
         setError(null);
       })
@@ -38,6 +44,30 @@ export const Section = () => {
       })
       .finally(() => setLoading(false));
   }, [sectionId]);
+
+  useEffect(() => {
+    if (!section) return;
+    api
+      .getModule(section.moduleId)
+      .then(async (mod) => {
+        setModule(mod);
+        try {
+          const c = await api.getCourse(mod.courseId);
+          setCourse(c);
+        } catch {
+          setCourse(null);
+        }
+      })
+      .catch(() => setModule(null));
+  }, [section]);
+
+  const handleVideoEnded = () => {
+    if (!sectionId) return;
+    api
+      .markSectionProgress(sectionId)
+      .then((progress) => setCompleted(progress.completed))
+      .catch(() => {});
+  };
 
   if (loading) {
     return (
@@ -53,11 +83,32 @@ export const Section = () => {
 
   return (
     <Box>
+      <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+        <Link to="/app" style={{ textDecoration: 'none', color: 'inherit' }}>
+          Biblioteca
+        </Link>
+        {course && (
+          <Link to={`/app/courses/${course.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+            {course.name}
+          </Link>
+        )}
+        <Typography color="text.primary">{module?.title ?? 'Módulo'}</Typography>
+        <Typography color="text.primary">{section.title}</Typography>
+      </Breadcrumbs>
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {section.title}
         </Typography>
       </motion.div>
+
+      {completed && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <CheckCircleIcon color="success" />
+          <Typography color="success.main" variant="body2">
+            Visto
+          </Typography>
+        </Box>
+      )}
 
       {videoUrl && (
         <Paper
@@ -75,8 +126,10 @@ export const Section = () => {
             controls
             preload="metadata"
             width="100%"
+            crossOrigin="use-credentials"
+            onEnded={handleVideoEnded}
             aria-label={`Video de ${section.title}`}
-            style={{ borderRadius: 14, display: 'block' }}
+            style={{ borderRadius: 8, display: 'block' }}
           />
         </Paper>
       )}

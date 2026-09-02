@@ -50,6 +50,7 @@ export class Section {
   moduleId: string;
   markdownContent: string | null;
   videoFileId: string | null;
+  module?: CourseModule;
   createdAt: Date;
   updatedAt: Date;
 
@@ -61,6 +62,7 @@ export class Section {
 export class VideoFile {
   id: string;
   storageKey: string;
+  url: string | null;
   filename: string;
   mimeType: string;
   fileSize: number | null;
@@ -96,10 +98,25 @@ export class CourseAccess {
   userId: string;
   courseId: string;
   accessLevel: AccessLevel;
+  course?: Course;
   createdAt: Date;
   updatedAt: Date;
 
   constructor(partial: Partial<CourseAccess>) {
+    Object.assign(this, partial);
+  }
+}
+
+export class UserSectionProgress {
+  id: string;
+  userId: string;
+  sectionId: string;
+  completed: boolean;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+
+  constructor(partial: Partial<UserSectionProgress>) {
     Object.assign(this, partial);
   }
 }

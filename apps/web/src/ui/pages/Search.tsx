@@ -87,7 +87,7 @@ export const Search = () => {
               fullWidth
               disabled={loading}
               startIcon={<SearchIcon />}
-              sx={{ mt: 2, py: 1.5, borderRadius: 14 }}
+              sx={{ mt: 2, py: 1.5, borderRadius: 8 }}
             >
               {loading ? 'Buscando...' : 'Buscar'}
             </Button>

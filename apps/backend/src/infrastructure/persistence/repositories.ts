@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
 import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
 import {
   IUserRepository,
@@ -11,6 +11,7 @@ import {
   IVideoMetadataRepository,
   VideoSearchResult,
   ICourseAccessRepository,
+  IProgressRepository,
   CreateUserInput,
   CreateCourseInput,
   UpdateCourseInput,
@@ -39,6 +40,24 @@ export class PrismaUserRepository implements IUserRepository {
   async findByUsername(username: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { username } });
     return user ? new User({ ...user, role: user.role as Role }) : null;
+  }
+
+  async search(query: string): Promise<User[]> {
+    const q = query.trim();
+    const where: Record<string, unknown> = {};
+    if (q) {
+      where.OR = [
+        { email: { contains: q, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+    const rows = await this.prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return rows.map((row) => new User({ ...row, role: row.role as Role }));
   }
 
   async create(input: CreateUserInput, passwordHash: string): Promise<User> {
@@ -163,6 +182,19 @@ export class PrismaSectionRepository implements ISectionRepository {
     return rows.map((row) => new Section(row));
   }
 
+  async findByVideoFileId(videoFileId: string): Promise<Section | null> {
+    const section = await this.prisma.section.findUnique({
+      where: { videoFileId },
+      include: { module: true },
+    });
+    return section
+      ? new Section({
+          ...section,
+          module: new CourseModule(section.module),
+        })
+      : null;
+  }
+
   async create(input: CreateSectionInput): Promise<Section> {
     const section = await this.prisma.section.create({
       data: {
@@ -219,6 +251,18 @@ export class PrismaVideoFileRepository implements IVideoFileRepository {
     return new VideoFile(videoFile);
   }
 
+  async createFromUrl(url: string): Promise<VideoFile> {
+    const videoFile = await this.prisma.videoFile.create({
+      data: {
+        storageKey: '',
+        url,
+        filename: 'external',
+        mimeType: 'video/mp4',
+      },
+    });
+    return new VideoFile(videoFile);
+  }
+
   async findById(id: string): Promise<VideoFile | null> {
     const file = await this.prisma.videoFile.findUnique({ where: { id } });
     return file ? new VideoFile(file) : null;
@@ -234,8 +278,18 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(input: CreateVideoMetadataInput): Promise<VideoMetadata> {
-    const meta = await this.prisma.videoMetadata.create({
-      data: {
+    const meta = await this.prisma.videoMetadata.upsert({
+      where: { sectionId: input.sectionId },
+      update: {
+        difficulty: input.difficulty,
+        primaryStyle: input.primaryStyle,
+        videoType: input.videoType,
+        durationCounts: input.durationCounts,
+        steps: input.steps,
+        influences: input.influences,
+        tags: input.tags,
+      },
+      create: {
         sectionId: input.sectionId,
         difficulty: input.difficulty,
         primaryStyle: input.primaryStyle,
@@ -315,7 +369,85 @@ export class PrismaCourseAccessRepository implements ICourseAccessRepository {
   }
 
   async findByUser(userId: string): Promise<CourseAccess[]> {
-    const rows = await this.prisma.courseAccess.findMany({ where: { userId } });
-    return rows.map((row) => new CourseAccess({ ...row, accessLevel: row.accessLevel as AccessLevel }));
+    const rows = await this.prisma.courseAccess.findMany({
+      where: { userId },
+      include: { course: true },
+    });
+    return rows.map((row) =>
+      new CourseAccess({
+        ...row,
+        course: row.course ? new Course(row.course) : undefined,
+        accessLevel: row.accessLevel as AccessLevel,
+      })
+    );
+  }
+
+  async findByCourse(courseId: string): Promise<CourseAccess[]> {
+    const rows = await this.prisma.courseAccess.findMany({
+      where: { courseId },
+      include: { course: true },
+    });
+    return rows.map((row) =>
+      new CourseAccess({
+        ...row,
+        course: row.course ? new Course(row.course) : undefined,
+        accessLevel: row.accessLevel as AccessLevel,
+      })
+    );
+  }
+
+  async revoke(userId: string, courseId: string): Promise<void> {
+    await this.prisma.courseAccess.delete({
+      where: { userId_courseId: { userId, courseId } },
+    });
+  }
+}
+
+@Injectable()
+export class PrismaProgressRepository implements IProgressRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null> {
+    const row = await this.prisma.userSectionProgress.findUnique({
+      where: { userId_sectionId: { userId, sectionId } },
+    });
+    return row
+      ? new UserSectionProgress({
+          ...row,
+          completedAt: row.completedAt ?? null,
+        })
+      : null;
+  }
+
+  async findCompletedByCourse(userId: string, courseId: string): Promise<string[]> {
+    const rows = await this.prisma.userSectionProgress.findMany({
+      where: {
+        userId,
+        completed: true,
+        section: { module: { courseId } },
+      },
+      select: { sectionId: true },
+    });
+    return rows.map((r) => r.sectionId);
+  }
+
+  async markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress> {
+    const row = await this.prisma.userSectionProgress.upsert({
+      where: { userId_sectionId: { userId, sectionId } },
+      create: {
+        userId,
+        sectionId,
+        completed: true,
+        completedAt: new Date(),
+      },
+      update: {
+        completed: true,
+        completedAt: new Date(),
+      },
+    });
+    return new UserSectionProgress({
+      ...row,
+      completedAt: row.completedAt ?? null,
+    });
   }
 }

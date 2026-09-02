@@ -49,7 +49,17 @@ export const Library = () => {
           {error}
         </Typography>
       )}
-      {!loading && <CourseList courses={courses} />}
+      {!loading && courses.length > 0 && <CourseList courses={courses} />}
+      {!loading && courses.length === 0 && !error && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h6" gutterBottom>
+            No tienes cursos disponibles
+          </Typography>
+          <Typography color="text.secondary">
+            Inscríbete en un curso para comenzar tu entrenamiento.
+          </Typography>
+        </Box>
+      )}
     </>
   );
 };

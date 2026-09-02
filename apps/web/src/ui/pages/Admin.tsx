@@ -1,21 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { z } from 'zod';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import Paper from '@mui/material/Paper';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
+import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import type { Course, CourseModule, Section, Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../types';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
-const TABS = ['cursos', 'modulos', 'secciones', 'videos', 'usuarios', 'accesos'];
+const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
 
 const courseSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -40,9 +45,9 @@ const videoSchema = z.object({
   primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
   videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
-  steps: z.string().optional(),
-  influences: z.string().optional(),
-  tags: z.string().optional(),
+  steps: z.array(z.string()).default([]),
+  influences: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
 });
 
 const roleSchema = z.object({
@@ -53,7 +58,6 @@ const roleSchema = z.object({
 const accessSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
   courseId: z.string().min(1, 'Selecciona un curso'),
-  accessLevel: z.enum(['READ', 'WRITE', 'MAINTAIN']),
 });
 
 type CourseFormData = z.infer<typeof courseSchema>;
@@ -64,10 +68,9 @@ type RoleFormData = z.infer<typeof roleSchema>;
 type AccessFormData = z.infer<typeof accessSchema>;
 
 export const Admin = () => {
-  const navigate = useNavigate();
   const { tab } = useParams<{ tab?: string }>();
   const activeTab = useMemo(() => {
-    const index = TABS.indexOf(tab ?? 'cursos');
+    const index = TABS.indexOf(tab ?? 'dashboard');
     return Math.max(0, index);
   }, [tab]);
 
@@ -89,6 +92,11 @@ export const Admin = () => {
   const [videoModule, setVideoModule] = useState('');
   const [videoSection, setVideoSection] = useState('');
 
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [dashboard, setDashboard] = useState({ courses: 0, users: 0 });
+
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
   const [courseErrors, setCourseErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
 
@@ -108,23 +116,44 @@ export const Admin = () => {
     primaryStyle: 'MAMBO_ON2',
     videoType: 'STEP',
     durationCounts: 0,
-    steps: '',
-    influences: '',
-    tags: '',
+    steps: [],
+    influences: [],
+    tags: [],
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoLink, setVideoLink] = useState('');
+  const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
 
-  const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '', accessLevel: 'READ' });
-  const [accessErrors, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
+  const [accessForm, setAccessForm] = useState<AccessFormData>({ userId: '', courseId: '' });
+  const [, setAccessErrors] = useState<Partial<Record<keyof AccessFormData, string>>>({});
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userAccesses, setUserAccesses] = useState<CourseAccess[]>([]);
 
   const showSuccess = (message: string) => {
     setSuccess(message);
     setTimeout(() => setSuccess(null), 3000);
   };
+
+  useEffect(() => {
+    if (!selectedUserId) {
+      setSelectedUser(null);
+      setUserAccesses([]);
+      return;
+    }
+    api
+      .getUser(selectedUserId)
+      .then(setSelectedUser)
+      .catch(() => setSelectedUser(null));
+    api
+      .getUserAccesses(selectedUserId)
+      .then(setUserAccesses)
+      .catch(() => setUserAccesses([]));
+  }, [selectedUserId]);
 
   useEffect(() => {
     setLoadingCourses(true);
@@ -133,6 +162,13 @@ export const Admin = () => {
       .then(setCourses)
       .catch(() => setCourses([]))
       .finally(() => setLoadingCourses(false));
+  }, []);
+
+  useEffect(() => {
+    api
+      .getDashboard()
+      .then(setDashboard)
+      .catch(() => setDashboard({ courses: 0, users: 0 }));
   }, []);
 
   useEffect(() => {
@@ -200,10 +236,6 @@ export const Admin = () => {
       .finally(() => setLoadingSections(false));
   }, [videoModule]);
 
-  const handleTabChange = (_: unknown, newValue: number) => {
-    navigate(`/admin/${TABS[newValue]}`);
-  };
-
   const submitCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result = courseSchema.safeParse(courseForm);
@@ -216,6 +248,21 @@ export const Admin = () => {
       return;
     }
     setCourseErrors({});
+    if (editingCourseId) {
+      api
+        .updateCourse(editingCourseId, result.data)
+        .then((updated) => {
+          setCourses((prev) => prev.map((c) => (c.id === editingCourseId ? updated : c)));
+          setCourseForm({ name: '', description: '' });
+          setEditingCourseId(null);
+          showSuccess('Curso actualizado');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar curso';
+          setCourseErrors({ name: message });
+        });
+      return;
+    }
     api
       .createCourse(result.data)
       .then((newCourse) => {
@@ -246,6 +293,21 @@ export const Admin = () => {
       return;
     }
     setModuleErrors({});
+    if (editingModuleId) {
+      api
+        .updateModule(editingModuleId, result.data)
+        .then((updated) => {
+          setModules((prev) => prev.map((m) => (m.id === editingModuleId ? updated : m)));
+          setModuleForm({ title: '', description: '', orderIndex: undefined });
+          setEditingModuleId(null);
+          showSuccess('Módulo actualizado');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar módulo';
+          setModuleErrors({ title: message });
+        });
+      return;
+    }
     api
       .createModule(moduleCourse, result.data)
       .then((newModule) => {
@@ -277,6 +339,21 @@ export const Admin = () => {
       return;
     }
     setSectionErrors({});
+    if (editingSectionId) {
+      api
+        .updateSection(editingSectionId, result.data)
+        .then((updated) => {
+          setSections((prev) => prev.map((s) => (s.id === editingSectionId ? updated : s)));
+          setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+          setEditingSectionId(null);
+          showSuccess('Sección actualizada');
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Error al actualizar sección';
+          setSectionErrors({ title: message });
+        });
+      return;
+    }
     api
       .createSection(sectionModule, result.data)
       .then((newSection) => {
@@ -312,23 +389,15 @@ export const Admin = () => {
       return;
     }
 
-    const parseList = (value: string | undefined) =>
-      value
-        ? value
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean)
-        : [];
-
     api
       .uploadVideo(videoSection, videoFile, {
         difficulty: result.data.difficulty as Difficulty,
         primaryStyle: result.data.primaryStyle as PrimaryStyle,
         videoType: result.data.videoType as VideoType,
         durationCounts: result.data.durationCounts,
-        steps: parseList(result.data.steps),
-        influences: parseList(result.data.influences),
-        tags: parseList(result.data.tags),
+        steps: result.data.steps,
+        influences: result.data.influences,
+        tags: result.data.tags,
       })
       .then(() => {
         setVideoFile(null);
@@ -337,9 +406,9 @@ export const Admin = () => {
           primaryStyle: 'MAMBO_ON2',
           videoType: 'STEP',
           durationCounts: 0,
-          steps: '',
-          influences: '',
-          tags: '',
+          steps: [],
+          influences: [],
+          tags: [],
         });
         setVideoSection('');
         showSuccess('Video subido');
@@ -347,6 +416,60 @@ export const Admin = () => {
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al subir video';
         setVideoErrors({ difficulty: message });
+      });
+  };
+
+  const submitLink = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setVideoLinkError(null);
+    if (!videoSection) {
+      setVideoLinkError('Selecciona una sección');
+      return;
+    }
+    const result = videoSchema.safeParse(videoForm);
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setVideoErrors({
+        difficulty: fieldErrors.difficulty?.[0],
+        primaryStyle: fieldErrors.primaryStyle?.[0],
+        videoType: fieldErrors.videoType?.[0],
+        durationCounts: fieldErrors.durationCounts?.[0],
+      });
+      return;
+    }
+    if (!videoLink.trim()) {
+      setVideoLinkError('Pega una URL de video');
+      return;
+    }
+
+    api
+      .attachVideoLink(videoSection, videoLink, {
+        difficulty: result.data.difficulty as Difficulty,
+        primaryStyle: result.data.primaryStyle as PrimaryStyle,
+        videoType: result.data.videoType as VideoType,
+        durationCounts: result.data.durationCounts,
+        steps: result.data.steps,
+        influences: result.data.influences,
+        tags: result.data.tags,
+      })
+      .then(() => {
+        setVideoLink('');
+        setVideoLinkError(null);
+        setVideoForm({
+          difficulty: 'BEGINNER',
+          primaryStyle: 'MAMBO_ON2',
+          videoType: 'STEP',
+          durationCounts: 0,
+          steps: [],
+          influences: [],
+          tags: [],
+        });
+        setVideoSection('');
+        showSuccess('Enlace guardado');
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Error al guardar enlace';
+        setVideoLinkError(message);
       });
   };
 
@@ -365,8 +488,11 @@ export const Admin = () => {
     api
       .updateUserRole(result.data.userId, result.data.role as Role)
       .then(() => {
-        setRoleForm({ userId: '', role: 'STUDENT' });
+        setRoleForm({ userId: selectedUserId, role: 'STUDENT' });
         showSuccess('Rol actualizado');
+        if (selectedUserId) {
+          api.getUser(selectedUserId).then(setSelectedUser).catch(() => setSelectedUser(null));
+        }
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al actualizar rol';
@@ -382,7 +508,6 @@ export const Admin = () => {
       setAccessErrors({
         userId: fieldErrors.userId?.[0],
         courseId: fieldErrors.courseId?.[0],
-        accessLevel: fieldErrors.accessLevel?.[0],
       });
       return;
     }
@@ -391,16 +516,55 @@ export const Admin = () => {
       .grantAccess(result.data.courseId, {
         userId: result.data.userId,
         courseId: result.data.courseId,
-        accessLevel: result.data.accessLevel as AccessLevel,
       })
       .then(() => {
-        setAccessForm({ userId: '', courseId: '', accessLevel: 'READ' });
+        setAccessForm({ userId: selectedUserId, courseId: '' });
         showSuccess('Acceso concedido');
+        if (selectedUserId) {
+          api.getUserAccesses(selectedUserId).then(setUserAccesses).catch(() => setUserAccesses([]));
+        }
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Error al conceder acceso';
         setAccessErrors({ courseId: message });
       });
+  };
+
+  const handleRevokeAccess = (courseId: string) => {
+    if (!selectedUserId) return;
+    api
+      .revokeAccess(selectedUserId, courseId)
+      .then(() => {
+        setUserAccesses((prev) => prev.filter((a) => a.courseId !== courseId));
+        showSuccess('Acceso revocado');
+      })
+      .catch(() => showSuccess('Error al revocar acceso'));
+  };
+
+  const startEditCourse = (c: Course) => {
+    setEditingCourseId(c.id);
+    setCourseForm({ name: c.name, description: c.description ?? '' });
+  };
+
+  const startEditModule = (m: CourseModule) => {
+    setModuleCourse(m.courseId);
+    setEditingModuleId(m.id);
+    setModuleForm({
+      title: m.title,
+      description: m.description ?? '',
+      orderIndex: m.orderIndex,
+    });
+  };
+
+  const startEditSection = (s: Section) => {
+    setSectionModule(s.moduleId);
+    setEditingSectionId(s.id);
+    setSectionForm({
+      title: s.title,
+      description: s.description ?? '',
+      orderIndex: s.orderIndex,
+      markdownContent: s.markdownContent ?? '',
+    });
   };
 
   const handleDeleteCourse = (courseId: string) => {
@@ -483,18 +647,6 @@ export const Admin = () => {
 
   return (
     <Box>
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        aria-label="Pestañas de administración"
-      >
-        {TABS.map((t) => (
-          <Tab key={t} label={t.charAt(0).toUpperCase() + t.slice(1)} />
-        ))}
-      </Tabs>
-
       {success && (
         <Typography color="success.main" sx={{ mt: 2 }}>
           {success}
@@ -505,9 +657,34 @@ export const Admin = () => {
         {activeTab === 0 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
+              Dashboard
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                <Typography color="text.secondary" variant="body2">
+                  Cursos que administro
+                </Typography>
+                <Typography variant="h3">{dashboard.courses}</Typography>
+              </Paper>
+              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                <Typography color="text.secondary" variant="body2">
+                  Usuarios que administro
+                </Typography>
+                <Typography variant="h3">{dashboard.users}</Typography>
+              </Paper>
+            </Box>
+          </Stack>
+        )}
+
+        {activeTab === 1 && (
+          <Stack spacing={3}>
+            <Typography variant="h5" component="h2">
               Cursos
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingCourseId ? 'Editar curso' : 'Crear curso'}
+              </Typography>
               <FormField
                 label="Nombre"
                 value={courseForm.name}
@@ -521,8 +698,21 @@ export const Admin = () => {
                 fieldError={courseErrors.description}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear curso
+                {editingCourseId ? 'Guardar cambios' : 'Crear curso'}
               </Button>
+              {editingCourseId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                    sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingCourseId(null);
+                    setCourseForm({ name: '', description: '' });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingCourses ? (
               <Typography color="text.secondary">Cargando cursos...</Typography>
@@ -532,9 +722,12 @@ export const Admin = () => {
                   <ListItem
                     key={course.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteCourse(course.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditCourse(course)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteCourse(course.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={course.name} secondary={course.description ?? ''} />
@@ -545,13 +738,16 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 1 && (
+        {activeTab === 2 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Módulos
             </Typography>
             {renderCourseSelect(moduleCourse, setModuleCourse)}
             <Box component="form" onSubmit={submitModule} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingModuleId ? 'Editar módulo' : 'Crear módulo'}
+              </Typography>
               <FormField
                 label="Título"
                 value={moduleForm.title}
@@ -577,8 +773,21 @@ export const Admin = () => {
                 fieldError={moduleErrors.orderIndex}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear módulo
+                {editingModuleId ? 'Guardar cambios' : 'Crear módulo'}
               </Button>
+              {editingModuleId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingModuleId(null);
+                    setModuleForm({ title: '', description: '', orderIndex: undefined });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingModules ? (
               <Typography color="text.secondary">Cargando módulos...</Typography>
@@ -588,9 +797,12 @@ export const Admin = () => {
                   <ListItem
                     key={module.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteModule(module.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditModule(module)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteModule(module.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={module.title} />
@@ -601,7 +813,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 2 && (
+        {activeTab === 3 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Secciones
@@ -609,6 +821,9 @@ export const Admin = () => {
             {renderCourseSelect(sectionCourse, setSectionCourse)}
             {renderModuleSelect(sectionModule, setSectionModule)}
             <Box component="form" onSubmit={submitSection} noValidate>
+              <Typography variant="h6" component="h3">
+                {editingSectionId ? 'Editar sección' : 'Crear sección'}
+              </Typography>
               <FormField
                 label="Título"
                 value={sectionForm.title}
@@ -644,8 +859,21 @@ export const Admin = () => {
                 fieldError={sectionErrors.markdownContent}
               />
               <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Crear sección
+                {editingSectionId ? 'Guardar cambios' : 'Crear sección'}
               </Button>
+              {editingSectionId && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    setEditingSectionId(null);
+                    setSectionForm({ title: '', description: '', orderIndex: undefined, markdownContent: '' });
+                  }}
+                >
+                  Cancelar
+                </Button>
+              )}
             </Box>
             {loadingSections ? (
               <Typography color="text.secondary">Cargando secciones...</Typography>
@@ -655,9 +883,12 @@ export const Admin = () => {
                   <ListItem
                     key={section.id}
                     secondaryAction={
-                      <Button color="error" onClick={() => handleDeleteSection(section.id)}>
-                        Eliminar
-                      </Button>
+                      <>
+                        <Button onClick={() => startEditSection(section)}>Editar</Button>
+                        <Button color="error" onClick={() => handleDeleteSection(section.id)}>
+                          Eliminar
+                        </Button>
+                      </>
                     }
                   >
                     <ListItemText primary={section.title} />
@@ -668,7 +899,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 3 && (
+        {activeTab === 4 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Subir video
@@ -729,20 +960,32 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.durationCounts}
               />
-              <FormField
-                label="Pasos (separados por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.steps}
-                onChange={(event) => setVideoForm((f) => ({ ...f, steps: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, steps: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Pasos" placeholder="Escribe y presiona Enter" />}
               />
-              <FormField
-                label="Influencias (separadas por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.influences}
-                onChange={(event) => setVideoForm((f) => ({ ...f, influences: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, influences: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Influencias" placeholder="Escribe y presiona Enter" />}
               />
-              <FormField
-                label="Tags (separados por coma)"
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
                 value={videoForm.tags}
-                onChange={(event) => setVideoForm((f) => ({ ...f, tags: event.target.value }))}
+                onChange={(_event, value) => setVideoForm((f) => ({ ...f, tags: value as string[] }))}
+                filterSelectedOptions
+                renderInput={(params) => <TextField {...params} label="Tags" placeholder="Escribe y presiona Enter" />}
               />
               <Box sx={{ my: 2 }}>
                 <Typography variant="body2" sx={{ mb: 1 }}>
@@ -763,36 +1006,22 @@ export const Admin = () => {
                 Subir video
               </Button>
             </Box>
-          </Stack>
-        )}
-
-        {activeTab === 4 && (
-          <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
-              Cambiar rol
-            </Typography>
-            <Box component="form" onSubmit={submitRole} noValidate>
+            <Divider />
+            <Box component="form" onSubmit={submitLink} noValidate>
               <FormField
-                label="ID de usuario (UUID)"
-                value={roleForm.userId}
-                onChange={(event) => setRoleForm((f) => ({ ...f, userId: event.target.value }))}
-                fieldError={roleErrors.userId}
+                label="URL del video"
+                placeholder="https://..."
+                value={videoLink}
+                onChange={(event) => setVideoLink(event.target.value)}
+                fieldError={videoLinkError ?? undefined}
               />
-              <FormField
-                select
-                label="Nuevo rol"
-                value={roleForm.role}
-                onChange={(event) =>
-                  setRoleForm((f) => ({ ...f, role: event.target.value as Role }))
-                }
-                fieldError={roleErrors.role}
-              >
-                <MenuItem value="STUDENT">Estudiante</MenuItem>
-                <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
-                <MenuItem value="ADMIN">Admin</MenuItem>
-              </FormField>
-              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Actualizar rol
+              {videoLinkError && (
+                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+                  {videoLinkError}
+                </Typography>
+              )}
+              <Button type="submit" variant="outlined" fullWidth sx={{ mt: 2 }}>
+                Guardar enlace
               </Button>
             </Box>
           </Stack>
@@ -801,35 +1030,91 @@ export const Admin = () => {
         {activeTab === 5 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
-              Conceder acceso
+              Mantenedor de usuarios
             </Typography>
-            <Box component="form" onSubmit={submitAccess} noValidate>
-              <FormField
-                label="ID de usuario (UUID)"
-                value={accessForm.userId}
-                onChange={(event) => setAccessForm((f) => ({ ...f, userId: event.target.value }))}
-                fieldError={accessErrors.userId}
-              />
-              {renderCourseSelect(accessForm.courseId, (value) =>
-                setAccessForm((f) => ({ ...f, courseId: value }))
-              )}
-              <FormField
-                select
-                label="Nivel de acceso"
-                value={accessForm.accessLevel}
-                onChange={(event) =>
-                  setAccessForm((f) => ({ ...f, accessLevel: event.target.value as AccessLevel }))
-                }
-                fieldError={accessErrors.accessLevel}
-              >
-                <MenuItem value="READ">Lectura</MenuItem>
-                <MenuItem value="WRITE">Escritura</MenuItem>
-                <MenuItem value="MAINTAIN">Mantenimiento</MenuItem>
-              </FormField>
-              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                Conceder acceso
-              </Button>
-            </Box>
+            <UserAutocomplete
+              value={selectedUserId}
+              onChange={(userId) => {
+                setSelectedUserId(userId);
+                setRoleForm((f) => ({ ...f, userId }));
+                setAccessForm((f) => ({ ...f, userId }));
+              }}
+              label="Buscar usuario"
+            />
+            {selectedUser && (
+              <Paper sx={{ p: 2, borderRadius: 2 }}>
+                <Typography variant="h6" component="h3" gutterBottom>
+                  Datos del usuario
+                </Typography>
+                <Typography><strong>Nombre:</strong> {selectedUser.firstName} {selectedUser.lastName}</Typography>
+                <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
+                <Typography><strong>Usuario:</strong> {selectedUser.username}</Typography>
+                <Typography><strong>Rol:</strong> {selectedUser.role}</Typography>
+              </Paper>
+            )}
+            {selectedUserId && (
+              <>
+                <Box component="form" onSubmit={submitRole} noValidate>
+                  <Typography variant="h6" component="h3">
+                    Cambiar rol
+                  </Typography>
+                  <FormField
+                    select
+                    label="Nuevo rol"
+                    value={roleForm.role}
+                    onChange={(event) =>
+                      setRoleForm((f) => ({ ...f, role: event.target.value as Role }))
+                    }
+                    fieldError={roleErrors.role}
+                  >
+                    <MenuItem value="STUDENT">Estudiante</MenuItem>
+                    <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
+                    <MenuItem value="ADMIN">Admin</MenuItem>
+                  </FormField>
+                  <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                    Actualizar rol
+                  </Button>
+                </Box>
+                <Box>
+                  <Typography variant="h6" component="h3" gutterBottom>
+                    Cursos con acceso
+                  </Typography>
+                  <List>
+                    {userAccesses.length === 0 && (
+                      <ListItem>
+                        <ListItemText primary="Sin accesos" />
+                      </ListItem>
+                    )}
+                    {userAccesses.map((access) => (
+                      <ListItem
+                        key={access.courseId}
+                        secondaryAction={
+                          <IconButton edge="end" onClick={() => handleRevokeAccess(access.courseId)} color="error">
+                            <CloseIcon />
+                          </IconButton>
+                        }
+                      >
+                        <ListItemText
+                          primary={access.course?.name ?? access.courseId}
+                          secondary={access.accessLevel}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+                <Box component="form" onSubmit={submitAccess} noValidate>
+                  <Typography variant="h6" component="h3">
+                    Conceder acceso
+                  </Typography>
+                  {renderCourseSelect(accessForm.courseId, (value) =>
+                    setAccessForm((f) => ({ ...f, courseId: value }))
+                  )}
+                  <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
+                    Conceder acceso
+                  </Button>
+                </Box>
+              </>
+            )}
           </Stack>
         )}
       </Box>

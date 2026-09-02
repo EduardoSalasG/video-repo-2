@@ -1,4 +1,4 @@
-import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess } from '../../domain/entities';
+import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
 import { AccessLevel, Difficulty, PrimaryStyle, Role, VideoType } from '../../domain/enums';
 
 export interface CreateUserInput {
@@ -78,6 +78,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByUsername(username: string): Promise<User | null>;
+  search(query: string): Promise<User[]>;
   create(input: CreateUserInput, passwordHash: string): Promise<User>;
   updateRole(id: string, role: Role): Promise<User>;
 }
@@ -102,6 +103,7 @@ export interface IModuleRepository {
 export interface ISectionRepository {
   findById(id: string): Promise<Section | null>;
   findByModuleId(moduleId: string): Promise<Section[]>;
+  findByVideoFileId(videoFileId: string): Promise<Section | null>;
   create(input: CreateSectionInput): Promise<Section>;
   update(id: string, input: UpdateSectionInput): Promise<Section>;
   delete(id: string): Promise<void>;
@@ -110,6 +112,7 @@ export interface ISectionRepository {
 
 export interface IVideoFileRepository {
   create(file: UploadedFile): Promise<VideoFile>;
+  createFromUrl(url: string): Promise<VideoFile>;
   findById(id: string): Promise<VideoFile | null>;
   delete(id: string): Promise<void>;
 }
@@ -131,6 +134,14 @@ export interface ICourseAccessRepository {
   findByUserAndCourse(userId: string, courseId: string): Promise<CourseAccess | null>;
   grant(userId: string, courseId: string, level: AccessLevel): Promise<CourseAccess>;
   findByUser(userId: string): Promise<CourseAccess[]>;
+  findByCourse(courseId: string): Promise<CourseAccess[]>;
+  revoke(userId: string, courseId: string): Promise<void>;
+}
+
+export interface IProgressRepository {
+  findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
+  findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;
+  markCompleted(userId: string, sectionId: string): Promise<UserSectionProgress>;
 }
 
 export interface IVideoStorage {

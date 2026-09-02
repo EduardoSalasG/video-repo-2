@@ -12,9 +12,10 @@ El backend se empaqueta en una imagen Docker y se despliega mediante GitHub Acti
 4. `docker build -f apps/backend/Dockerfile`
 5. Push a `ghcr.io/eduardosalasg/dance-platform-backend`
 6. Conexión SSH a la VM de Oracle
-7. `docker compose pull backend` y `docker compose up -d --force-recreate --remove-orphans backend`
-8. Health check en `http://127.0.0.1:3000/health` y validación anónima de `/auth/me` (401).
-9. Recarga de Nginx y validación HTTPS.
+7. Se copia `apps/backend/docker-compose.yml` a `/opt/apps/video-repo/docker-compose.yml`
+8. `docker compose pull backend` y `docker compose up -d --force-recreate --remove-orphans backend`
+9. Health check en `http://127.0.0.1:3000/api/health` y validación anónima de `/api/auth/me` (401).
+10. Recarga de Nginx y validación HTTPS.
 
 ### Base de datos
 
@@ -25,11 +26,54 @@ El backend ejecuta `prisma migrate deploy` y, si la base de datos está vacía, 
 ```env
 DATABASE_URL=postgresql://...:5432/dance_platform
 JWT_SECRET=<seguro>
-CORS_ORIGIN=https://app.dance-platform.eduardosalasg.dev
+CORS_ORIGIN=https://<frontend-domain>
 VIDEO_STORAGE=local
-VIDEO_STORAGE_LOCAL_PATH=/app/uploads
+VIDEO_STORAGE_LOCAL_PATH=/data/video-repo
 PORT=3000
+NODE_ENV=production
+COOKIE_SAMESITE=none
+COOKIE_SECURE=true
 ```
+
+### Volumen de videos
+
+El `docker-compose.yml` monta el host en el contenedor:
+
+```yaml
+volumes:
+  - /mnt/video-repo:/data/video-repo
+```
+
+Los archivos se guardan con `storageKey` relativo, por ejemplo `videos/<uuid>.mp4`.
+
+### Nginx (sugerencia)
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name api.video-repo.eduardosalasg.dev;
+
+    # SSL config...
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /_protected_videos/ {
+        internal;
+        alias /mnt/video-repo/;
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Credentials true always;
+    }
+}
+```
+
+El endpoint `GET /api/videos/:id/stream` devuelve `X-Accel-Redirect: /_protected_videos/videos/<uuid>.mp4` y Nginx sirve el archivo directamente.
 
 ## Frontend (Netlify)
 
@@ -54,7 +98,7 @@ El archivo `netlify.toml` en raíz define:
 
 - `NODE_VERSION=22`
 - `PNPM_VERSION=10.12.1`
-- `VITE_API_URL=https://api.dance-platform.eduardosalasg.dev`
+- `VITE_API_URL=https://api.video-repo.eduardosalasg.dev/api`
 
 ## Infraestructura local
 
@@ -65,3 +109,5 @@ pnpm stack:up
 ```
 
 El backend se puede iniciar con `pnpm dev:backend` o `pnpm --filter @dance-platform/backend start:dev`.
+
+La URL de la API local es `http://localhost:3000/api`.

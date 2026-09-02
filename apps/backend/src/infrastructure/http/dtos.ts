@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsInt, IsArray, IsUUID } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsInt, IsArray, IsUUID, ValidateNested, IsUrl } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
 
@@ -70,9 +70,6 @@ export class CreateModuleDto {
   @IsOptional()
   @Type(() => Number)
   orderIndex?: number;
-
-  @IsUUID()
-  courseId: string;
 }
 
 export class UpdateModuleDto {
@@ -108,9 +105,6 @@ export class CreateSectionDto {
   @IsString()
   @IsOptional()
   markdownContent?: string;
-
-  @IsUUID()
-  moduleId: string;
 }
 
 export class UpdateSectionDto {
@@ -160,6 +154,15 @@ export class CreateVideoMetadataDto {
   tags: string[];
 }
 
+export class LinkVideoDto {
+  @IsUrl()
+  url: string;
+
+  @ValidateNested()
+  @Type(() => CreateVideoMetadataDto)
+  metadata: CreateVideoMetadataDto;
+}
+
 export class GrantCourseAccessDto {
   @IsUUID()
   userId: string;
@@ -167,8 +170,9 @@ export class GrantCourseAccessDto {
   @IsUUID()
   courseId: string;
 
+  @IsOptional()
   @IsEnum(AccessLevel)
-  accessLevel: AccessLevel;
+  accessLevel?: AccessLevel;
 }
 
 export class UpdateUserRoleDto {
