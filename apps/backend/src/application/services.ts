@@ -183,6 +183,8 @@ export class CourseAccessService {
   ) {}
 
   async requireAccess(userId: string, courseId: string, minimum: AccessLevel): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (user?.role === Role.ADMIN) return;
     const granted = await this.access.findByUserAndCourse(userId, courseId);
     if (!granted || !this.satisfies(granted.accessLevel, minimum)) {
       throw new UnauthorizedException('Insufficient access to course');
