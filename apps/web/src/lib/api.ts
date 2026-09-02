@@ -140,6 +140,8 @@ export const api = {
   getUserAccesses: (id: string) => request<CourseAccess[]>('GET', `/users/${id}/accesses`),
   updateUserRole: (id: string, role: string) =>
     request<User>('PATCH', `/users/${id}/role`, { role }),
+  changePassword: (id: string, currentPassword: string, newPassword: string) =>
+    request<User>('PATCH', `/users/${id}/password`, { currentPassword, newPassword }),
   revokeAccess: (userId: string, courseId: string) =>
     request<void>('DELETE', `/users/${userId}/accesses/${courseId}`),
 

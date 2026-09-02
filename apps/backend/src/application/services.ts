@@ -333,6 +333,7 @@ export class VideoService {
 export class UserService {
   constructor(
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
+    @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
   ) {}
 
   async getById(id: string): Promise<SafeUser> {
@@ -349,6 +350,22 @@ export class UserService {
   async search(query: string): Promise<SafeUser[]> {
     const users = await this.users.search(query);
     return users.map(stripPassword);
+  }
+
+  async changePassword(
+    id: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<SafeUser> {
+    const user = await this.users.findById(id);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const valid = await this.hasher.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+
+    const passwordHash = await this.hasher.hash(newPassword);
+    const updated = await this.users.updatePassword(id, passwordHash);
+    return stripPassword(updated);
   }
 }
 
