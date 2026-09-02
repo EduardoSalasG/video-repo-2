@@ -74,6 +74,11 @@ jobs:
           echo "${{ secrets.ORACLE_SSH_KEY }}" > ~/.ssh/oracle_deploy_key
           chmod 600 ~/.ssh/oracle_deploy_key
           ssh-keyscan -H "${{ secrets.ORACLE_HOST }}" >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<SSHCONF
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 3
+          SSHCONF
 
       - name: Copy docker-compose.yml to server
         run: |
@@ -99,15 +104,19 @@ jobs:
               docker compose pull backend
               docker compose up -d --force-recreate --remove-orphans backend
 
-              for attempt in $(seq 1 30); do
-                if curl -fsS http://127.0.0.1:3001/api/health > /dev/null; then
+              echo "--- backend startup logs ---"
+              docker compose logs --tail=50 backend || true
+
+              for attempt in $(seq 1 60); do
+                echo "Health check attempt $attempt/60 ..."
+                if curl -fsS --max-time 5 --connect-timeout 2 http://127.0.0.1:3001/api/health > /dev/null; then
                   break
                 fi
 
-                if [ "$attempt" -eq 30 ]; then
+                if [ "$attempt" -eq 60 ]; then
                   echo "Backend failed health check after deploy."
                   docker compose ps
-                  docker logs --tail=200 backend || true
+                  docker compose logs --tail=100 backend || true
                   exit 1
                 fi
 
@@ -116,11 +125,11 @@ jobs:
 
               # A health response alone can come from an older container image.
               # This protected route must exist and reject the anonymous probe.
-              route_status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/api/auth/me)
+              route_status=$(curl -s -o /dev/null --max-time 5 --connect-timeout 2 -w "%{http_code}" http://127.0.0.1:3001/api/auth/me)
               if [ "$route_status" != "401" ]; then
                 echo "Expected /api/auth/me to return 401 after deploy; received $route_status."
                 docker compose ps
-                docker logs --tail=200 backend || true
+                docker compose logs --tail=100 backend || true
                 exit 1
               fi
 
