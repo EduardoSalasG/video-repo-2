@@ -15,7 +15,7 @@ permissions:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/dance-platform-backend
-  CONTAINER_DIR: /opt/apps/video-repo
+  CONTAINER_DIR: /home/${{ secrets.ORACLE_USER }}/video-repo
   PUBLIC_API_HOST: api.video-repo.eduardosalasg.dev
 
 jobs:
