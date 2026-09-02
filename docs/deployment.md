@@ -13,10 +13,11 @@ El backend se empaqueta en una imagen Docker y se despliega mediante GitHub Acti
 5. `docker build -f apps/backend/Dockerfile`
 6. Push a `ghcr.io/eduardosalasg/dance-platform-backend`
 7. Conexión SSH a la VM de Oracle
-8. `cd /opt/apps/video-repo` y `docker compose pull backend`
-9. `docker compose up -d --force-recreate --remove-orphans backend`
-10. Health check en `http://127.0.0.1:3000/api/health` y validación anónima de `/api/auth/me` (401).
-11. Recarga de Nginx y validación HTTPS.
+8. Se copia `apps/backend/docker-compose.yml` a `/opt/apps/video-repo/docker-compose.yml`
+9. `cd /opt/apps/video-repo` y `docker compose pull backend`
+10. `docker compose up -d --force-recreate --remove-orphans backend`
+11. Health check en `http://127.0.0.1:3001/api/health` y validación anónima de `/api/auth/me` (401).
+12. Recarga de Nginx y validación HTTPS.
 
 ### Base de datos
 
