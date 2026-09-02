@@ -11,7 +11,9 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const rawCors = process.env.CORS_ORIGIN;
-  const allowedOrigins = rawCors ? rawCors.split(',').map((o) => o.trim()) : [];
+  const allowedOrigins = rawCors
+    ? rawCors.split(',').map((o) => o.trim().replace(/\/$/, ''))
+    : [];
   const allowAll = allowedOrigins.includes('*') || allowedOrigins.length === 0;
 
   app.enableCors({
