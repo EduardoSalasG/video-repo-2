@@ -58,18 +58,15 @@ jobs:
             -u "${{ github.actor }}" \
             --password-stdin
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
-          docker build \
+          docker buildx build \
+            --provenance=false \
+            --push \
             -f apps/backend/Dockerfile \
             -t $IMAGE_NAME:${{ github.sha }} \
             -t $IMAGE_NAME:latest \
             .
-
-      - name: Push Docker image
-        run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest
 
       - name: Setup SSH
         run: |
