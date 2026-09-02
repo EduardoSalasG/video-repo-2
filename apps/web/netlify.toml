@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "22"
   PNPM_VERSION = "10.12.1"
+  VITE_API_URL = "https://api.video-repo.eduardosalasg.dev/api"
 
 [[redirects]]
   from = "/*"
