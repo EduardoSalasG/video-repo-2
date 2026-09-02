@@ -18,6 +18,7 @@ async function bootstrap(): Promise<void> {
 
   app.enableCors({
     origin: (origin, callback) => {
+      console.log(`[CORS] origin=${origin} allowed=${allowedOrigins.join(',')} allowAll=${allowAll}`);
       if (!origin || allowAll || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
