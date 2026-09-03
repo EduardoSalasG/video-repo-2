@@ -1,5 +1,5 @@
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
-import { AccessLevel, Difficulty, PrimaryStyle, Role, VideoType } from '../../domain/enums';
+import { AccessLevel, Difficulty, PrimaryStyle, Role, VideoType, LabelType } from '../../domain/enums';
 
 export interface CreateUserInput {
   email: string;
@@ -125,10 +125,22 @@ export interface VideoSearchResult {
   metadata: VideoMetadata;
 }
 
+export interface VideoSearchOptions {
+  courseIds?: string[];
+  style?: PrimaryStyle;
+  tagNames?: string[];
+  stepNames?: string[];
+}
+
 export interface IVideoMetadataRepository {
   create(input: CreateVideoMetadataInput): Promise<VideoMetadata>;
   findBySectionId(sectionId: string): Promise<VideoMetadata | null>;
-  findByTags(tags: string[]): Promise<VideoSearchResult[]>;
+  search(options: VideoSearchOptions): Promise<VideoSearchResult[]>;
+}
+
+export interface IVideoLabelRepository {
+  findByType(type: LabelType, query?: string): Promise<string[]>;
+  ensureMany(type: LabelType, names: string[]): Promise<void>;
 }
 
 export interface ICourseAccessRepository {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
@@ -8,12 +8,15 @@ import Stack from '@mui/material/Stack';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import MenuItem from '@mui/material/MenuItem';
 import SearchIcon from '@mui/icons-material/Search';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import type { VideoSearchResult } from '../../types';
+import type { Course, VideoSearchResult } from '../../types';
+
+const PRIMARY_STYLES = ['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA'];
 
 const resultVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -23,24 +26,30 @@ const resultVariants = {
 export const Search = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [style, setStyle] = useState('');
+  const [courseId, setCourseId] = useState('');
+  const [courses, setCourses] = useState<Course[]>([]);
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    api
+      .getCourses()
+      .then(setCourses)
+      .catch(() => setCourses([]));
+  }, []);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    const tags = query
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean);
-    if (tags.length === 0) {
-      setError('Escribe al menos un tag');
-      return;
-    }
     setLoading(true);
     try {
-      const data = await api.searchVideos(tags);
+      const data = await api.searchVideos({
+        q: query.trim() || undefined,
+        style: style || undefined,
+        courseId: courseId || undefined,
+      });
       setResults(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al buscar';
@@ -67,15 +76,43 @@ export const Search = () => {
             Buscar videos
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Encuentra contenido por tags, estilo o dificultad.
+            Encuentra contenido por tags, pasos, estilo o curso.
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate>
-            <FormField
-              label="Tags (separados por coma)"
-              placeholder="salsa, on2, principiante"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
+            <Stack spacing={2}>
+              <FormField
+                label="Buscar en tags y pasos"
+                placeholder="salsa, suzy q, 1 2 3"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <FormField
+                select
+                label="Estilo"
+                value={style}
+                onChange={(event) => setStyle(event.target.value)}
+              >
+                <MenuItem value="">Todos los estilos</MenuItem>
+                {PRIMARY_STYLES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {s}
+                  </MenuItem>
+                ))}
+              </FormField>
+              <FormField
+                select
+                label="Curso"
+                value={courseId}
+                onChange={(event) => setCourseId(event.target.value)}
+              >
+                <MenuItem value="">Todos mis cursos</MenuItem>
+                {courses.map((course) => (
+                  <MenuItem key={course.id} value={course.id}>
+                    {course.name}
+                  </MenuItem>
+                ))}
+              </FormField>
+            </Stack>
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
@@ -132,9 +169,9 @@ export const Search = () => {
         </Stack>
       )}
 
-      {!loading && results.length === 0 && query && (
+      {!loading && results.length === 0 && (query || style || courseId) && (
         <Typography color="text.secondary" align="center" sx={{ mt: 4 }}>
-          No se encontraron videos con esos tags.
+          No se encontraron videos.
         </Typography>
       )}
     </Container>

@@ -185,9 +185,19 @@ export const api = {
     return Promise.resolve([] as CourseAccess[]);
   },
 
-  searchVideos: (tags: string[]) =>
-    request<{ results: VideoSearchResult[] }>(
-      'GET',
-      `/videos/search?tags=${encodeURIComponent(tags.join(','))}`,
-    ).then((data) => data.results),
+  searchVideos: (params: { q?: string; style?: string; courseId?: string }) => {
+    const query = new URLSearchParams();
+    if (params.q) query.set('q', params.q);
+    if (params.style) query.set('style', params.style);
+    if (params.courseId) query.set('courseId', params.courseId);
+    return request<{ results: VideoSearchResult[] }>('GET', `/videos/search?${query.toString()}`).then(
+      (data) => data.results,
+    );
+  },
+  getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string) => {
+    const query = new URLSearchParams();
+    query.set('type', type);
+    if (q) query.set('q', q);
+    return request<{ labels: string[] }>('GET', `/videos/labels?${query.toString()}`).then((data) => data.labels);
+  },
 };
