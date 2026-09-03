@@ -39,6 +39,12 @@ enum VideoType {
   CHOREOGRAPHY
 }
 
+enum LabelType {
+  STEP
+  INFLUENCE
+  TAG
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -163,4 +169,15 @@ model UserSectionProgress {
 
   @@unique([userId, sectionId])
   @@map("user_section_progress")
+}
+
+model VideoLabel {
+  id        String    @id @default(uuid())
+  name      String
+  type      LabelType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([name, type])
+  @@map("video_labels")
 }
