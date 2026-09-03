@@ -108,16 +108,48 @@ export const api = {
     sectionId: string,
     file: File,
     metadata: Omit<VideoMetadata, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>,
+    onProgress?: (percent: number) => void,
   ) => {
     const formData = new FormData();
     formData.append('video', file);
     formData.append('metadata', JSON.stringify(metadata));
-    return request<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>(
-      'POST',
-      `/sections/${sectionId}/videos`,
-      formData,
-      true,
-    );
+    return new Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_URL}/sections/${sectionId}/videos`);
+      xhr.withCredentials = true;
+
+      if (onProgress) {
+        xhr.upload.addEventListener('loadstart', () => onProgress(0));
+        xhr.upload.addEventListener('progress', (event) => {
+          if (!event.lengthComputable) return;
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        });
+      }
+
+      xhr.addEventListener('load', () => {
+        const response = (() => {
+          try {
+            return JSON.parse(xhr.responseText) as unknown;
+          } catch {
+            return null;
+          }
+        })();
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(response as { videoFile: VideoFile; videoMetadata: VideoMetadata });
+        } else if (xhr.status === 401) {
+          reject(new ApiError(401, response, 'No autenticado'));
+        } else {
+          const data = (response as { message?: string | string[] } | null) ?? null;
+          const rawMessage = data?.message;
+          const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage ?? `HTTP ${xhr.status}`;
+          reject(new ApiError(xhr.status, data, message));
+        }
+      });
+
+      xhr.addEventListener('error', () => reject(new ApiError(0, null, 'Error de red')));
+      xhr.addEventListener('abort', () => reject(new ApiError(0, null, 'Subida cancelada')));
+      xhr.send(formData);
+    });
   },
 
   attachVideoLink: (

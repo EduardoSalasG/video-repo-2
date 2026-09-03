@@ -12,6 +12,8 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
@@ -21,6 +23,17 @@ import { api } from '../../lib/api';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
 const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
+
+const getUploadMessage = (percent: number): string => {
+  if (percent < 25) return 'Subiendo video...';
+  if (percent < 50) return '25%, ya falta menos';
+  if (percent < 75) return 'Ya pasamos la mitad';
+  if (percent < 80) return 'Queda un poco más, no desesperes';
+  if (percent < 90) return 'Bien, superamos el 80%';
+  if (percent < 99) return 'Ya queda un 10% solamente';
+  if (percent < 100) return 'Llegando al 99%';
+  return 'Video cargado';
+};
 
 const courseSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
@@ -122,6 +135,10 @@ export const Admin = () => {
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'info' | 'success' | 'error'>('info');
   const [videoLink, setVideoLink] = useState('');
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
@@ -370,8 +387,9 @@ export const Admin = () => {
       });
   };
 
-  const submitVideo = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitVideo = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (uploading) return;
     if (!videoSection) {
       setVideoErrors({ ...videoErrors, difficulty: 'Selecciona una sección' });
       return;
@@ -392,36 +410,52 @@ export const Admin = () => {
       return;
     }
 
-    api
-      .uploadVideo(videoSection, videoFile, {
-        difficulty: result.data.difficulty as Difficulty,
-        primaryStyle: result.data.primaryStyle as PrimaryStyle,
-        videoType: result.data.videoType as VideoType,
-        durationCounts: result.data.durationCounts,
-        steps: result.data.steps,
-        influences: result.data.influences,
-        tags: result.data.tags,
-      })
-      .then(() => {
-        setVideoFile(null);
-        setVideoForm({
-          difficulty: 'BEGINNER',
-          primaryStyle: 'MAMBO_ON2',
-          videoType: 'STEP',
-          durationCounts: 0,
-          steps: [],
-          influences: [],
-          tags: [],
-        });
-        setVideoCourse('');
-        setVideoModule('');
-        setVideoSection('');
-        showSuccess('Video subido');
-      })
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Error al subir video';
-        setVideoErrors({ difficulty: message });
+    setUploading(true);
+    setSnackbarSeverity('info');
+    setSnackbarMessage(getUploadMessage(0));
+    setSnackbarOpen(true);
+    setVideoErrors({});
+
+    try {
+      await api.uploadVideo(
+        videoSection,
+        videoFile,
+        {
+          difficulty: result.data.difficulty as Difficulty,
+          primaryStyle: result.data.primaryStyle as PrimaryStyle,
+          videoType: result.data.videoType as VideoType,
+          durationCounts: result.data.durationCounts,
+          steps: result.data.steps,
+          influences: result.data.influences,
+          tags: result.data.tags,
+        },
+        (percent) => {
+          setSnackbarMessage(getUploadMessage(percent));
+        },
+      );
+      setVideoFile(null);
+      setVideoForm({
+        difficulty: 'BEGINNER',
+        primaryStyle: 'MAMBO_ON2',
+        videoType: 'STEP',
+        durationCounts: 0,
+        steps: [],
+        influences: [],
+        tags: [],
       });
+      setVideoCourse('');
+      setVideoModule('');
+      setVideoSection('');
+      setSnackbarSeverity('success');
+      setSnackbarMessage('Video cargado');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al subir video';
+      setSnackbarSeverity('error');
+      setSnackbarMessage(message);
+      setVideoErrors({ difficulty: message });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const submitLink = (event: React.FormEvent<HTMLFormElement>) => {
@@ -662,6 +696,21 @@ export const Admin = () => {
           {success}
         </Typography>
       )}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={snackbarSeverity === 'success' ? 6000 : null}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
       <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
@@ -1028,6 +1077,7 @@ export const Admin = () => {
                 <input
                   type="file"
                   accept="video/*"
+                  disabled={uploading}
                   onChange={(event) => setVideoFile(event.target.files?.[0] ?? null)}
                 />
               </Box>
@@ -1036,8 +1086,8 @@ export const Admin = () => {
                   {videoErrors.difficulty}
                 </Typography>
               )}
-              <Button type="submit" variant="contained" fullWidth>
-                Subir video
+              <Button type="submit" variant="contained" fullWidth disabled={uploading}>
+                {uploading ? 'Subiendo...' : 'Subir video'}
               </Button>
             </Box>
             <Divider />
