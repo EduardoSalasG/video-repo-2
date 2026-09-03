@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../../domain/entities';
-import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
+import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType, LabelType } from '../../domain/enums';
 import {
   IUserRepository,
   ICourseRepository,
@@ -10,6 +10,8 @@ import {
   IVideoFileRepository,
   IVideoMetadataRepository,
   VideoSearchResult,
+  IVideoLabelRepository,
+  VideoSearchOptions,
   ICourseAccessRepository,
   IProgressRepository,
   CreateUserInput,
@@ -324,9 +326,19 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
     });
   }
 
-  async findByTags(tags: string[]): Promise<VideoSearchResult[]> {
+  async search(options: VideoSearchOptions): Promise<VideoSearchResult[]> {
+    const where: Record<string, unknown> = {};
+    if (options.style) where.primaryStyle = options.style;
+    if (options.courseIds?.length) {
+      where.section = { module: { courseId: { in: options.courseIds } } };
+    }
+    const conditions: Record<string, unknown>[] = [];
+    if (options.tagNames?.length) conditions.push({ tags: { hasSome: options.tagNames } });
+    if (options.stepNames?.length) conditions.push({ steps: { hasSome: options.stepNames } });
+    if (conditions.length) where.OR = conditions;
+
     const rows = await this.prisma.videoMetadata.findMany({
-      where: { tags: { hasSome: tags } },
+      where,
       include: {
         section: {
           include: {
@@ -350,6 +362,31 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
         videoType: row.videoType as VideoType,
       }),
     }));
+  }
+}
+
+@Injectable()
+export class PrismaVideoLabelRepository implements IVideoLabelRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findByType(type: LabelType, query?: string): Promise<string[]> {
+    const rows = await this.prisma.videoLabel.findMany({
+      where: {
+        type,
+        ...(query && { name: { contains: query, mode: 'insensitive' } }),
+      },
+      select: { name: true },
+      orderBy: { name: 'asc' },
+      take: 100,
+    });
+    return rows.map((row) => row.name);
+  }
+
+  async ensureMany(type: LabelType, names: string[]): Promise<void> {
+    const unique = [...new Set(names.filter(Boolean))];
+    if (unique.length === 0) return;
+    const data = unique.map((name) => ({ name, type }));
+    await this.prisma.videoLabel.createMany({ data, skipDuplicates: true });
   }
 }
 

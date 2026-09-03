@@ -28,3 +28,9 @@ export enum VideoType {
   SEQUENCE = 'SEQUENCE',
   CHOREOGRAPHY = 'CHOREOGRAPHY',
 }
+
+export enum LabelType {
+  STEP = 'STEP',
+  INFLUENCE = 'INFLUENCE',
+  TAG = 'TAG',
+}

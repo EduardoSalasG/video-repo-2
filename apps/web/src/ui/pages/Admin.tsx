@@ -139,6 +139,9 @@ export const Admin = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'info' | 'success' | 'error'>('info');
+  const [stepLabels, setStepLabels] = useState<string[]>([]);
+  const [influenceLabels, setInfluenceLabels] = useState<string[]>([]);
+  const [tagLabels, setTagLabels] = useState<string[]>([]);
   const [videoLink, setVideoLink] = useState('');
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
 
@@ -252,6 +255,13 @@ export const Admin = () => {
       .catch(() => setSections([]))
       .finally(() => setLoadingSections(false));
   }, [videoModule]);
+
+  useEffect(() => {
+    if (activeTab !== 4) return;
+    api.getVideoLabels('STEP').then(setStepLabels).catch(() => setStepLabels([]));
+    api.getVideoLabels('INFLUENCE').then(setInfluenceLabels).catch(() => setInfluenceLabels([]));
+    api.getVideoLabels('TAG').then(setTagLabels).catch(() => setTagLabels([]));
+  }, [activeTab]);
 
   const submitCourse = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1022,7 +1032,7 @@ export const Admin = () => {
               <Autocomplete
                 multiple
                 freeSolo
-                options={[]}
+                options={stepLabels}
                 value={videoForm.steps}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, steps: value as string[] }))}
                 filterSelectedOptions
@@ -1039,7 +1049,7 @@ export const Admin = () => {
               <Autocomplete
                 multiple
                 freeSolo
-                options={[]}
+                options={influenceLabels}
                 value={videoForm.influences}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, influences: value as string[] }))}
                 filterSelectedOptions
@@ -1056,7 +1066,7 @@ export const Admin = () => {
               <Autocomplete
                 multiple
                 freeSolo
-                options={[]}
+                options={tagLabels}
                 value={videoForm.tags}
                 onChange={(_event, value) => setVideoForm((f) => ({ ...f, tags: value as string[] }))}
                 filterSelectedOptions

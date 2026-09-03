@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Role, AccessLevel } from '../domain/enums';
+import { Role, AccessLevel, PrimaryStyle, LabelType } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
@@ -9,6 +9,7 @@ import {
   ISectionRepository,
   IVideoFileRepository,
   IVideoMetadataRepository,
+  IVideoLabelRepository,
   ICourseAccessRepository,
   IProgressRepository,
   IVideoStorage,
@@ -268,6 +269,7 @@ export class VideoService {
     @Inject(InjectionTokens.VIDEO_STORAGE) private readonly storage: IVideoStorage,
     @Inject(InjectionTokens.VIDEO_FILE_REPOSITORY) private readonly videoFiles: IVideoFileRepository,
     @Inject(InjectionTokens.VIDEO_METADATA_REPOSITORY) private readonly videoMetadata: IVideoMetadataRepository,
+    @Inject(InjectionTokens.VIDEO_LABEL_REPOSITORY) private readonly videoLabels: IVideoLabelRepository,
     @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
     private readonly courseAccess: CourseAccessService,
   ) {}
@@ -284,6 +286,7 @@ export class VideoService {
       ...metadata,
       sectionId,
     });
+    await this.ensureLabels(metadata);
 
     return { videoFile, videoMetadata };
   }
@@ -299,8 +302,17 @@ export class VideoService {
       ...metadata,
       sectionId,
     });
+    await this.ensureLabels(metadata);
 
     return { videoFile, videoMetadata };
+  }
+
+  private async ensureLabels(metadata: CreateVideoMetadataInput): Promise<void> {
+    await Promise.all([
+      this.videoLabels.ensureMany(LabelType.STEP, metadata.steps),
+      this.videoLabels.ensureMany(LabelType.INFLUENCE, metadata.influences),
+      this.videoLabels.ensureMany(LabelType.TAG, metadata.tags),
+    ]);
   }
 
   async getSignedUrl(videoFileId: string): Promise<string> {
@@ -326,8 +338,44 @@ export class VideoService {
     return { type: 'internal', storageKey: file.storageKey, mimeType: file.mimeType };
   }
 
-  async searchByTags(tags: string[]): Promise<VideoSearchResult[]> {
-    return this.videoMetadata.findByTags(tags);
+  async getLabels(type: LabelType, query?: string): Promise<string[]> {
+    return this.videoLabels.findByType(type, query);
+  }
+
+  async search(
+    user: { userId: string; role: Role },
+    options: { q?: string; style?: PrimaryStyle; courseId?: string },
+  ): Promise<VideoSearchResult[]> {
+    const accessibleCourseIds = user.role === Role.ADMIN
+      ? undefined
+      : (await this.courseAccess.getByUser(user.userId)).map((a) => a.courseId);
+
+    if (options.courseId) {
+      if (accessibleCourseIds && !accessibleCourseIds.includes(options.courseId)) {
+        return [];
+      }
+    }
+
+    const courseIds = options.courseId ? [options.courseId] : accessibleCourseIds;
+
+    let tagNames: string[] | undefined;
+    let stepNames: string[] | undefined;
+    if (options.q) {
+      const [tags, steps] = await Promise.all([
+        this.videoLabels.findByType(LabelType.TAG, options.q),
+        this.videoLabels.findByType(LabelType.STEP, options.q),
+      ]);
+      tagNames = tags;
+      stepNames = steps;
+      if (tagNames.length === 0 && stepNames.length === 0) return [];
+    }
+
+    return this.videoMetadata.search({
+      courseIds,
+      style: options.style,
+      tagNames,
+      stepNames,
+    });
   }
 }
 

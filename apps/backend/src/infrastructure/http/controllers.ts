@@ -27,7 +27,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
 import { Course } from '../../domain/entities';
-import { Role, AccessLevel } from '../../domain/enums';
+import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
 import {
   RegisterDto,
@@ -466,26 +466,32 @@ export class HealthController {
 @ApiTags('search')
 @Controller('videos')
 export class VideoSearchController {
-  constructor(
-    private readonly videos: VideoService,
-    private readonly courseAccess: CourseAccessService,
-  ) {}
+  constructor(private readonly videos: VideoService) {}
 
   @Get('search')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
-  async search(@CurrentUser() user: AuthUser, @Query('tags') tags?: string) {
-    const tagList = tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [];
-    if (tagList.length === 0) {
-      return { results: [] };
-    }
-    const results = await this.videos.searchByTags(tagList);
-    if (user.role === Role.ADMIN) {
-      return { results };
-    }
-    const myAccess = await this.courseAccess.getByUser(user.userId);
-    const courseIds = new Set(myAccess.map((a) => a.courseId));
-    return { results: results.filter((r) => courseIds.has(r.course.id)) };
+  async search(
+    @CurrentUser() user: AuthUser,
+    @Query('q') q?: string,
+    @Query('style') style?: string,
+    @Query('courseId') courseId?: string,
+  ) {
+    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
+    const results = await this.videos.search(user, { q, style: styleEnum as PrimaryStyle | undefined, courseId });
+    return { results };
+  }
+
+  @Get('labels')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async getLabels(
+    @Query('type') type: string,
+    @Query('q') q?: string,
+  ) {
+    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.TAG;
+    const labels = await this.videos.getLabels(labelType as LabelType, q);
+    return { labels };
   }
 
   @Get(':id/stream')

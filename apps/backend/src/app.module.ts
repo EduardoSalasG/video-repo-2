@@ -13,6 +13,7 @@ import {
   PrismaSectionRepository,
   PrismaVideoFileRepository,
   PrismaVideoMetadataRepository,
+  PrismaVideoLabelRepository,
   PrismaCourseAccessRepository,
   PrismaProgressRepository,
 } from './infrastructure/persistence/repositories';
@@ -59,6 +60,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     { provide: InjectionTokens.SECTION_REPOSITORY, useClass: PrismaSectionRepository },
     { provide: InjectionTokens.VIDEO_FILE_REPOSITORY, useClass: PrismaVideoFileRepository },
     { provide: InjectionTokens.VIDEO_METADATA_REPOSITORY, useClass: PrismaVideoMetadataRepository },
+    { provide: InjectionTokens.VIDEO_LABEL_REPOSITORY, useClass: PrismaVideoLabelRepository },
     { provide: InjectionTokens.COURSE_ACCESS_REPOSITORY, useClass: PrismaCourseAccessRepository },
     { provide: InjectionTokens.PROGRESS_REPOSITORY, useClass: PrismaProgressRepository },
     PrismaService,
