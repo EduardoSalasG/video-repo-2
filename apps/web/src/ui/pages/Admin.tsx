@@ -25,15 +25,15 @@ import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, Vid
 
 const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
 
-const getUploadMessage = (percent: number): string => {
-  if (percent < 25) return 'Subiendo video...';
+const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
+  if (percent < 25) return `Subiendo ${type}...`;
   if (percent < 50) return '25%, ya falta menos';
   if (percent < 75) return 'Ya pasamos la mitad';
   if (percent < 80) return 'Queda un poco más, no desesperes';
   if (percent < 90) return 'Bien, superamos el 80%';
   if (percent < 99) return 'Ya queda un 10% solamente';
   if (percent < 100) return 'Llegando al 99%';
-  return 'Video cargado';
+  return type === 'imagen' ? 'Imagen cargada' : 'Video cargado';
 };
 
 const courseSchema = z.object({
@@ -281,12 +281,12 @@ export const Admin = () => {
     setCourseErrors({});
     setCourseUploading(true);
     setSnackbarSeverity('info');
-    setSnackbarMessage(getUploadMessage(0));
+    setSnackbarMessage(getUploadMessage(0, 'imagen'));
     setSnackbarOpen(true);
 
     try {
       let course: Course;
-      const onProgress = (percent: number) => setSnackbarMessage(getUploadMessage(percent));
+      const onProgress = (percent: number) => setSnackbarMessage(getUploadMessage(percent, 'imagen'));
       if (editingCourseId) {
         course = await api.updateCourse(editingCourseId, result.data, courseImage ?? undefined, onProgress);
         setCourses((prev) => prev.map((c) => (c.id === editingCourseId ? course : c)));
