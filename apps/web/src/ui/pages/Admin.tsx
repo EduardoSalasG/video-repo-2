@@ -20,6 +20,7 @@ import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
+import { primaryStyleLabels, videoTypeLabels } from '../../lib/labels';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
 const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
@@ -179,7 +180,7 @@ export const Admin = () => {
     setLoadingCourses(true);
     api
       .getCourses()
-      .then(setCourses)
+      .then((data) => setCourses([...data].sort((a, b) => a.name.localeCompare(b.name))))
       .catch(() => setCourses([]))
       .finally(() => setLoadingCourses(false));
   }, []);
@@ -199,7 +200,7 @@ export const Admin = () => {
     setLoadingModules(true);
     api
       .getModules(moduleCourse)
-      .then(setModules)
+      .then((data) => setModules([...data].sort((a, b) => a.title.localeCompare(b.title))))
       .catch(() => setModules([]))
       .finally(() => setLoadingModules(false));
   }, [moduleCourse]);
@@ -212,7 +213,7 @@ export const Admin = () => {
     setLoadingModules(true);
     api
       .getModules(sectionCourse)
-      .then(setModules)
+      .then((data) => setModules([...data].sort((a, b) => a.title.localeCompare(b.title))))
       .catch(() => setModules([]))
       .finally(() => setLoadingModules(false));
   }, [sectionCourse]);
@@ -225,7 +226,7 @@ export const Admin = () => {
     setLoadingSections(true);
     api
       .getSections(sectionModule)
-      .then(setSections)
+      .then((data) => setSections([...data].sort((a, b) => a.title.localeCompare(b.title))))
       .catch(() => setSections([]))
       .finally(() => setLoadingSections(false));
   }, [sectionModule]);
@@ -238,7 +239,7 @@ export const Admin = () => {
     setLoadingModules(true);
     api
       .getModules(videoCourse)
-      .then(setModules)
+      .then((data) => setModules([...data].sort((a, b) => a.title.localeCompare(b.title))))
       .catch(() => setModules([]))
       .finally(() => setLoadingModules(false));
   }, [videoCourse]);
@@ -251,7 +252,7 @@ export const Admin = () => {
     setLoadingSections(true);
     api
       .getSections(videoModule)
-      .then(setSections)
+      .then((data) => setSections([...data].sort((a, b) => a.title.localeCompare(b.title))))
       .catch(() => setSections([]))
       .finally(() => setLoadingSections(false));
   }, [videoModule]);
@@ -1000,10 +1001,13 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.primaryStyle}
               >
-                <MenuItem value="MAMBO_ON2">Mambo On2</MenuItem>
-                <MenuItem value="CASINO">Casino</MenuItem>
-                <MenuItem value="SENSUAL_BACHATA">Bachata Sensual</MenuItem>
-                <MenuItem value="MODERN_BACHATA">Bachata Moderna</MenuItem>
+                {Object.entries(primaryStyleLabels)
+                  .sort((a, b) => a[1].localeCompare(b[1]))
+                  .map(([value, label]) => (
+                    <MenuItem key={value} value={value}>
+                      {label}
+                    </MenuItem>
+                  ))}
               </FormField>
               <FormField
                 select
@@ -1014,9 +1018,13 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.videoType}
               >
-                <MenuItem value="STEP">Paso</MenuItem>
-                <MenuItem value="SEQUENCE">Secuencia</MenuItem>
-                <MenuItem value="CHOREOGRAPHY">Coreografía</MenuItem>
+                {Object.entries(videoTypeLabels)
+                  .sort((a, b) => a[1].localeCompare(b[1]))
+                  .map(([value, label]) => (
+                    <MenuItem key={value} value={value}>
+                      {label}
+                    </MenuItem>
+                  ))}
               </FormField>
               <FormField
                 label="Duración (counts)"
@@ -1162,9 +1170,13 @@ export const Admin = () => {
                     }
                     fieldError={roleErrors.role}
                   >
-                    <MenuItem value="STUDENT">Estudiante</MenuItem>
-                    <MenuItem value="INSTRUCTOR">Instructor</MenuItem>
-                    <MenuItem value="ADMIN">Admin</MenuItem>
+                    {Object.entries({ ADMIN: 'Admin', INSTRUCTOR: 'Instructor', STUDENT: 'Estudiante' })
+                      .sort((a, b) => a[1].localeCompare(b[1]))
+                      .map(([value, label]) => (
+                        <MenuItem key={value} value={value}>
+                          {label}
+                        </MenuItem>
+                      ))}
                   </FormField>
                   <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                     Actualizar rol

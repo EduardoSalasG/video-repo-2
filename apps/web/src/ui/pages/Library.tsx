@@ -18,7 +18,7 @@ export const Library = () => {
     setLoading(true);
     api
       .getCourses()
-      .then(setCourses)
+      .then((data) => setCourses([...data].sort((a, b) => a.name.localeCompare(b.name))))
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
           navigate('/login', { replace: true });
