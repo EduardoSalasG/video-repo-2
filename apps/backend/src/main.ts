@@ -40,10 +40,8 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  if (process.env.NODE_ENV !== 'production') {
-    const uploadsPath = path.resolve(process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads');
-    app.use('/uploads', express.static(uploadsPath));
-  }
+  const uploadsPath = path.resolve(process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads');
+  app.use('/uploads', express.static(uploadsPath));
 
   const config = new DocumentBuilder()
     .setTitle('Dance Platform API')

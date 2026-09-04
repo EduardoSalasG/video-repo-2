@@ -20,6 +20,8 @@ export class Course {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
+  imageStorageKey: string | null;
   createdAt: Date;
   updatedAt: Date;
 

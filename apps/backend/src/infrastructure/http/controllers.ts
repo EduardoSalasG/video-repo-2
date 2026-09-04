@@ -223,17 +223,34 @@ export class CoursesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseInterceptors(FileInterceptor('image'))
   @ApiCookieAuth()
-  async create(@Body() dto: CreateCourseDto) {
-    return this.courses.create(dto);
+  async create(
+    @Body('name') name: string,
+    @Body('description') description: string | undefined,
+    @UploadedFile() image: Express.Multer.File | undefined,
+  ) {
+    const imageFile = image
+      ? { originalname: image.originalname, mimetype: image.mimetype, buffer: image.buffer, size: image.size }
+      : undefined;
+    return this.courses.create({ name, description }, imageFile);
   }
 
   @Patch(':courseId')
   @UseGuards(JwtAuthGuard, CourseAccessGuard)
   @RequiredAccess(AccessLevel.MAINTAIN)
+  @UseInterceptors(FileInterceptor('image'))
   @ApiCookieAuth()
-  async update(@Param('courseId') courseId: string, @Body() dto: UpdateCourseDto) {
-    return this.courses.update(courseId, dto);
+  async update(
+    @Param('courseId') courseId: string,
+    @Body('name') name: string | undefined,
+    @Body('description') description: string | undefined,
+    @UploadedFile() image: Express.Multer.File | undefined,
+  ) {
+    const imageFile = image
+      ? { originalname: image.originalname, mimetype: image.mimetype, buffer: image.buffer, size: image.size }
+      : undefined;
+    return this.courses.update(courseId, { name, description }, imageFile);
   }
 
   @Delete(':courseId')

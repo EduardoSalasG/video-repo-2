@@ -71,25 +71,47 @@ export class AuthService {
 export class CourseService {
   constructor(
     @Inject(InjectionTokens.COURSE_REPOSITORY) private readonly courses: ICourseRepository,
+    @Inject(InjectionTokens.VIDEO_STORAGE) private readonly storage: IVideoStorage,
   ) {}
 
+  private async hydrateImageUrl(course: Course): Promise<Course> {
+    if (course.imageStorageKey) {
+      course.imageUrl = await this.storage.getUrl(course.imageStorageKey);
+    }
+    return course;
+  }
+
   async list(): Promise<Course[]> {
-    return this.courses.findAll();
+    const courses = await this.courses.findAll();
+    return Promise.all(courses.map((course) => this.hydrateImageUrl(course)));
   }
 
   async getById(id: string): Promise<Course> {
     const course = await this.courses.findById(id);
     if (!course) throw new NotFoundException('Course not found');
-    return course;
+    return this.hydrateImageUrl(course);
   }
 
-  async create(input: CreateCourseInput): Promise<Course> {
-    return this.courses.create(input);
+  async create(input: CreateCourseInput, image?: StorageFile): Promise<Course> {
+    if (image) {
+      const uploaded = await this.storage.upload(image, 'thumbnails');
+      input.imageStorageKey = uploaded.storageKey;
+    }
+    const course = await this.courses.create(input);
+    return this.hydrateImageUrl(course);
   }
 
-  async update(id: string, input: UpdateCourseInput): Promise<Course> {
-    await this.getById(id);
-    return this.courses.update(id, input);
+  async update(id: string, input: UpdateCourseInput, image?: StorageFile): Promise<Course> {
+    const existing = await this.getById(id);
+    if (image) {
+      if (existing.imageStorageKey) {
+        await this.storage.delete(existing.imageStorageKey);
+      }
+      const uploaded = await this.storage.upload(image, 'thumbnails');
+      input.imageStorageKey = uploaded.storageKey;
+    }
+    const course = await this.courses.update(id, input);
+    return this.hydrateImageUrl(course);
   }
 
   async delete(id: string): Promise<void> {

@@ -13,11 +13,13 @@ export interface CreateUserInput {
 export interface CreateCourseInput {
   name: string;
   description?: string;
+  imageStorageKey?: string;
 }
 
 export interface UpdateCourseInput {
   name?: string;
   description?: string;
+  imageStorageKey?: string;
 }
 
 export interface CreateModuleInput {
@@ -158,7 +160,7 @@ export interface IProgressRepository {
 }
 
 export interface IVideoStorage {
-  upload(file: StorageFile): Promise<UploadedFile>;
+  upload(file: StorageFile, folder?: string): Promise<UploadedFile>;
   getUrl(key: string): Promise<string>;
   delete(key: string): Promise<void>;
 }
