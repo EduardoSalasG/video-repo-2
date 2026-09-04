@@ -8,6 +8,7 @@ export interface Course {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

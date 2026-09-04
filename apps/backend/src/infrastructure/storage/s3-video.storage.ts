@@ -23,8 +23,8 @@ export class S3VideoStorage implements IVideoStorage {
     this.bucket = process.env.S3_BUCKET ?? 'videos';
   }
 
-  async upload(file: StorageFile): Promise<UploadedFile> {
-    const key = `videos/${randomUUID()}-${file.originalname}`;
+  async upload(file: StorageFile, folder = 'videos'): Promise<UploadedFile> {
+    const key = `${folder}/${randomUUID()}-${file.originalname}`;
 
     await this.client.send(
       new PutObjectCommand({

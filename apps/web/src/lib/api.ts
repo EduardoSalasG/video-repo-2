@@ -14,6 +14,7 @@ import { ApiError } from './error';
 const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api';
 const isLocal = typeof location !== 'undefined' && location.hostname === 'localhost';
 const API_URL = (isLocal ? 'http://localhost:3000/api' : rawApiUrl).replace(/\/$/, '');
+export const API_BASE_URL = API_URL.replace(/\/api\/?$/, '');
 
 export { ApiError } from './error';
 
@@ -49,6 +50,46 @@ async function request<T>(
   return handleResponse<T>(res);
 }
 
+function requestFormData<T>(method: string, path: string, formData: FormData, onProgress?: (percent: number) => void): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(method, `${API_URL}${path}`);
+    xhr.withCredentials = true;
+
+    if (onProgress) {
+      xhr.upload.addEventListener('loadstart', () => onProgress(0));
+      xhr.upload.addEventListener('progress', (event) => {
+        if (!event.lengthComputable) return;
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      const response = (() => {
+        try {
+          return JSON.parse(xhr.responseText) as unknown;
+        } catch {
+          return null;
+        }
+      })();
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(response as T);
+      } else if (xhr.status === 401) {
+        reject(new ApiError(401, response, 'No autenticado'));
+      } else {
+        const data = (response as { message?: string | string[] } | null) ?? null;
+        const rawMessage = data?.message;
+        const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage ?? `HTTP ${xhr.status}`;
+        reject(new ApiError(xhr.status, data, message));
+      }
+    });
+
+    xhr.addEventListener('error', () => reject(new ApiError(0, null, 'Error de red')));
+    xhr.addEventListener('abort', () => reject(new ApiError(0, null, 'Subida cancelada')));
+    xhr.send(formData);
+  });
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
@@ -77,10 +118,29 @@ export const api = {
   getCourse: (courseId: string) => request<Course>('GET', `/courses/${courseId}`),
   getCourseProgress: (courseId: string) =>
     request<{ completedSectionIds: string[] }>('GET', `/courses/${courseId}/progress`),
-  createCourse: (data: { name: string; description?: string }) =>
-    request<Course>('POST', '/courses', data),
-  updateCourse: (courseId: string, data: { name?: string; description?: string }) =>
-    request<Course>('PATCH', `/courses/${courseId}`, data),
+  createCourse: (
+    data: { name: string; description?: string },
+    image?: File,
+    onProgress?: (percent: number) => void,
+  ) => {
+    const formData = new FormData();
+    formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    if (image) formData.append('image', image);
+    return requestFormData<Course>('POST', '/courses', formData, onProgress);
+  },
+  updateCourse: (
+    courseId: string,
+    data: { name?: string; description?: string },
+    image?: File,
+    onProgress?: (percent: number) => void,
+  ) => {
+    const formData = new FormData();
+    if (data.name) formData.append('name', data.name);
+    if (data.description !== undefined) formData.append('description', data.description ?? '');
+    if (image) formData.append('image', image);
+    return requestFormData<Course>('PATCH', `/courses/${courseId}`, formData, onProgress);
+  },
   deleteCourse: (courseId: string) => request<void>('DELETE', `/courses/${courseId}`),
 
   getModules: (courseId: string) => request<CourseModule[]>('GET', `/courses/${courseId}/modules`),
@@ -114,43 +174,12 @@ export const api = {
     const formData = new FormData();
     formData.append('video', file);
     formData.append('metadata', JSON.stringify(metadata));
-    return new Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${API_URL}/sections/${sectionId}/videos`);
-      xhr.withCredentials = true;
-
-      if (onProgress) {
-        xhr.upload.addEventListener('loadstart', () => onProgress(0));
-        xhr.upload.addEventListener('progress', (event) => {
-          if (!event.lengthComputable) return;
-          onProgress(Math.round((event.loaded / event.total) * 100));
-        });
-      }
-
-      xhr.addEventListener('load', () => {
-        const response = (() => {
-          try {
-            return JSON.parse(xhr.responseText) as unknown;
-          } catch {
-            return null;
-          }
-        })();
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(response as { videoFile: VideoFile; videoMetadata: VideoMetadata });
-        } else if (xhr.status === 401) {
-          reject(new ApiError(401, response, 'No autenticado'));
-        } else {
-          const data = (response as { message?: string | string[] } | null) ?? null;
-          const rawMessage = data?.message;
-          const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage ?? `HTTP ${xhr.status}`;
-          reject(new ApiError(xhr.status, data, message));
-        }
-      });
-
-      xhr.addEventListener('error', () => reject(new ApiError(0, null, 'Error de red')));
-      xhr.addEventListener('abort', () => reject(new ApiError(0, null, 'Subida cancelada')));
-      xhr.send(formData);
-    });
+    return requestFormData<{ videoFile: VideoFile; videoMetadata: VideoMetadata }>(
+      'POST',
+      `/sections/${sectionId}/videos`,
+      formData,
+      onProgress,
+    );
   },
 
   attachVideoLink: (
