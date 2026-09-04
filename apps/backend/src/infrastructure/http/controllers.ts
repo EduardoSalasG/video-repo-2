@@ -349,6 +349,14 @@ export class SectionDetailController {
     return this.sections.getById(sectionId);
   }
 
+  @Get(':sectionId/metadata')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.READ)
+  @ApiCookieAuth()
+  async getMetadata(@Param('sectionId') sectionId: string) {
+    return this.sections.getMetadata(sectionId);
+  }
+
   @Get(':sectionId/progress')
   @UseGuards(JwtAuthGuard, CourseAccessGuard)
   @RequiredAccess(AccessLevel.READ)

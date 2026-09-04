@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import { Typography } from '../atoms/Typography';
 import { Markdown } from '../atoms/Markdown';
 import { api } from '../../lib/api';
-import type { Section as SectionType, Course, CourseModule } from '../../types';
+import type { Section as SectionType, Course, CourseModule, VideoMetadata } from '../../types';
 
 export const Section = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -17,6 +19,7 @@ export const Section = () => {
   const [module, setModule] = useState<CourseModule | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +39,12 @@ export const Section = () => {
           setCompleted(progress.completed);
         } catch {
           setCompleted(false);
+        }
+        try {
+          const meta = await api.getSectionMetadata(sectionId);
+          setMetadata(meta);
+        } catch {
+          setMetadata(null);
         }
         setError(null);
       })
@@ -115,7 +124,7 @@ export const Section = () => {
           elevation={0}
           sx={{
             p: 1,
-            mb: 3,
+            mb: 2,
             borderRadius: 4,
             border: '1px solid rgba(0,0,0,0.06)',
             overflow: 'hidden',
@@ -132,6 +141,14 @@ export const Section = () => {
             style={{ borderRadius: 8, display: 'block' }}
           />
         </Paper>
+      )}
+
+      {metadata?.tags && metadata.tags.length > 0 && (
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" gap={0.75} sx={{ mb: 3 }}>
+          {metadata.tags.map((tag) => (
+            <Chip key={tag} label={tag} size="small" />
+          ))}
+        </Stack>
       )}
 
       {section.markdownContent && (
