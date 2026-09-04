@@ -206,10 +206,11 @@ export const AdminLayout = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
-          pb: isMobile ? 9 : 3,
+          pb: isMobile ? 10 : 3,
           width: { sm: `calc(100% - ${open ? DRAWER_WIDTH : COLLAPSED_WIDTH}px)` },
-          height: '100vh',
+          height: { xs: '100dvh', sm: '100vh' },
           overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           backgroundColor: '#fafafa',
           transition: 'width 250ms ease',
         }}
