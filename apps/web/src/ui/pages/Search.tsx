@@ -14,9 +14,8 @@ import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
+import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
 import type { Course, VideoSearchResult } from '../../types';
-
-const PRIMARY_STYLES = ['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA'];
 
 const resultVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -93,9 +92,9 @@ export const Search = () => {
                 onChange={(event) => setStyle(event.target.value)}
               >
                 <MenuItem value="">Todos los estilos</MenuItem>
-                {PRIMARY_STYLES.map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {s}
+                {Object.entries(primaryStyleLabels).map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
                   </MenuItem>
                 ))}
               </FormField>
@@ -160,7 +159,7 @@ export const Search = () => {
                     ))}
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                    {result.metadata.difficulty} / {result.metadata.primaryStyle} / {result.metadata.videoType}
+                    {difficultyLabels[result.metadata.difficulty]} / {primaryStyleLabels[result.metadata.primaryStyle]} / {videoTypeLabels[result.metadata.videoType]}
                   </Typography>
                 </CardContent>
               </Card>

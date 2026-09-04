@@ -142,6 +142,7 @@ export class SectionService {
   constructor(
     @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
     @Inject(InjectionTokens.MODULE_REPOSITORY) private readonly modules: IModuleRepository,
+    @Inject(InjectionTokens.VIDEO_METADATA_REPOSITORY) private readonly videoMetadata: IVideoMetadataRepository,
   ) {}
 
   async listByModule(moduleId: string): Promise<Section[]> {
@@ -153,6 +154,10 @@ export class SectionService {
     const section = await this.sections.findById(id);
     if (!section) throw new NotFoundException('Section not found');
     return section;
+  }
+
+  async getMetadata(sectionId: string): Promise<VideoMetadata | null> {
+    return this.videoMetadata.findBySectionId(sectionId);
   }
 
   async create(input: CreateSectionInput): Promise<Section> {

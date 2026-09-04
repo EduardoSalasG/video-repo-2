@@ -97,6 +97,7 @@ export const api = {
     request<Section>('POST', `/modules/${moduleId}/sections`, data),
 
   getSection: (sectionId: string) => request<Section>('GET', `/sections/${sectionId}`),
+  getSectionMetadata: (sectionId: string) => request<VideoMetadata | null>('GET', `/sections/${sectionId}/metadata`),
   updateSection: (sectionId: string, data: { title?: string; description?: string; orderIndex?: number; markdownContent?: string }) =>
     request<Section>('PATCH', `/sections/${sectionId}`, data),
   deleteSection: (sectionId: string) => request<void>('DELETE', `/sections/${sectionId}`),
