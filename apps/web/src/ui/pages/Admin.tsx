@@ -54,7 +54,7 @@ const sectionSchema = z.object({
 });
 
 const videoSchema = z.object({
-  difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']),
+  difficulty: z.enum(['BEGINNER', 'BASIC', 'INTERMEDIATE', 'ADVANCED']),
   primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
   videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
@@ -987,6 +987,7 @@ export const Admin = () => {
                 fieldError={videoErrors.difficulty}
               >
                 <MenuItem value="BEGINNER">Principiante</MenuItem>
+                <MenuItem value="BASIC">Básico</MenuItem>
                 <MenuItem value="INTERMEDIATE">Intermedio</MenuItem>
                 <MenuItem value="ADVANCED">Avanzado</MenuItem>
               </FormField>

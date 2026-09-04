@@ -22,6 +22,7 @@ enum AccessLevel {
 
 enum Difficulty {
   BEGINNER
+  BASIC
   INTERMEDIATE
   ADVANCED
 }
