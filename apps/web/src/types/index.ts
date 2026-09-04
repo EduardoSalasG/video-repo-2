@@ -1,6 +1,6 @@
 export type Role = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
 export type AccessLevel = 'READ' | 'WRITE' | 'MAINTAIN';
-export type Difficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export type Difficulty = 'BEGINNER' | 'BASIC' | 'INTERMEDIATE' | 'ADVANCED';
 export type PrimaryStyle = 'MAMBO_ON2' | 'CASINO' | 'SENSUAL_BACHATA' | 'MODERN_BACHATA';
 export type VideoType = 'STEP' | 'SEQUENCE' | 'CHOREOGRAPHY';
 
