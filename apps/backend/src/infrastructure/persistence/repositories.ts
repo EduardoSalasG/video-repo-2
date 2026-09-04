@@ -108,7 +108,7 @@ export class PrismaCourseRepository implements ICourseRepository {
 
   async create(input: CreateCourseInput): Promise<Course> {
     const course = await this.prisma.course.create({
-      data: { name: input.name, description: input.description ?? null },
+      data: { name: input.name, description: input.description ?? null, imageStorageKey: input.imageStorageKey ?? null },
     });
     return new Course(course);
   }
@@ -116,7 +116,7 @@ export class PrismaCourseRepository implements ICourseRepository {
   async update(id: string, input: UpdateCourseInput): Promise<Course> {
     const course = await this.prisma.course.update({
       where: { id },
-      data: { name: input.name, description: input.description },
+      data: { name: input.name, description: input.description, imageStorageKey: input.imageStorageKey },
     });
     return new Course(course);
   }

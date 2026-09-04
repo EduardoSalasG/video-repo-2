@@ -3,6 +3,7 @@ import CardContent from '@mui/material/CardContent';
 import Box from '@mui/material/Box';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Typography } from '../atoms/Typography';
+import { API_BASE_URL } from '../../lib/api';
 import type { Course } from '../../types';
 import { Link } from 'react-router-dom';
 
@@ -30,7 +31,7 @@ export const VideoCard = ({ course }: VideoCardProps) => {
     >
       <Box
         component="img"
-        src="/icon.svg"
+        src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${API_BASE_URL}${course.imageUrl}`) : '/icon.svg'}
         alt={course.name}
         sx={{ width: '100%', height: 180, objectFit: 'cover' }}
       />

@@ -18,9 +18,9 @@ export class LocalVideoStorage implements IVideoStorage {
     this.baseDir = process.env.VIDEO_STORAGE_LOCAL_PATH ?? 'uploads';
   }
 
-  async upload(file: StorageFile): Promise<UploadedFile> {
+  async upload(file: StorageFile, folder = 'videos'): Promise<UploadedFile> {
     const key = `${randomUUID()}${safeExtension(file.originalname)}`;
-    const storageKey = `videos/${key}`;
+    const storageKey = `${folder}/${key}`;
     const target = path.join(this.baseDir, storageKey);
 
     await fs.mkdir(path.dirname(target), { recursive: true });

@@ -112,6 +112,8 @@ export const Admin = () => {
   const [dashboard, setDashboard] = useState({ courses: 0, users: 0 });
 
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
+  const [courseImage, setCourseImage] = useState<File | null>(null);
+  const [courseUploading, setCourseUploading] = useState(false);
   const [courseErrors, setCourseErrors] = useState<Partial<Record<keyof CourseFormData, string>>>({});
 
   const [moduleForm, setModuleForm] = useState<ModuleFormData>({ title: '', description: '', orderIndex: undefined });
@@ -264,8 +266,9 @@ export const Admin = () => {
     api.getVideoLabels('TAG').then(setTagLabels).catch(() => setTagLabels([]));
   }, [activeTab]);
 
-  const submitCourse = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitCourse = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (courseUploading) return;
     const result = courseSchema.safeParse(courseForm);
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
@@ -276,32 +279,34 @@ export const Admin = () => {
       return;
     }
     setCourseErrors({});
-    if (editingCourseId) {
-      api
-        .updateCourse(editingCourseId, result.data)
-        .then((updated) => {
-          setCourses((prev) => prev.map((c) => (c.id === editingCourseId ? updated : c)));
-          setCourseForm({ name: '', description: '' });
-          setEditingCourseId(null);
-          showSuccess('Curso actualizado');
-        })
-        .catch((err: unknown) => {
-          const message = err instanceof Error ? err.message : 'Error al actualizar curso';
-          setCourseErrors({ name: message });
-        });
-      return;
+    setCourseUploading(true);
+    setSnackbarSeverity('info');
+    setSnackbarMessage(getUploadMessage(0));
+    setSnackbarOpen(true);
+
+    try {
+      let course: Course;
+      const onProgress = (percent: number) => setSnackbarMessage(getUploadMessage(percent));
+      if (editingCourseId) {
+        course = await api.updateCourse(editingCourseId, result.data, courseImage ?? undefined, onProgress);
+        setCourses((prev) => prev.map((c) => (c.id === editingCourseId ? course : c)));
+        setEditingCourseId(null);
+      } else {
+        course = await api.createCourse(result.data, courseImage ?? undefined, onProgress);
+        setCourses((prev) => [...prev, course]);
+      }
+      setCourseForm({ name: '', description: '' });
+      setCourseImage(null);
+      setSnackbarSeverity('success');
+      setSnackbarMessage(editingCourseId ? 'Curso actualizado' : 'Curso creado');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al guardar curso';
+      setSnackbarSeverity('error');
+      setSnackbarMessage(message);
+      setCourseErrors({ name: message });
+    } finally {
+      setCourseUploading(false);
     }
-    api
-      .createCourse(result.data)
-      .then((newCourse) => {
-        setCourses((prev) => [...prev, newCourse]);
-        setCourseForm({ name: '', description: '' });
-        showSuccess('Curso creado');
-      })
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'Error al crear curso';
-        setCourseErrors({ name: message });
-      });
   };
 
   const submitModule = (event: React.FormEvent<HTMLFormElement>) => {
@@ -596,6 +601,7 @@ export const Admin = () => {
   const startEditCourse = (c: Course) => {
     setEditingCourseId(c.id);
     setCourseForm({ name: c.name, description: c.description ?? '' });
+    setCourseImage(null);
   };
 
   const startEditModule = (m: CourseModule) => {
@@ -767,8 +773,19 @@ export const Admin = () => {
                 onChange={(event) => setCourseForm((f) => ({ ...f, description: event.target.value }))}
                 fieldError={courseErrors.description}
               />
-              <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                {editingCourseId ? 'Guardar cambios' : 'Crear curso'}
+              <Box sx={{ my: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Imagen del curso
+                </Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={courseUploading}
+                  onChange={(event) => setCourseImage(event.target.files?.[0] ?? null)}
+                />
+              </Box>
+              <Button type="submit" variant="contained" fullWidth disabled={courseUploading} sx={{ mt: 2 }}>
+                {courseUploading ? 'Subiendo...' : editingCourseId ? 'Guardar cambios' : 'Crear curso'}
               </Button>
               {editingCourseId && (
                 <Button
@@ -778,6 +795,7 @@ export const Admin = () => {
                   onClick={() => {
                     setEditingCourseId(null);
                     setCourseForm({ name: '', description: '' });
+                    setCourseImage(null);
                   }}
                 >
                   Cancelar
