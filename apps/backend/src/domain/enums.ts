@@ -12,6 +12,7 @@ export enum AccessLevel {
 
 export enum Difficulty {
   BEGINNER = 'BEGINNER',
+  BASIC = 'BASIC',
   INTERMEDIATE = 'INTERMEDIATE',
   ADVANCED = 'ADVANCED',
 }
