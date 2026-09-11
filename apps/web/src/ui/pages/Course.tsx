@@ -51,20 +51,18 @@ export const Course = () => {
       return;
     }
     setExpanded(moduleId);
-    if (!sectionsByModule[moduleId]) {
+    if (sectionsByModule[moduleId] === undefined) {
       try {
         const sections = await api.getSections(moduleId);
-        setSectionsByModule((prev) => ({ ...prev, [moduleId]: sections }));
         const metadata = await Promise.all(
           sections.map((s) => api.getSectionMetadata(s.id).catch(() => null)),
         );
-        setMetadataBySection((prev) => {
-          const next = { ...prev };
-          sections.forEach((s, i) => {
-            next[s.id] = metadata[i];
-          });
-          return next;
+        const nextMetadata: Record<string, VideoMetadata | null> = {};
+        sections.forEach((s, i) => {
+          nextMetadata[s.id] = metadata[i];
         });
+        setMetadataBySection((prev) => ({ ...prev, ...nextMetadata }));
+        setSectionsByModule((prev) => ({ ...prev, [moduleId]: sections }));
       } catch {
         setSectionsByModule((prev) => ({ ...prev, [moduleId]: [] }));
       }
@@ -127,43 +125,49 @@ export const Course = () => {
               {expanded === module.id ? <ExpandLess color="action" /> : <ExpandMore color="action" />}
             </ListItemButton>
             <Collapse in={expanded === module.id} timeout="auto" unmountOnExit>
-              <List disablePadding>
-                {(sectionsByModule[module.id] ?? []).map((section) => (
-                  <ListItem key={section.id} disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={`/app/sections/${section.id}`}
-                      sx={{ pl: 4, py: 1.5 }}
-                    >
-                      <ListItemText
-                        primary={
-                          <Typography variant="body1" sx={{ color: '#111111' }}>
-                            {section.title}
-                          </Typography>
-                        }
-                        secondary={
-                          metadataBySection[section.id]?.steps?.length ? (
-                            <Stack
-                              direction="row"
-                              spacing={0.5}
-                              flexWrap="wrap"
-                              gap={0.5}
-                              sx={{ mt: 0.5 }}
-                            >
-                              {metadataBySection[section.id]!.steps.map((step) => (
-                                <Chip key={step} label={step} size="small" variant="outlined" />
-                              ))}
-                            </Stack>
-                          ) : null
-                        }
-                      />
-                      {completedIds.has(section.id) && (
-                        <CheckCircleIcon color="success" />
-                      )}
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
+              {sectionsByModule[module.id] === undefined ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : (
+                <List disablePadding>
+                  {(sectionsByModule[module.id] ?? []).map((section) => (
+                    <ListItem key={section.id} disablePadding>
+                      <ListItemButton
+                        component={Link}
+                        to={`/app/sections/${section.id}`}
+                        sx={{ pl: 4, py: 1.5 }}
+                      >
+                        <ListItemText
+                          primary={
+                            <Typography variant="body1" sx={{ color: '#111111' }}>
+                              {section.title}
+                            </Typography>
+                          }
+                          secondary={
+                            metadataBySection[section.id]?.steps?.length ? (
+                              <Stack
+                                direction="row"
+                                spacing={0.5}
+                                flexWrap="wrap"
+                                gap={0.5}
+                                sx={{ mt: 0.5 }}
+                              >
+                                {metadataBySection[section.id]!.steps.map((step) => (
+                                  <Chip key={step} label={step} size="small" variant="outlined" />
+                                ))}
+                              </Stack>
+                            ) : null
+                          }
+                        />
+                        {completedIds.has(section.id) && (
+                          <CheckCircleIcon color="success" />
+                        )}
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </Collapse>
           </Box>
         ))}
