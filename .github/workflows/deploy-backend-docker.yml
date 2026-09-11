@@ -145,6 +145,20 @@ jobs:
                 exit 1
               fi
 
+              echo "--- seeding default data one-shot ---"
+              docker rm -f dance-platform-seed 2>/dev/null || true
+              if ! timeout 300 docker run \
+                --name dance-platform-seed \
+                --rm \
+                -e DATABASE_URL="$MIGRATION_DATABASE_URL" \
+                -w /app/apps/backend \
+                "$BACKEND_IMAGE" \
+                npx prisma db seed; then
+                echo "Seed failed or timed out"
+                docker rm -f dance-platform-seed 2>/dev/null || true
+                exit 1
+              fi
+
               echo "--- recreating backend with new image ---"
               docker compose up -d --force-recreate --remove-orphans backend
 
