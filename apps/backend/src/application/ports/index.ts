@@ -140,9 +140,18 @@ export interface IVideoMetadataRepository {
   search(options: VideoSearchOptions): Promise<VideoSearchResult[]>;
 }
 
+export interface LabelWithStyles {
+  id: string;
+  name: string;
+  styles: PrimaryStyle[];
+}
+
 export interface IVideoLabelRepository {
   findByType(type: LabelType, query?: string, styles?: PrimaryStyle[]): Promise<string[]>;
   ensureMany(type: LabelType, names: string[], styles?: PrimaryStyle[]): Promise<void>;
+  findWithStyles(type: LabelType, style?: PrimaryStyle): Promise<LabelWithStyles[]>;
+  create(type: LabelType, name: string, styles: PrimaryStyle[]): Promise<LabelWithStyles>;
+  delete(id: string): Promise<void>;
 }
 
 export interface ICourseAccessRepository {

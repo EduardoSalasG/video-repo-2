@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
@@ -14,7 +15,11 @@ import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
@@ -23,7 +28,16 @@ import { api } from '../../lib/api';
 import { primaryStyleLabels, videoTypeLabels } from '../../lib/labels';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
 
-const TABS = ['dashboard', 'cursos', 'modulos', 'secciones', 'videos', 'usuarios'];
+const TABS = [
+  'dashboard',
+  'cursos',
+  'modulos',
+  'secciones',
+  'videos',
+  'parametros/pasos',
+  'parametros/estilos',
+  'usuarios',
+];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
   if (percent < 25) return `Subiendo ${type}...`;
@@ -82,10 +96,13 @@ type RoleFormData = z.infer<typeof roleSchema>;
 type AccessFormData = z.infer<typeof accessSchema>;
 
 export const Admin = () => {
-  const { tab } = useParams<{ tab?: string }>();
+  const { '*': tab } = useParams();
   const activeTab = useMemo(() => {
-    const index = TABS.indexOf(tab ?? 'dashboard');
-    return Math.max(0, index);
+    const current = tab ?? 'dashboard';
+    const index = TABS.indexOf(current);
+    if (index >= 0) return index;
+    if (current.startsWith('parametros/')) return 5;
+    return 0;
   }, [tab]);
 
   const [success, setSuccess] = useState<string | null>(null);
@@ -147,6 +164,12 @@ export const Admin = () => {
   const [tagLabels, setTagLabels] = useState<string[]>([]);
   const [videoLink, setVideoLink] = useState('');
   const [videoLinkError, setVideoLinkError] = useState<string | null>(null);
+
+  const [adminLabels, setAdminLabels] = useState<{ id: string; name: string; styles: PrimaryStyle[] }[]>([]);
+  const [loadingLabels, setLoadingLabels] = useState(false);
+  const [newLabelName, setNewLabelName] = useState('');
+  const [newLabelStyles, setNewLabelStyles] = useState<PrimaryStyle[]>([]);
+  const [filterLabelStyle, setFilterLabelStyle] = useState<PrimaryStyle | ''>('');
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -265,6 +288,20 @@ export const Admin = () => {
     api.getVideoLabels('INFLUENCE').then(setInfluenceLabels).catch(() => setInfluenceLabels([]));
     api.getVideoLabels('TAG').then(setTagLabels).catch(() => setTagLabels([]));
   }, [activeTab, videoForm.primaryStyle]);
+
+  const loadAdminLabels = () => {
+    if (activeTab !== 5 && activeTab !== 6) return;
+    setLoadingLabels(true);
+    api
+      .getAdminLabels('STEP', filterLabelStyle || undefined)
+      .then((data) => setAdminLabels(data.labels as { id: string; name: string; styles: PrimaryStyle[] }[]))
+      .catch(() => setAdminLabels([]))
+      .finally(() => setLoadingLabels(false));
+  };
+
+  useEffect(() => {
+    loadAdminLabels();
+  }, [activeTab, filterLabelStyle]);
 
   const submitCourse = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -471,6 +508,36 @@ export const Admin = () => {
       setVideoErrors({ difficulty: message });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleCreateLabel = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!newLabelName.trim() || newLabelStyles.length === 0) return;
+    try {
+      await api.createAdminLabel({
+        type: 'STEP',
+        name: newLabelName.trim(),
+        styles: newLabelStyles,
+      });
+      setNewLabelName('');
+      setNewLabelStyles([]);
+      showSuccess('Paso creado');
+      loadAdminLabels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear paso';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteLabel = async (id: string) => {
+    try {
+      await api.deleteAdminLabel(id);
+      showSuccess('Paso eliminado');
+      loadAdminLabels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar paso';
+      showSuccess(message);
     }
   };
 
@@ -1149,6 +1216,113 @@ export const Admin = () => {
         )}
 
         {activeTab === 5 && (
+          <Stack spacing={3}>
+            <Typography variant="h5" component="h2">
+              Mantenedor de pasos
+            </Typography>
+            <FormField
+              select
+              label="Filtrar por estilo"
+              value={filterLabelStyle}
+              onChange={(event) => setFilterLabelStyle(event.target.value as PrimaryStyle | '')}
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {Object.entries(primaryStyleLabels)
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+            </FormField>
+            <Box component="form" onSubmit={handleCreateLabel} noValidate>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+                <FormField
+                  label="Nuevo paso"
+                  value={newLabelName}
+                  onChange={(event) => setNewLabelName(event.target.value)}
+                  sx={{ flex: 1 }}
+                />
+                <Autocomplete
+                  multiple
+                  options={Object.keys(primaryStyleLabels) as PrimaryStyle[]}
+                  getOptionLabel={(option) => primaryStyleLabels[option]}
+                  value={newLabelStyles}
+                  onChange={(_event, value) => setNewLabelStyles(value)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Estilos" helperText="Asocia uno o varios estilos" />
+                  )}
+                  sx={{ flex: 1, minWidth: 200 }}
+                />
+                <Button type="submit" variant="contained" disabled={!newLabelName.trim() || newLabelStyles.length === 0}>
+                  Agregar
+                </Button>
+              </Stack>
+            </Box>
+            {loadingLabels && <Typography color="text.secondary">Cargando pasos...</Typography>}
+            <Paper sx={{ p: 2, borderRadius: 2 }}>
+              <List>
+                {adminLabels.map((label) => (
+                  <ListItem
+                    key={label.id}
+                    secondaryAction={
+                      <IconButton edge="end" onClick={() => handleDeleteLabel(label.id)} color="error">
+                        <CloseIcon />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={label.name}
+                      secondary={
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5} sx={{ mt: 0.5 }}>
+                          {label.styles.map((style) => (
+                            <Chip key={style} label={primaryStyleLabels[style]} size="small" variant="outlined" />
+                          ))}
+                        </Stack>
+                      }
+                    />
+                  </ListItem>
+                ))}
+                {adminLabels.length === 0 && !loadingLabels && (
+                  <ListItem>
+                    <ListItemText primary="No hay pasos" />
+                  </ListItem>
+                )}
+              </List>
+            </Paper>
+          </Stack>
+        )}
+
+        {activeTab === 6 && (
+          <Stack spacing={3}>
+            <Typography variant="h5" component="h2">
+              Estilos y sus pasos
+            </Typography>
+            {loadingLabels && <Typography color="text.secondary">Cargando...</Typography>}
+            {Object.entries(primaryStyleLabels)
+              .sort((a, b) => a[1].localeCompare(b[1]))
+              .map(([style, label]) => {
+                const styleSteps = adminLabels.filter((l) => l.styles.includes(style as PrimaryStyle));
+                return (
+                  <Accordion key={style} defaultExpanded>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
+                        {styleSteps.map((step) => (
+                          <Chip key={step.id} label={step.name} size="small" />
+                        ))}
+                        {styleSteps.length === 0 && <Typography color="text.secondary">Sin pasos</Typography>}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })}
+          </Stack>
+        )}
+
+        {activeTab === 7 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
               Mantenedor de usuarios

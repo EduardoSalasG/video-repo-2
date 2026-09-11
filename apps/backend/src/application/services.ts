@@ -26,6 +26,7 @@ import {
   CreateVideoMetadataInput,
   StorageFile,
   VideoSearchResult,
+  LabelWithStyles,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -494,5 +495,26 @@ export class DashboardService {
     }
 
     return { courses: 0, users: 0 };
+  }
+}
+
+@Injectable()
+export class LabelService {
+  constructor(
+    @Inject(InjectionTokens.VIDEO_LABEL_REPOSITORY) private readonly videoLabels: IVideoLabelRepository,
+  ) {}
+
+  async list(type: LabelType, style?: PrimaryStyle): Promise<LabelWithStyles[]> {
+    return this.videoLabels.findWithStyles(type, style);
+  }
+
+  async create(type: LabelType, name: string, styles: PrimaryStyle[]): Promise<LabelWithStyles> {
+    if (!name.trim()) throw new Error('Label name is required');
+    if (styles.length === 0) throw new Error('At least one style is required');
+    return this.videoLabels.create(type, name.trim(), styles);
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.videoLabels.delete(id);
   }
 }

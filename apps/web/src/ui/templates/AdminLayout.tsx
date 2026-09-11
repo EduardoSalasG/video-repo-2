@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate, Outlet, useLocation, Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -11,10 +11,14 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SchoolIcon from '@mui/icons-material/School';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
@@ -31,13 +35,38 @@ import { useAuth } from '../../hooks/useAuth';
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
 
-const MENU = [
+interface MenuItem { label: string; path: string; icon: ReactNode; }
+interface MenuGroup { label: string; items: MenuItem[]; }
+
+const STANDALONE_ITEMS: MenuItem[] = [
   { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
-  { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon /> },
-  { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon /> },
-  { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon /> },
-  { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon /> },
   { label: 'Usuarios', path: '/admin/usuarios', icon: <PeopleIcon /> },
+];
+
+const MENU_GROUPS: MenuGroup[] = [
+  {
+    label: 'Contenido',
+    items: [
+      { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon /> },
+      { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon /> },
+      { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon /> },
+      { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon /> },
+    ],
+  },
+  {
+    label: 'Parámetros',
+    items: [
+      { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
+      { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
+    ],
+  },
+];
+
+const ALL_MENU_ITEMS: MenuItem[] = [
+  STANDALONE_ITEMS[0], // Dashboard
+  ...MENU_GROUPS[0].items, // Contenido
+  ...MENU_GROUPS[1].items, // Parámetros
+  STANDALONE_ITEMS[1], // Usuarios
 ];
 
 export const AdminLayout = () => {
@@ -64,17 +93,17 @@ export const AdminLayout = () => {
   const handleMoreClose = () => setMoreAnchor(null);
 
   const mobileNavIndex = (() => {
-    const idx = MENU.findIndex((item) => isActive(item.path));
-    if (idx < 3) return idx;
+    const idx = ALL_MENU_ITEMS.findIndex((item) => isActive(item.path));
+    if (idx < 2) return idx;
     return -1;
   })();
 
   const handleMobileNav = (_: unknown, newValue: number) => {
-    if (newValue < 0 || newValue >= 3) return;
-    navigate(MENU[newValue].path);
+    if (newValue < 0 || newValue >= 2) return;
+    navigate(ALL_MENU_ITEMS[newValue].path);
   };
 
-  const moreItems = MENU.slice(3);
+  const moreItems = ALL_MENU_ITEMS.slice(2);
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -117,8 +146,8 @@ export const AdminLayout = () => {
             </IconButton>
           </Toolbar>
           <Divider />
-          <List sx={{ flex: 1, px: 1 }}>
-            {MENU.map((item) => (
+          <Box sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
+            {STANDALONE_ITEMS.map((item) => (
               <ListItemButton
                 key={item.path}
                 selected={isActive(item.path)}
@@ -152,7 +181,55 @@ export const AdminLayout = () => {
                 />
               </ListItemButton>
             ))}
-          </List>
+            {open && MENU_GROUPS.map((group) => (
+              <Accordion
+                key={group.label}
+                defaultExpanded={group.items.some((item) => isActive(item.path))}
+                disableGutters
+                elevation={0}
+                sx={{ backgroundColor: 'transparent', '&:before': { display: 'none' } }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{ minHeight: 48, px: 2, borderRadius: 2 }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                    {group.label}
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 1, pt: 0 }}>
+                  <List disablePadding>
+                    {group.items.map((item) => (
+                      <ListItemButton
+                        key={item.path}
+                        selected={isActive(item.path)}
+                        onClick={() => navigate(item.path)}
+                        sx={{
+                          borderRadius: 2,
+                          minHeight: 40,
+                          justifyContent: 'initial',
+                          px: 2,
+                          mb: 0.5,
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 0,
+                            mr: 2,
+                            justifyContent: 'center',
+                            color: isActive(item.path) ? '#111111' : 'inherit',
+                          }}
+                        >
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText primary={item.label} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
           <Divider />
           <List sx={{ px: 1 }}>
             <ListItemButton
@@ -236,10 +313,10 @@ export const AdminLayout = () => {
           >
             <BottomNavigationAction label="Dashboard" icon={<DashboardIcon />} />
             <BottomNavigationAction label="Cursos" icon={<SchoolIcon />} />
-            <BottomNavigationAction label="Módulos" icon={<ViewModuleIcon />} />
             <BottomNavigationAction
               label="Más"
               icon={<MoreHorizIcon />}
+              value={-1}
               onClick={handleMoreOpen}
             />
           </BottomNavigation>

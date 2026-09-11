@@ -51,10 +51,7 @@ export const router = createBrowserRouter([
         <AdminLayout />
       </RequireAuth>
     ),
-    children: [
-      { index: true, element: <Admin /> },
-      { path: ':tab', element: <Admin /> },
-    ],
+    children: [{ path: '*', element: <Admin /> }],
   },
   {
     path: '*',

@@ -224,6 +224,11 @@ export const api = {
       (data) => data.results,
     );
   },
+  getAdminLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', style?: string) =>
+    request<{ labels: { id: string; name: string; styles: string[] }[] }>('GET', `/admin/labels?type=${type}${style ? `&style=${style}` : ''}`),
+  createAdminLabel: (data: { type: 'STEP' | 'INFLUENCE' | 'TAG'; name: string; styles: string[] }) =>
+    request<{ label: { id: string; name: string; styles: string[] } }>('POST', '/admin/labels', data),
+  deleteAdminLabel: (id: string) => request<void>('DELETE', `/admin/labels/${id}`),
   getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);

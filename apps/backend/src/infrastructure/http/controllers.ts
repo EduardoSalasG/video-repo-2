@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -555,5 +555,46 @@ export class DashboardController {
   @ApiCookieAuth()
   async getDashboard(@CurrentUser() user: AuthUser) {
     return this.dashboard.getDashboard(user.userId, user.role as Role);
+  }
+}
+
+@Controller('admin/labels')
+export class LabelsController {
+  constructor(private readonly labels: LabelService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list(
+    @Query('type') type: string,
+    @Query('style') style?: string,
+  ) {
+    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.STEP;
+    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
+    const labels = await this.labels.list(labelType as LabelType, styleEnum as PrimaryStyle | undefined);
+    return { labels };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { type: string; name: string; styles: string[] }) {
+    const labelType = Object.values(LabelType).find((t) => t === body.type) ?? LabelType.STEP;
+    const styleEnums = body.styles
+      .map((s) => Object.values(PrimaryStyle).find((ps) => ps === s))
+      .filter((s): s is PrimaryStyle => s !== undefined);
+    const label = await this.labels.create(labelType as LabelType, body.name, styleEnums);
+    return { label };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('id') id: string) {
+    await this.labels.delete(id);
+    return { ok: true };
   }
 }

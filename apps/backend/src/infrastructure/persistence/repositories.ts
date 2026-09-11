@@ -11,6 +11,7 @@ import {
   IVideoMetadataRepository,
   VideoSearchResult,
   IVideoLabelRepository,
+  LabelWithStyles,
   VideoSearchOptions,
   ICourseAccessRepository,
   IProgressRepository,
@@ -407,6 +408,46 @@ export class PrismaVideoLabelRepository implements IVideoLabelRepository {
 
     if (styleData.length === 0) return;
     await this.prisma.videoLabelStyle.createMany({ data: styleData, skipDuplicates: true });
+  }
+
+  async findWithStyles(type: LabelType, style?: PrimaryStyle): Promise<LabelWithStyles[]> {
+    const rows = await this.prisma.videoLabel.findMany({
+      where: {
+        type,
+        ...(style && {
+          styles: { some: { style } },
+        }),
+      },
+      include: { styles: { select: { style: true } } },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      styles: row.styles.map((s) => s.style as PrimaryStyle),
+    }));
+  }
+
+  async create(type: LabelType, name: string, styles: PrimaryStyle[]): Promise<LabelWithStyles> {
+    const label = await this.prisma.videoLabel.create({
+      data: {
+        name,
+        type,
+        styles: {
+          create: styles.map((style) => ({ style })),
+        },
+      },
+      include: { styles: { select: { style: true } } },
+    });
+    return {
+      id: label.id,
+      name: label.name,
+      styles: label.styles.map((s) => s.style as PrimaryStyle),
+    };
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.videoLabel.delete({ where: { id } });
   }
 }
 

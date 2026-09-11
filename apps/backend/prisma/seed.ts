@@ -1,4 +1,4 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient, Role, LabelType, PrimaryStyle } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -39,7 +39,23 @@ const defaultUsers: SeedUser[] = [
   },
 ];
 
-async function main(): Promise<void> {
+const baseSteps = [
+  'Follower Right Turn',
+  'Follower Left Turn',
+  'Leader Right Turn',
+  'Leader Left Turn',
+];
+
+const mamboExtraSteps = ['Cross Body Lead', 'New York Walk', 'Cross Body Lead Reverse'];
+
+const defaultStepsByStyle: Record<PrimaryStyle, string[]> = {
+  MAMBO_ON2: [...baseSteps, ...mamboExtraSteps],
+  SENSUAL_BACHATA: [...baseSteps],
+  MODERN_BACHATA: [...baseSteps],
+  CASINO: [],
+};
+
+async function seedUsers(): Promise<void> {
   for (const user of defaultUsers) {
     const existing = await prisma.user.findUnique({ where: { email: user.email } });
     if (existing) {
@@ -60,6 +76,30 @@ async function main(): Promise<void> {
     });
     console.log(`User ${user.email} created`);
   }
+}
+
+async function seedSteps(): Promise<void> {
+  for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
+    for (const step of steps) {
+      const label = await prisma.videoLabel.upsert({
+        where: { name_type: { name: step, type: LabelType.STEP } },
+        update: {},
+        create: { name: step, type: LabelType.STEP },
+      });
+
+      await prisma.videoLabelStyle.upsert({
+        where: { labelId_style: { labelId: label.id, style: style as PrimaryStyle } },
+        update: {},
+        create: { labelId: label.id, style: style as PrimaryStyle },
+      });
+      console.log(`Step "${step}" for ${style} seeded`);
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  await seedUsers();
+  await seedSteps();
 }
 
 main()
