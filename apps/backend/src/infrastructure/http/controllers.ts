@@ -513,9 +513,11 @@ export class VideoSearchController {
   async getLabels(
     @Query('type') type: string,
     @Query('q') q?: string,
+    @Query('style') style?: string,
   ) {
     const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.TAG;
-    const labels = await this.videos.getLabels(labelType as LabelType, q);
+    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
+    const labels = await this.videos.getLabels(labelType as LabelType, q, styleEnum as PrimaryStyle | undefined);
     return { labels };
   }
 

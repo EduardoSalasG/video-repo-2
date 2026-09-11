@@ -369,11 +369,14 @@ export class PrismaVideoMetadataRepository implements IVideoMetadataRepository {
 export class PrismaVideoLabelRepository implements IVideoLabelRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findByType(type: LabelType, query?: string): Promise<string[]> {
+  async findByType(type: LabelType, query?: string, styles?: PrimaryStyle[]): Promise<string[]> {
     const rows = await this.prisma.videoLabel.findMany({
       where: {
         type,
         ...(query && { name: { contains: query, mode: 'insensitive' } }),
+        ...(styles && styles.length > 0 && {
+          styles: { some: { style: { in: styles } } },
+        }),
       },
       select: { name: true },
       orderBy: { name: 'asc' },
@@ -382,11 +385,28 @@ export class PrismaVideoLabelRepository implements IVideoLabelRepository {
     return rows.map((row) => row.name);
   }
 
-  async ensureMany(type: LabelType, names: string[]): Promise<void> {
+  async ensureMany(type: LabelType, names: string[], styles: PrimaryStyle[] = []): Promise<void> {
     const unique = [...new Set(names.filter(Boolean))];
     if (unique.length === 0) return;
-    const data = unique.map((name) => ({ name, type }));
-    await this.prisma.videoLabel.createMany({ data, skipDuplicates: true });
+
+    await this.prisma.videoLabel.createMany({
+      data: unique.map((name) => ({ name, type })),
+      skipDuplicates: true,
+    });
+
+    if (styles.length === 0) return;
+
+    const labels = await this.prisma.videoLabel.findMany({
+      where: { type, name: { in: unique } },
+      select: { id: true },
+    });
+
+    const styleData = labels.flatMap((label) =>
+      styles.map((style) => ({ labelId: label.id, style })),
+    );
+
+    if (styleData.length === 0) return;
+    await this.prisma.videoLabelStyle.createMany({ data: styleData, skipDuplicates: true });
   }
 }
 

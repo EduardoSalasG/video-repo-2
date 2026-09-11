@@ -224,10 +224,11 @@ export const api = {
       (data) => data.results,
     );
   },
-  getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string) => {
+  getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);
     if (q) query.set('q', q);
+    if (style) query.set('style', style);
     return request<{ labels: string[] }>('GET', `/videos/labels?${query.toString()}`).then((data) => data.labels);
   },
 };

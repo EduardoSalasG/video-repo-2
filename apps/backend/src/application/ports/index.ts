@@ -141,8 +141,8 @@ export interface IVideoMetadataRepository {
 }
 
 export interface IVideoLabelRepository {
-  findByType(type: LabelType, query?: string): Promise<string[]>;
-  ensureMany(type: LabelType, names: string[]): Promise<void>;
+  findByType(type: LabelType, query?: string, styles?: PrimaryStyle[]): Promise<string[]>;
+  ensureMany(type: LabelType, names: string[], styles?: PrimaryStyle[]): Promise<void>;
 }
 
 export interface ICourseAccessRepository {

@@ -261,10 +261,10 @@ export const Admin = () => {
 
   useEffect(() => {
     if (activeTab !== 4) return;
-    api.getVideoLabels('STEP').then(setStepLabels).catch(() => setStepLabels([]));
+    api.getVideoLabels('STEP', undefined, videoForm.primaryStyle).then(setStepLabels).catch(() => setStepLabels([]));
     api.getVideoLabels('INFLUENCE').then(setInfluenceLabels).catch(() => setInfluenceLabels([]));
     api.getVideoLabels('TAG').then(setTagLabels).catch(() => setTagLabels([]));
-  }, [activeTab]);
+  }, [activeTab, videoForm.primaryStyle]);
 
   const submitCourse = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

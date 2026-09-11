@@ -336,7 +336,7 @@ export class VideoService {
 
   private async ensureLabels(metadata: CreateVideoMetadataInput): Promise<void> {
     await Promise.all([
-      this.videoLabels.ensureMany(LabelType.STEP, metadata.steps),
+      this.videoLabels.ensureMany(LabelType.STEP, metadata.steps, [metadata.primaryStyle]),
       this.videoLabels.ensureMany(LabelType.INFLUENCE, metadata.influences),
       this.videoLabels.ensureMany(LabelType.TAG, metadata.tags),
     ]);
@@ -365,8 +365,8 @@ export class VideoService {
     return { type: 'internal', storageKey: file.storageKey, mimeType: file.mimeType };
   }
 
-  async getLabels(type: LabelType, query?: string): Promise<string[]> {
-    return this.videoLabels.findByType(type, query);
+  async getLabels(type: LabelType, query?: string, style?: PrimaryStyle): Promise<string[]> {
+    return this.videoLabels.findByType(type, query, style ? [style] : undefined);
   }
 
   async search(
@@ -390,7 +390,7 @@ export class VideoService {
     if (options.q) {
       const [tags, steps] = await Promise.all([
         this.videoLabels.findByType(LabelType.TAG, options.q),
-        this.videoLabels.findByType(LabelType.STEP, options.q),
+        this.videoLabels.findByType(LabelType.STEP, options.q, options.style ? [options.style] : undefined),
       ]);
       tagNames = tags;
       stepNames = steps;
