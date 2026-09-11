@@ -1068,7 +1068,7 @@ export const Admin = () => {
                   <TextField
                     {...params}
                     label="Pasos"
-                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    helperText="Escribe y presiona Enter"
                     InputLabelProps={{ shrink: true }}
                   />
                 )}
@@ -1085,7 +1085,7 @@ export const Admin = () => {
                   <TextField
                     {...params}
                     label="Influencias"
-                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    helperText="Escribe y presiona Enter"
                     InputLabelProps={{ shrink: true }}
                   />
                 )}
@@ -1102,7 +1102,7 @@ export const Admin = () => {
                   <TextField
                     {...params}
                     label="Tags"
-                    placeholder={params.InputProps.startAdornment ? '' : 'Escribe y presiona Enter'}
+                    helperText="Escribe y presiona Enter"
                     InputLabelProps={{ shrink: true }}
                   />
                 )}
