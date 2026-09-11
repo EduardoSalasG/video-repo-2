@@ -79,6 +79,7 @@ async function seedUsers(): Promise<void> {
 }
 
 async function seedSteps(): Promise<void> {
+  const styleData: { labelId: string; style: PrimaryStyle }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
     for (const step of steps) {
       const label = await prisma.videoLabel.upsert({
@@ -87,13 +88,16 @@ async function seedSteps(): Promise<void> {
         create: { name: step, type: LabelType.STEP },
       });
 
-      await prisma.videoLabelStyle.upsert({
-        where: { labelId_style: { labelId: label.id, style: style as PrimaryStyle } },
-        update: {},
-        create: { labelId: label.id, style: style as PrimaryStyle },
-      });
+      styleData.push({ labelId: label.id, style: style as PrimaryStyle });
       console.log(`Step "${step}" for ${style} seeded`);
     }
+  }
+
+  if (styleData.length > 0) {
+    await prisma.videoLabelStyle.createMany({
+      data: styleData,
+      skipDuplicates: true,
+    });
   }
 }
 
