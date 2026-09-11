@@ -1236,11 +1236,12 @@ export const Admin = () => {
                 ))}
             </FormField>
             <Box component="form" onSubmit={handleCreateLabel} noValidate>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
                 <FormField
                   label="Nuevo paso"
                   value={newLabelName}
                   onChange={(event) => setNewLabelName(event.target.value)}
+                  margin="none"
                   sx={{ flex: 1 }}
                 />
                 <Autocomplete
@@ -1250,11 +1251,22 @@ export const Admin = () => {
                   value={newLabelStyles}
                   onChange={(_event, value) => setNewLabelStyles(value)}
                   renderInput={(params) => (
-                    <TextField {...params} label="Estilos" helperText="Asocia uno o varios estilos" />
+                    <TextField
+                      {...params}
+                      label="Estilos"
+                      placeholder="Asocia uno o varios estilos"
+                      size="small"
+                      margin="none"
+                    />
                   )}
                   sx={{ flex: 1, minWidth: 200 }}
                 />
-                <Button type="submit" variant="contained" disabled={!newLabelName.trim() || newLabelStyles.length === 0}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!newLabelName.trim() || newLabelStyles.length === 0}
+                  sx={{ height: 40 }}
+                >
                   Agregar
                 </Button>
               </Stack>
@@ -1295,9 +1307,14 @@ export const Admin = () => {
 
         {activeTab === 6 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
-              Estilos y sus pasos
-            </Typography>
+            <Box>
+              <Typography variant="h5" component="h2">
+                Estilos
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Los estilos son Mambo, Bachata Sensual, Bachata Moderna y Casino. Aquí se muestran los pasos asociados a cada uno.
+              </Typography>
+            </Box>
             {loadingLabels && <Typography color="text.secondary">Cargando...</Typography>}
             {Object.entries(primaryStyleLabels)
               .sort((a, b) => a[1].localeCompare(b[1]))
