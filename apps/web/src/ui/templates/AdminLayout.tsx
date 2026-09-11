@@ -27,6 +27,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import TuneIcon from '@mui/icons-material/Tune';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { Typography } from '../atoms/Typography';
@@ -36,7 +38,7 @@ const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
 
 interface MenuItem { label: string; path: string; icon: ReactNode; }
-interface MenuGroup { label: string; items: MenuItem[]; }
+interface MenuGroup { label: string; icon: ReactNode; items: MenuItem[]; }
 
 const STANDALONE_ITEMS: MenuItem[] = [
   { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
@@ -46,6 +48,7 @@ const STANDALONE_ITEMS: MenuItem[] = [
 const MENU_GROUPS: MenuGroup[] = [
   {
     label: 'Contenido',
+    icon: <MenuBookIcon />,
     items: [
       { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon /> },
       { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon /> },
@@ -55,6 +58,7 @@ const MENU_GROUPS: MenuGroup[] = [
   },
   {
     label: 'Parámetros',
+    icon: <TuneIcon />,
     items: [
       { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
       { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
@@ -181,23 +185,36 @@ export const AdminLayout = () => {
                 />
               </ListItemButton>
             ))}
-            {open && MENU_GROUPS.map((group) => (
+            {MENU_GROUPS.map((group) => (
               <Accordion
                 key={group.label}
-                defaultExpanded={group.items.some((item) => isActive(item.path))}
+                defaultExpanded={open && group.items.some((item) => isActive(item.path))}
                 disableGutters
                 elevation={0}
                 sx={{ backgroundColor: 'transparent', '&:before': { display: 'none' } }}
               >
                 <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  sx={{ minHeight: 48, px: 2, borderRadius: 2 }}
+                  expandIcon={open ? <ExpandMoreIcon /> : null}
+                  sx={{ minHeight: 48, px: open ? 2 : 1, borderRadius: 2 }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                    {group.label}
-                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: open ? 'flex-start' : 'center',
+                      gap: open ? 1.5 : 0,
+                      width: '100%',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', color: 'text.secondary' }}>{group.icon}</Box>
+                    {open && (
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                        {group.label}
+                      </Typography>
+                    )}
+                  </Box>
                 </AccordionSummary>
-                <AccordionDetails sx={{ px: 1, pt: 0 }}>
+                <AccordionDetails sx={{ px: open ? 1 : 0, pt: 0 }}>
                   <List disablePadding>
                     {group.items.map((item) => (
                       <ListItemButton
@@ -207,22 +224,22 @@ export const AdminLayout = () => {
                         sx={{
                           borderRadius: 2,
                           minHeight: 40,
-                          justifyContent: 'initial',
-                          px: 2,
+                          justifyContent: open ? 'initial' : 'center',
+                          px: open ? 2 : 1,
                           mb: 0.5,
                         }}
                       >
                         <ListItemIcon
                           sx={{
                             minWidth: 0,
-                            mr: 2,
+                            mr: open ? 2 : 'auto',
                             justifyContent: 'center',
                             color: isActive(item.path) ? '#111111' : 'inherit',
                           }}
                         >
                           {item.icon}
                         </ListItemIcon>
-                        <ListItemText primary={item.label} />
+                        {open && <ListItemText primary={item.label} />}
                       </ListItemButton>
                     ))}
                   </List>
