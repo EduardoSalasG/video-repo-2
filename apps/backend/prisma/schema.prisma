@@ -174,12 +174,25 @@ model UserSectionProgress {
 }
 
 model VideoLabel {
-  id        String    @id @default(uuid())
+  id        String            @id @default(uuid())
   name      String
   type      LabelType
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  styles    VideoLabelStyle[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@unique([name, type])
   @@map("video_labels")
+}
+
+model VideoLabelStyle {
+  id        String     @id @default(uuid())
+  labelId   String
+  label     VideoLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  style     PrimaryStyle
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([labelId, style])
+  @@map("video_label_styles")
 }
