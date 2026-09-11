@@ -3,18 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Typography } from '../atoms/Typography';
 import { api } from '../../lib/api';
-import type { Course as CourseType, CourseModule, Section } from '../../types';
+import type { Course as CourseType, CourseModule, Section, VideoMetadata } from '../../types';
 
 export const Course = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -23,6 +25,7 @@ export const Course = () => {
   const [sectionsByModule, setSectionsByModule] = useState<Record<string, Section[]>>({});
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [metadataBySection, setMetadataBySection] = useState<Record<string, VideoMetadata | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +55,16 @@ export const Course = () => {
       try {
         const sections = await api.getSections(moduleId);
         setSectionsByModule((prev) => ({ ...prev, [moduleId]: sections }));
+        const metadata = await Promise.all(
+          sections.map((s) => api.getSectionMetadata(s.id).catch(() => null)),
+        );
+        setMetadataBySection((prev) => {
+          const next = { ...prev };
+          sections.forEach((s, i) => {
+            next[s.id] = metadata[i];
+          });
+          return next;
+        });
       } catch {
         setSectionsByModule((prev) => ({ ...prev, [moduleId]: [] }));
       }
@@ -127,6 +140,21 @@ export const Course = () => {
                           <Typography variant="body1" sx={{ color: '#111111' }}>
                             {section.title}
                           </Typography>
+                        }
+                        secondary={
+                          metadataBySection[section.id]?.steps?.length ? (
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              flexWrap="wrap"
+                              gap={0.5}
+                              sx={{ mt: 0.5 }}
+                            >
+                              {metadataBySection[section.id]!.steps.map((step) => (
+                                <Chip key={step} label={step} size="small" variant="outlined" />
+                              ))}
+                            </Stack>
+                          ) : null
                         }
                       />
                       {completedIds.has(section.id) && (

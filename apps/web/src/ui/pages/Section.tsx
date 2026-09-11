@@ -128,17 +128,19 @@ export const Section = () => {
             borderRadius: 4,
             border: '1px solid rgba(0,0,0,0.06)',
             overflow: 'hidden',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
           <video
             src={videoUrl}
             controls
             preload="metadata"
-            width="100%"
             crossOrigin="use-credentials"
             onEnded={handleVideoEnded}
             aria-label={`Video de ${section.title}`}
-            style={{ borderRadius: 8, display: 'block' }}
+            style={{ borderRadius: 8, display: 'block', maxWidth: '100%', maxHeight: '70vh' }}
           />
         </Paper>
       )}
