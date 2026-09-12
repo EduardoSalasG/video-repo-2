@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService } from './application/services';
+import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from './application/services';
 import { InjectionTokens } from './application/tokens';
-import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController } from './infrastructure/http/controllers';
+import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController, DifficultiesController, VideoTypesController, LabelTypesController, AccessLevelsController, RolesController } from './infrastructure/http/controllers';
 import { PrismaService } from './infrastructure/persistence/prisma.service';
 import {
   PrismaUserRepository,
@@ -15,6 +15,11 @@ import {
   PrismaVideoMetadataRepository,
   PrismaVideoLabelRepository,
   PrismaPrimaryStyleRepository,
+  PrismaDifficultyRepository,
+  PrismaVideoTypeRepository,
+  PrismaLabelTypeRepository,
+  PrismaAccessLevelRepository,
+  PrismaRoleRepository,
   PrismaCourseAccessRepository,
   PrismaProgressRepository,
 } from './infrastructure/persistence/repositories';
@@ -49,6 +54,11 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     DashboardController,
     LabelsController,
     PrimaryStylesController,
+    DifficultiesController,
+    VideoTypesController,
+    LabelTypesController,
+    AccessLevelsController,
+    RolesController,
   ],
   providers: [
     { provide: InjectionTokens.TOKEN_SERVICE, useClass: JwtTokenService },
@@ -65,6 +75,11 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     { provide: InjectionTokens.VIDEO_METADATA_REPOSITORY, useClass: PrismaVideoMetadataRepository },
     { provide: InjectionTokens.VIDEO_LABEL_REPOSITORY, useClass: PrismaVideoLabelRepository },
     { provide: InjectionTokens.PRIMARY_STYLE_REPOSITORY, useClass: PrismaPrimaryStyleRepository },
+    { provide: InjectionTokens.DIFFICULTY_REPOSITORY, useClass: PrismaDifficultyRepository },
+    { provide: InjectionTokens.VIDEO_TYPE_REPOSITORY, useClass: PrismaVideoTypeRepository },
+    { provide: InjectionTokens.LABEL_TYPE_REPOSITORY, useClass: PrismaLabelTypeRepository },
+    { provide: InjectionTokens.ACCESS_LEVEL_REPOSITORY, useClass: PrismaAccessLevelRepository },
+    { provide: InjectionTokens.ROLE_REPOSITORY, useClass: PrismaRoleRepository },
     { provide: InjectionTokens.COURSE_ACCESS_REPOSITORY, useClass: PrismaCourseAccessRepository },
     { provide: InjectionTokens.PROGRESS_REPOSITORY, useClass: PrismaProgressRepository },
     PrismaService,
@@ -81,6 +96,12 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     VideoService,
     DashboardService,
     LabelService,
+    StyleService,
+    DifficultyService,
+    VideoTypeService,
+    LabelTypeService,
+    AccessLevelService,
+    RoleService,
     ProgressService,
   ],
 })

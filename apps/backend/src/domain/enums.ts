@@ -1,21 +1,27 @@
-export enum Role {
-  ADMIN = 'ADMIN',
-  INSTRUCTOR = 'INSTRUCTOR',
-  STUDENT = 'STUDENT',
-}
+export const Role = {
+  ADMIN: 'ADMIN',
+  INSTRUCTOR: 'INSTRUCTOR',
+  STUDENT: 'STUDENT',
+} as const;
 
-export enum AccessLevel {
-  READ = 'READ',
-  WRITE = 'WRITE',
-  MAINTAIN = 'MAINTAIN',
-}
+export type Role = string;
 
-export enum Difficulty {
-  BEGINNER = 'BEGINNER',
-  BASIC = 'BASIC',
-  INTERMEDIATE = 'INTERMEDIATE',
-  ADVANCED = 'ADVANCED',
-}
+export const AccessLevel = {
+  READ: 'READ',
+  WRITE: 'WRITE',
+  MAINTAIN: 'MAINTAIN',
+} as const;
+
+export type AccessLevel = string;
+
+export const Difficulty = {
+  BEGINNER: 'BEGINNER',
+  BASIC: 'BASIC',
+  INTERMEDIATE: 'INTERMEDIATE',
+  ADVANCED: 'ADVANCED',
+} as const;
+
+export type Difficulty = string;
 
 export const PrimaryStyle = {
   MAMBO_ON2: 'MAMBO_ON2',
@@ -26,14 +32,18 @@ export const PrimaryStyle = {
 
 export type PrimaryStyle = string;
 
-export enum VideoType {
-  STEP = 'STEP',
-  SEQUENCE = 'SEQUENCE',
-  CHOREOGRAPHY = 'CHOREOGRAPHY',
-}
+export const VideoType = {
+  STEP: 'STEP',
+  SEQUENCE: 'SEQUENCE',
+  CHOREOGRAPHY: 'CHOREOGRAPHY',
+} as const;
 
-export enum LabelType {
-  STEP = 'STEP',
-  INFLUENCE = 'INFLUENCE',
-  TAG = 'TAG',
-}
+export type VideoType = string;
+
+export const LabelType = {
+  STEP: 'STEP',
+  INFLUENCE: 'INFLUENCE',
+  TAG: 'TAG',
+} as const;
+
+export type LabelType = string;

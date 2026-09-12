@@ -15,17 +15,15 @@ import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import CloseIcon from '@mui/icons-material/Close';
-import EditIcon from '@mui/icons-material/Edit';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
+import { ParamMaintainer } from '../organisms/ParamMaintainer';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import { primaryStyleLabels, videoTypeLabels } from '../../lib/labels';
-import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess, PrimaryStyleRecord } from '../../types';
+import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess, ParamRecord } from '../../types';
 
 const TABS = [
   'dashboard',
@@ -36,6 +34,11 @@ const TABS = [
   'parametros/pasos',
   'parametros/estilos',
   'usuarios',
+  'parametros/dificultades',
+  'parametros/tipos-video',
+  'parametros/tipos-etiqueta',
+  'parametros/niveles-acceso',
+  'parametros/roles',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -68,9 +71,9 @@ const sectionSchema = z.object({
 });
 
 const videoSchema = z.object({
-  difficulty: z.enum(['BEGINNER', 'BASIC', 'INTERMEDIATE', 'ADVANCED']),
+  difficulty: z.string().min(1, 'La dificultad es obligatoria'),
   primaryStyle: z.string().min(1, 'El estilo es obligatorio'),
-  videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
+  videoType: z.string().min(1, 'El tipo de video es obligatorio'),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
   steps: z.array(z.string()).default([]),
   influences: z.array(z.string()).default([]),
@@ -79,7 +82,7 @@ const videoSchema = z.object({
 
 const roleSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
-  role: z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']),
+  role: z.string().min(1, 'Selecciona un rol'),
 });
 
 const accessSchema = z.object({
@@ -170,12 +173,18 @@ export const Admin = () => {
   const [newLabelStyles, setNewLabelStyles] = useState<PrimaryStyle[]>([]);
   const [filterLabelStyle, setFilterLabelStyle] = useState<PrimaryStyle | ''>('');
 
-  const [primaryStyles, setPrimaryStyles] = useState<PrimaryStyleRecord[]>([]);
+  const [primaryStyles, setPrimaryStyles] = useState<ParamRecord[]>([]);
   const [loadingStyles, setLoadingStyles] = useState(false);
-  const [newStyleValue, setNewStyleValue] = useState('');
-  const [newStyleLabel, setNewStyleLabel] = useState('');
-  const [editingStyle, setEditingStyle] = useState<PrimaryStyleRecord | null>(null);
-  const [styleForm, setStyleForm] = useState({ label: '', orderIndex: 0, isActive: true });
+  const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
+  const [loadingDifficulties, setLoadingDifficulties] = useState(false);
+  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
+  const [loadingVideoTypes, setLoadingVideoTypes] = useState(false);
+  const [labelTypes, setLabelTypes] = useState<ParamRecord[]>([]);
+  const [loadingLabelTypes, setLoadingLabelTypes] = useState(false);
+  const [accessLevels, setAccessLevels] = useState<ParamRecord[]>([]);
+  const [loadingAccessLevels, setLoadingAccessLevels] = useState(false);
+  const [roles, setRoles] = useState<ParamRecord[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -314,8 +323,60 @@ export const Admin = () => {
       .finally(() => setLoadingStyles(false));
   };
 
+  const loadDifficulties = () => {
+    setLoadingDifficulties(true);
+    api
+      .getDifficulties()
+      .then(setDifficulties)
+      .catch(() => setDifficulties([]))
+      .finally(() => setLoadingDifficulties(false));
+  };
+
+  const loadVideoTypes = () => {
+    setLoadingVideoTypes(true);
+    api
+      .getVideoTypes()
+      .then(setVideoTypes)
+      .catch(() => setVideoTypes([]))
+      .finally(() => setLoadingVideoTypes(false));
+  };
+
+  const loadLabelTypes = () => {
+    setLoadingLabelTypes(true);
+    api
+      .getLabelTypes()
+      .then(setLabelTypes)
+      .catch(() => setLabelTypes([]))
+      .finally(() => setLoadingLabelTypes(false));
+  };
+
+  const loadAccessLevels = () => {
+    setLoadingAccessLevels(true);
+    api
+      .getAccessLevels()
+      .then(setAccessLevels)
+      .catch(() => setAccessLevels([]))
+      .finally(() => setLoadingAccessLevels(false));
+  };
+
+  const loadRoles = () => {
+    setLoadingRoles(true);
+    api
+      .getRoles()
+      .then(setRoles)
+      .catch(() => setRoles([]))
+      .finally(() => setLoadingRoles(false));
+  };
+
   useEffect(() => {
-    if (activeTab >= 4) loadPrimaryStyles();
+    if (activeTab >= 4) {
+      loadPrimaryStyles();
+      loadDifficulties();
+      loadVideoTypes();
+      loadLabelTypes();
+      loadAccessLevels();
+      loadRoles();
+    }
   }, [activeTab]);
 
   useEffect(() => {
@@ -560,13 +621,9 @@ export const Admin = () => {
     }
   };
 
-  const handleCreateStyle = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!newStyleValue.trim() || !newStyleLabel.trim()) return;
+  const handleCreateStyle = async (value: string, label: string) => {
     try {
-      await api.createPrimaryStyle({ value: newStyleValue.trim().toUpperCase(), label: newStyleLabel.trim() });
-      setNewStyleValue('');
-      setNewStyleLabel('');
+      await api.createPrimaryStyle({ value, label });
       showSuccess('Estilo creado');
       loadPrimaryStyles();
     } catch (err) {
@@ -575,17 +632,9 @@ export const Admin = () => {
     }
   };
 
-  const handleEditStyle = (style: PrimaryStyleRecord) => {
-    setEditingStyle(style);
-    setStyleForm({ label: style.label, orderIndex: style.orderIndex, isActive: style.isActive });
-  };
-
-  const handleUpdateStyle = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editingStyle) return;
+  const handleUpdateStyle = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
     try {
-      await api.updatePrimaryStyle(editingStyle.value, styleForm);
-      setEditingStyle(null);
+      await api.updatePrimaryStyle(value, data);
       showSuccess('Estilo actualizado');
       loadPrimaryStyles();
     } catch (err) {
@@ -601,6 +650,171 @@ export const Admin = () => {
       loadPrimaryStyles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar estilo';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateDifficulty = async (value: string, label: string) => {
+    try {
+      await api.createDifficulty({ value, label });
+      showSuccess('Dificultad creada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear dificultad';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateDifficulty = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateDifficulty(value, data);
+      showSuccess('Dificultad actualizada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar dificultad';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteDifficulty = async (value: string) => {
+    try {
+      await api.deleteDifficulty(value);
+      showSuccess('Dificultad eliminada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar dificultad';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateVideoType = async (value: string, label: string) => {
+    try {
+      await api.createVideoType({ value, label });
+      showSuccess('Tipo de video creado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateVideoType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateVideoType(value, data);
+      showSuccess('Tipo de video actualizado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteVideoType = async (value: string) => {
+    try {
+      await api.deleteVideoType(value);
+      showSuccess('Tipo de video eliminado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateLabelType = async (value: string, label: string) => {
+    try {
+      await api.createLabelType({ value, label });
+      showSuccess('Tipo de etiqueta creado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateLabelType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateLabelType(value, data);
+      showSuccess('Tipo de etiqueta actualizado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteLabelType = async (value: string) => {
+    try {
+      await api.deleteLabelType(value);
+      showSuccess('Tipo de etiqueta eliminado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateAccessLevel = async (value: string, label: string) => {
+    try {
+      await api.createAccessLevel({ value, label });
+      showSuccess('Nivel de acceso creado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateAccessLevel = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateAccessLevel(value, data);
+      showSuccess('Nivel de acceso actualizado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteAccessLevel = async (value: string) => {
+    try {
+      await api.deleteAccessLevel(value);
+      showSuccess('Nivel de acceso eliminado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateRole = async (value: string, label: string) => {
+    try {
+      await api.createRole({ value, label });
+      showSuccess('Rol creado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear rol';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateRole = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateRole(value, data);
+      showSuccess('Rol actualizado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar rol';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteRole = async (value: string) => {
+    try {
+      await api.deleteRole(value);
+      showSuccess('Rol eliminado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar rol';
       showSuccess(message);
     }
   };
@@ -1136,10 +1350,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.difficulty}
               >
-                <MenuItem value="BEGINNER">Principiante</MenuItem>
-                <MenuItem value="BASIC">Básico</MenuItem>
-                <MenuItem value="INTERMEDIATE">Intermedio</MenuItem>
-                <MenuItem value="ADVANCED">Avanzado</MenuItem>
+                {(difficulties.length > 0
+                  ? difficulties.filter((d) => d.isActive)
+                  : Object.entries(difficultyLabels).map(([value, label], index) => ({ value, label, orderIndex: index }))
+                ).map((difficulty) => (
+                  <MenuItem key={difficulty.value} value={difficulty.value}>
+                    {difficulty.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 select
@@ -1168,13 +1386,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.videoType}
               >
-                {Object.entries(videoTypeLabels)
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                {(videoTypes.length > 0
+                  ? videoTypes.filter((t) => t.isActive)
+                  : Object.entries(videoTypeLabels).map(([value, label], index) => ({ value, label, orderIndex: index }))
+                ).map((videoType) => (
+                  <MenuItem key={videoType.value} value={videoType.value}>
+                    {videoType.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 label="Duración (counts)"
@@ -1377,111 +1596,75 @@ export const Admin = () => {
         )}
 
         {activeTab === 6 && (
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="h5" component="h2">
-                Mantenedor de estilos
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Crea, edita y desactiva estilos principales. Estos valores alimentan los selects de videos y pasos.
-              </Typography>
-            </Box>
-            <Box component="form" onSubmit={handleCreateStyle} noValidate>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                <FormField
-                  label="Valor"
-                  value={newStyleValue}
-                  onChange={(event) => setNewStyleValue(event.target.value)}
-                  margin="none"
-                  sx={{ flex: 1 }}
-                  helperText="Identificador interno, por ejemplo MAMBO_ON2"
-                />
-                <FormField
-                  label="Etiqueta"
-                  value={newStyleLabel}
-                  onChange={(event) => setNewStyleLabel(event.target.value)}
-                  margin="none"
-                  sx={{ flex: 1 }}
-                  helperText="Nombre visible, por ejemplo Mambo"
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={!newStyleValue.trim() || !newStyleLabel.trim()}
-                  sx={{ height: 40 }}
-                >
-                  Agregar
-                </Button>
-              </Stack>
-            </Box>
-            {editingStyle && (
-              <Paper sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="h6" component="h3" gutterBottom>
-                  Editar {editingStyle.value}
-                </Typography>
-                <Box component="form" onSubmit={handleUpdateStyle} noValidate>
-                  <Stack spacing={2}>
-                    <FormField
-                      label="Etiqueta"
-                      value={styleForm.label}
-                      onChange={(event) => setStyleForm((f) => ({ ...f, label: event.target.value }))}
-                      margin="none"
-                    />
-                    <TextField
-                      label="Orden"
-                      type="number"
-                      value={styleForm.orderIndex}
-                      onChange={(event) => setStyleForm((f) => ({ ...f, orderIndex: Number(event.target.value) }))}
-                      size="small"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={styleForm.isActive}
-                          onChange={(event) => setStyleForm((f) => ({ ...f, isActive: event.target.checked }))}
-                        />
-                      }
-                      label="Activo"
-                    />
-                    <Stack direction="row" spacing={1}>
-                      <Button type="submit" variant="contained">Guardar</Button>
-                      <Button type="button" variant="outlined" onClick={() => setEditingStyle(null)}>Cancelar</Button>
-                    </Stack>
-                  </Stack>
-                </Box>
-              </Paper>
-            )}
-            {loadingStyles && <Typography color="text.secondary">Cargando estilos...</Typography>}
-            <Paper sx={{ p: 2, borderRadius: 2 }}>
-              <List>
-                {primaryStyles.map((style) => (
-                  <ListItem
-                    key={style.value}
-                    secondaryAction={
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <IconButton edge="end" onClick={() => handleEditStyle(style)} color="primary">
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton edge="end" onClick={() => handleDeleteStyle(style.value)} color="error">
-                          <CloseIcon />
-                        </IconButton>
-                      </Stack>
-                    }
-                  >
-                    <ListItemText
-                      primary={style.label}
-                      secondary={`${style.value} · orden ${style.orderIndex} · ${style.isActive ? 'activo' : 'inactivo'}`}
-                    />
-                  </ListItem>
-                ))}
-                {primaryStyles.length === 0 && !loadingStyles && (
-                  <ListItem>
-                    <ListItemText primary="No hay estilos" />
-                  </ListItem>
-                )}
-              </List>
-            </Paper>
-          </Stack>
+          <ParamMaintainer
+            title="Mantenedor de estilos"
+            description="Crea, edita y desactiva estilos principales. Estos valores alimentan los selects de videos y pasos."
+            items={primaryStyles}
+            loading={loadingStyles}
+            onCreate={handleCreateStyle}
+            onUpdate={handleUpdateStyle}
+            onDelete={handleDeleteStyle}
+          />
+        )}
+
+        {activeTab === 8 && (
+          <ParamMaintainer
+            title="Mantenedor de dificultades"
+            description="Crea, edita y desactiva niveles de dificultad. El orden define cómo se listan en los formularios."
+            items={difficulties}
+            loading={loadingDifficulties}
+            onCreate={handleCreateDifficulty}
+            onUpdate={handleUpdateDifficulty}
+            onDelete={handleDeleteDifficulty}
+          />
+        )}
+
+        {activeTab === 9 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de video"
+            description="Crea, edita y desactiva tipos de video (paso, secuencia, coreografía, etc.)."
+            items={videoTypes}
+            loading={loadingVideoTypes}
+            onCreate={handleCreateVideoType}
+            onUpdate={handleUpdateVideoType}
+            onDelete={handleDeleteVideoType}
+          />
+        )}
+
+        {activeTab === 10 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de etiqueta"
+            description="Crea, edita y desactiva tipos de etiqueta (paso, influencia, tag, etc.)."
+            items={labelTypes}
+            loading={loadingLabelTypes}
+            onCreate={handleCreateLabelType}
+            onUpdate={handleUpdateLabelType}
+            onDelete={handleDeleteLabelType}
+          />
+        )}
+
+        {activeTab === 11 && (
+          <ParamMaintainer
+            title="Mantenedor de niveles de acceso"
+            description="Crea, edita y desactiva niveles de acceso (lectura, escritura, mantener, etc.)."
+            items={accessLevels}
+            loading={loadingAccessLevels}
+            onCreate={handleCreateAccessLevel}
+            onUpdate={handleUpdateAccessLevel}
+            onDelete={handleDeleteAccessLevel}
+          />
+        )}
+
+        {activeTab === 12 && (
+          <ParamMaintainer
+            title="Mantenedor de roles"
+            description="Crea, edita y desactiva roles de usuario (admin, instructor, estudiante, etc.)."
+            items={roles}
+            loading={loadingRoles}
+            onCreate={handleCreateRole}
+            onUpdate={handleUpdateRole}
+            onDelete={handleDeleteRole}
+          />
         )}
 
         {activeTab === 7 && (
@@ -1506,7 +1689,7 @@ export const Admin = () => {
                 <Typography><strong>Nombre:</strong> {selectedUser.firstName} {selectedUser.lastName}</Typography>
                 <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
                 <Typography><strong>Usuario:</strong> {selectedUser.username}</Typography>
-                <Typography><strong>Rol:</strong> {selectedUser.role}</Typography>
+                <Typography><strong>Rol:</strong> {roles.find((r) => r.value === selectedUser.role)?.label ?? selectedUser.role}</Typography>
               </Paper>
             )}
             {selectedUserId && (
@@ -1524,13 +1707,18 @@ export const Admin = () => {
                     }
                     fieldError={roleErrors.role}
                   >
-                    {Object.entries({ ADMIN: 'Admin', INSTRUCTOR: 'Instructor', STUDENT: 'Estudiante' })
-                      .sort((a, b) => a[1].localeCompare(b[1]))
-                      .map(([value, label]) => (
-                        <MenuItem key={value} value={value}>
-                          {label}
-                        </MenuItem>
-                      ))}
+                    {(roles.length > 0
+                      ? roles.filter((r) => r.isActive)
+                      : [
+                          { value: 'ADMIN', label: 'Admin' },
+                          { value: 'INSTRUCTOR', label: 'Instructor' },
+                          { value: 'STUDENT', label: 'Estudiante' },
+                        ]
+                    ).map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        {role.label}
+                      </MenuItem>
+                    ))}
                   </FormField>
                   <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                     Actualizar rol
@@ -1557,7 +1745,7 @@ export const Admin = () => {
                       >
                         <ListItemText
                           primary={access.course?.name ?? access.courseId}
-                          secondary={access.accessLevel}
+                          secondary={accessLevels.find((l) => l.value === access.accessLevel)?.label ?? access.accessLevel}
                         />
                       </ListItem>
                     ))}

@@ -8,6 +8,7 @@ import type {
   CourseAccess,
   VideoSearchResult,
   PrimaryStyleRecord,
+  ParamRecord,
 } from '../types';
 
 import { ApiError } from './error';
@@ -225,9 +226,9 @@ export const api = {
       (data) => data.results,
     );
   },
-  getAdminLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', style?: string) =>
+  getAdminLabels: (type: string, style?: string) =>
     request<{ labels: { id: string; name: string; styles: string[] }[] }>('GET', `/admin/labels?type=${type}${style ? `&style=${style}` : ''}`),
-  createAdminLabel: (data: { type: 'STEP' | 'INFLUENCE' | 'TAG'; name: string; styles: string[] }) =>
+  createAdminLabel: (data: { type: string; name: string; styles: string[] }) =>
     request<{ label: { id: string; name: string; styles: string[] } }>('POST', '/admin/labels', data),
   deleteAdminLabel: (id: string) => request<void>('DELETE', `/admin/labels/${id}`),
   getPrimaryStyles: () => request<{ styles: PrimaryStyleRecord[] }>('GET', '/admin/primary-styles').then((data) => data.styles),
@@ -236,7 +237,37 @@ export const api = {
   updatePrimaryStyle: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ style: PrimaryStyleRecord }>('PATCH', `/admin/primary-styles/${encodeURIComponent(value)}`, data),
   deletePrimaryStyle: (value: string) => request<void>('DELETE', `/admin/primary-styles/${encodeURIComponent(value)}`),
-  getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
+  getDifficulties: () => request<{ difficulties: ParamRecord[] }>('GET', '/admin/difficulties').then((data) => data.difficulties),
+  createDifficulty: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ difficulty: ParamRecord }>('POST', '/admin/difficulties', data),
+  updateDifficulty: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ difficulty: ParamRecord }>('PATCH', `/admin/difficulties/${encodeURIComponent(value)}`, data),
+  deleteDifficulty: (value: string) => request<void>('DELETE', `/admin/difficulties/${encodeURIComponent(value)}`),
+  getVideoTypes: () => request<{ videoTypes: ParamRecord[] }>('GET', '/admin/video-types').then((data) => data.videoTypes),
+  createVideoType: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ videoType: ParamRecord }>('POST', '/admin/video-types', data),
+  updateVideoType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ videoType: ParamRecord }>('PATCH', `/admin/video-types/${encodeURIComponent(value)}`, data),
+  deleteVideoType: (value: string) => request<void>('DELETE', `/admin/video-types/${encodeURIComponent(value)}`),
+  getLabelTypes: () => request<{ labelTypes: ParamRecord[] }>('GET', '/admin/label-types').then((data) => data.labelTypes),
+  createLabelType: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ labelType: ParamRecord }>('POST', '/admin/label-types', data),
+  updateLabelType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ labelType: ParamRecord }>('PATCH', `/admin/label-types/${encodeURIComponent(value)}`, data),
+  deleteLabelType: (value: string) => request<void>('DELETE', `/admin/label-types/${encodeURIComponent(value)}`),
+  getAccessLevels: () => request<{ accessLevels: ParamRecord[] }>('GET', '/admin/access-levels').then((data) => data.accessLevels),
+  createAccessLevel: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ accessLevel: ParamRecord }>('POST', '/admin/access-levels', data),
+  updateAccessLevel: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ accessLevel: ParamRecord }>('PATCH', `/admin/access-levels/${encodeURIComponent(value)}`, data),
+  deleteAccessLevel: (value: string) => request<void>('DELETE', `/admin/access-levels/${encodeURIComponent(value)}`),
+  getRoles: () => request<{ roles: ParamRecord[] }>('GET', '/admin/roles').then((data) => data.roles),
+  createRole: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ role: ParamRecord }>('POST', '/admin/roles', data),
+  updateRole: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ role: ParamRecord }>('PATCH', `/admin/roles/${encodeURIComponent(value)}`, data),
+  deleteRole: (value: string) => request<void>('DELETE', `/admin/roles/${encodeURIComponent(value)}`),
+  getVideoLabels: (type: string, q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);
     if (q) query.set('q', q);

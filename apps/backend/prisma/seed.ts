@@ -1,7 +1,13 @@
-import { PrismaClient, Role, LabelType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+const defaultRoles: Record<string, string> = {
+  ADMIN: 'Admin',
+  INSTRUCTOR: 'Instructor',
+  STUDENT: 'Estudiante',
+};
 
 const defaultPrimaryStyles: Record<string, string> = {
   MAMBO_ON2: 'Mambo',
@@ -10,12 +16,37 @@ const defaultPrimaryStyles: Record<string, string> = {
   MODERN_BACHATA: 'Bachata Moderna',
 };
 
+const defaultDifficulties: Record<string, string> = {
+  BEGINNER: 'Principiante',
+  BASIC: 'Básico',
+  INTERMEDIATE: 'Intermedio',
+  ADVANCED: 'Avanzado',
+};
+
+const defaultVideoTypes: Record<string, string> = {
+  STEP: 'Paso',
+  SEQUENCE: 'Secuencia',
+  CHOREOGRAPHY: 'Coreografía',
+};
+
+const defaultLabelTypes: Record<string, string> = {
+  STEP: 'Paso',
+  INFLUENCE: 'Influencia',
+  TAG: 'Tag',
+};
+
+const defaultAccessLevels: Record<string, string> = {
+  READ: 'Lectura',
+  WRITE: 'Escritura',
+  MAINTAIN: 'Mantener',
+};
+
 interface SeedUser {
   email: string;
   username: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role: string;
   password: string;
 }
 
@@ -25,7 +56,7 @@ const defaultUsers: SeedUser[] = [
     username: 'admin',
     firstName: 'Admin',
     lastName: 'User',
-    role: Role.ADMIN,
+    role: 'ADMIN',
     password: process.env.ADMIN_PASSWORD ?? 'admin123',
   },
   {
@@ -33,7 +64,7 @@ const defaultUsers: SeedUser[] = [
     username: 'instructor',
     firstName: 'Instructor',
     lastName: 'User',
-    role: Role.INSTRUCTOR,
+    role: 'INSTRUCTOR',
     password: process.env.INSTRUCTOR_PASSWORD ?? 'instructor123',
   },
   {
@@ -41,7 +72,7 @@ const defaultUsers: SeedUser[] = [
     username: 'student',
     firstName: 'Student',
     lastName: 'User',
-    role: Role.STUDENT,
+    role: 'STUDENT',
     password: process.env.STUDENT_PASSWORD ?? 'student123',
   },
 ];
@@ -61,6 +92,19 @@ const defaultStepsByStyle: Record<string, string[]> = {
   MODERN_BACHATA: [...baseSteps],
   CASINO: [],
 };
+
+async function seedRoles(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultRoles)) {
+    await prisma.role.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Role ${value} seeded`);
+  }
+}
 
 async function seedUsers(): Promise<void> {
   for (const user of defaultUsers) {
@@ -96,14 +140,66 @@ async function seedPrimaryStyles(): Promise<void> {
   }
 }
 
+async function seedDifficulties(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultDifficulties)) {
+    await prisma.difficulty.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Difficulty ${value} seeded`);
+  }
+}
+
+async function seedVideoTypes(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultVideoTypes)) {
+    await prisma.videoType.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Video type ${value} seeded`);
+  }
+}
+
+async function seedLabelTypes(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultLabelTypes)) {
+    await prisma.labelType.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Label type ${value} seeded`);
+  }
+}
+
+async function seedAccessLevels(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultAccessLevels)) {
+    await prisma.accessLevel.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Access level ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
     for (const step of steps) {
       const label = await prisma.videoLabel.upsert({
-        where: { name_type: { name: step, type: LabelType.STEP } },
+        where: { name_type: { name: step, type: 'STEP' } },
         update: {},
-        create: { name: step, type: LabelType.STEP },
+        create: { name: step, type: 'STEP' },
       });
 
       styleData.push({ labelId: label.id, style });
@@ -120,8 +216,13 @@ async function seedSteps(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  await seedRoles();
   await seedUsers();
   await seedPrimaryStyles();
+  await seedDifficulties();
+  await seedVideoTypes();
+  await seedLabelTypes();
+  await seedAccessLevels();
   await seedSteps();
 }
 

@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService } from '../../application/services';
+import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -514,8 +514,8 @@ export class VideoSearchController {
     @Query('q') q?: string,
     @Query('style') style?: string,
   ) {
-    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.TAG;
-    const labels = await this.videos.getLabels(labelType as LabelType, q, style);
+    const labelType = type || LabelType.TAG;
+    const labels = await this.videos.getLabels(labelType, q, style);
     return { labels };
   }
 
@@ -568,8 +568,8 @@ export class LabelsController {
     @Query('type') type: string,
     @Query('style') style?: string,
   ) {
-    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.STEP;
-    const labels = await this.labels.list(labelType as LabelType, style);
+    const labelType = type || LabelType.STEP;
+    const labels = await this.labels.list(labelType, style);
     return { labels };
   }
 
@@ -578,9 +578,9 @@ export class LabelsController {
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiCookieAuth()
   async create(@Body() body: { type: string; name: string; styles: string[] }) {
-    const labelType = Object.values(LabelType).find((t) => t === body.type) ?? LabelType.STEP;
+    const labelType = body.type || LabelType.STEP;
     const styles = body.styles.filter((s) => typeof s === 'string' && s.trim().length > 0);
-    const label = await this.labels.create(labelType as LabelType, body.name, styles);
+    const label = await this.labels.create(labelType, body.name, styles);
     return { label };
   }
 
@@ -639,6 +639,251 @@ export class PrimaryStylesController {
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.styles.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/difficulties')
+export class DifficultiesController {
+  constructor(private readonly difficulties: DifficultyService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const difficulties = await this.difficulties.list();
+    return { difficulties };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const difficulty = await this.difficulties.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { difficulty };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const difficulty = await this.difficulties.update(value, body);
+    return { difficulty };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.difficulties.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/video-types')
+export class VideoTypesController {
+  constructor(private readonly videoTypes: VideoTypeService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const videoTypes = await this.videoTypes.list();
+    return { videoTypes };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const videoType = await this.videoTypes.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { videoType };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const videoType = await this.videoTypes.update(value, body);
+    return { videoType };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.videoTypes.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/label-types')
+export class LabelTypesController {
+  constructor(private readonly labelTypes: LabelTypeService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const labelTypes = await this.labelTypes.list();
+    return { labelTypes };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const labelType = await this.labelTypes.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { labelType };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const labelType = await this.labelTypes.update(value, body);
+    return { labelType };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.labelTypes.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/access-levels')
+export class AccessLevelsController {
+  constructor(private readonly accessLevels: AccessLevelService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const accessLevels = await this.accessLevels.list();
+    return { accessLevels };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const accessLevel = await this.accessLevels.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { accessLevel };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const accessLevel = await this.accessLevels.update(value, body);
+    return { accessLevel };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.accessLevels.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/roles')
+export class RolesController {
+  constructor(private readonly rolesService: RoleService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const roles = await this.rolesService.list();
+    return { roles };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const role = await this.rolesService.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { role };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const role = await this.rolesService.update(value, body);
+    return { role };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.rolesService.delete(value);
     return { ok: true };
   }
 }

@@ -62,6 +62,11 @@ const MENU_GROUPS: MenuGroup[] = [
     items: [
       { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
       { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
+      { label: 'Dificultades', path: '/admin/parametros/dificultades', icon: <SchoolIcon /> },
+      { label: 'Tipos de video', path: '/admin/parametros/tipos-video', icon: <SchoolIcon /> },
+      { label: 'Tipos de etiqueta', path: '/admin/parametros/tipos-etiqueta', icon: <SchoolIcon /> },
+      { label: 'Niveles de acceso', path: '/admin/parametros/niveles-acceso', icon: <SchoolIcon /> },
+      { label: 'Roles', path: '/admin/parametros/roles', icon: <SchoolIcon /> },
     ],
   },
 ];
