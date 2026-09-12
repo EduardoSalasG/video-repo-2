@@ -7,11 +7,13 @@ import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { useAuth } from '../../hooks/useAuth';
+import { useParamLabels } from '../../hooks/useParamLabels';
 import { api } from '../../lib/api';
 import { ApiError } from '../../lib/error';
 
 export const Profile = () => {
   const { user, logout } = useAuth();
+  const { getLabel } = useParamLabels();
   const navigate = useNavigate();
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -79,7 +81,7 @@ export const Profile = () => {
           {user.email}
         </Typography>
         <Typography color="text.secondary" paragraph>
-          Rol: {user.role}
+          Rol: {getLabel('role', user.role)}
         </Typography>
         <Button variant="contained" onClick={handleLogout} fullWidth>
           Cerrar sesión

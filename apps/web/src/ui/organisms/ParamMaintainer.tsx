@@ -14,6 +14,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
+import { invalidateParamLabels } from '../../hooks/useParamLabels';
 import type { ParamRecord } from '../../types';
 
 interface ParamMaintainerProps {
@@ -36,6 +37,7 @@ export const ParamMaintainer = ({ title, description, items, loading, onCreate, 
     event.preventDefault();
     if (!newValue.trim() || !newLabel.trim()) return;
     await onCreate(newValue.trim().toUpperCase(), newLabel.trim());
+    invalidateParamLabels();
     setNewValue('');
     setNewLabel('');
   };
@@ -49,6 +51,7 @@ export const ParamMaintainer = ({ title, description, items, loading, onCreate, 
     event.preventDefault();
     if (!editing) return;
     await onUpdate(editing.value, form);
+    invalidateParamLabels();
     setEditing(null);
   };
 
@@ -140,7 +143,7 @@ export const ParamMaintainer = ({ title, description, items, loading, onCreate, 
                   <IconButton edge="end" onClick={() => handleEdit(item)} color="primary">
                     <EditIcon />
                   </IconButton>
-                  <IconButton edge="end" onClick={() => onDelete(item.value)} color="error">
+                  <IconButton edge="end" onClick={() => onDelete(item.value).then(invalidateParamLabels)} color="error">
                     <CloseIcon />
                   </IconButton>
                 </Stack>

@@ -16,6 +16,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { Header } from '../organisms/Header';
+import { Footer } from '../molecules/Footer';
 import { useAuth } from '../../hooks/useAuth';
 
 const pageVariants = {
@@ -76,7 +77,16 @@ export const MainLayout = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {!isMobile && <Header />}
-      <Container maxWidth="md" sx={{ flex: 1, py: 3, pb: isMobile ? 9 : 3 }}>
+      <Container
+        maxWidth="md"
+        sx={{
+          flex: 1,
+          py: 3,
+          pb: isMobile ? 'calc(72px + env(safe-area-inset-bottom))' : 3,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
         <motion.div
           key={location.pathname}
           initial="initial"
@@ -84,9 +94,11 @@ export const MainLayout = () => {
           exit="exit"
           variants={pageVariants}
           transition={transition}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
         >
           <Outlet />
         </motion.div>
+        <Footer />
       </Container>
       {isMobile && (
         <>

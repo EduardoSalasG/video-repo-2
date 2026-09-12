@@ -1549,7 +1549,7 @@ export const Admin = () => {
                 <Autocomplete
                   multiple
                   options={primaryStyles.map((s) => s.value)}
-                  getOptionLabel={(option) => primaryStyles.find((s) => s.value === option)?.label ?? option}
+                  getOptionLabel={(option) => primaryStyles.find((s) => s.value === option)?.label ?? primaryStyleLabels[option] ?? option}
                   value={newLabelStyles}
                   onChange={(_event, value) => setNewLabelStyles(value)}
                   renderInput={(params) => (

@@ -11,6 +11,7 @@ import Stack from '@mui/material/Stack';
 import { Typography } from '../atoms/Typography';
 import { Markdown } from '../atoms/Markdown';
 import { api } from '../../lib/api';
+import { useParamLabels } from '../../hooks/useParamLabels';
 import type { Section as SectionType, Course, CourseModule, VideoMetadata } from '../../types';
 
 export const Section = () => {
@@ -20,6 +21,7 @@ export const Section = () => {
   const [course, setCourse] = useState<Course | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
+  const { getLabel } = useParamLabels();
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +145,18 @@ export const Section = () => {
             style={{ borderRadius: 8, display: 'block', maxWidth: '100%', maxHeight: '70vh' }}
           />
         </Paper>
+      )}
+
+      {metadata && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {[
+            getLabel('difficulty', metadata.difficulty),
+            getLabel('primaryStyle', metadata.primaryStyle),
+            getLabel('videoType', metadata.videoType),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </Typography>
       )}
 
       {metadata?.tags && metadata.tags.length > 0 && (
