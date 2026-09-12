@@ -171,7 +171,7 @@ export class GrantCourseAccessDto {
   courseId: string;
 
   @IsOptional()
-  @IsEnum(AccessLevel)
+  @IsString()
   accessLevel?: AccessLevel;
 }
 

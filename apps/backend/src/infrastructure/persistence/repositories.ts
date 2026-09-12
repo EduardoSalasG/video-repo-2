@@ -40,6 +40,10 @@ import {
   LabelTypeRecord,
   CreateLabelTypeInput,
   UpdateLabelTypeInput,
+  IAccessLevelRepository,
+  AccessLevelRecord,
+  CreateAccessLevelInput,
+  UpdateAccessLevelInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -700,6 +704,65 @@ export class PrismaLabelTypeRepository implements ILabelTypeRepository {
 
   async delete(value: LabelType): Promise<void> {
     await this.prisma.labelType.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaAccessLevelRepository implements IAccessLevelRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): AccessLevelRecord {
+    return {
+      value: row.value as AccessLevel,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<AccessLevelRecord[]> {
+    const rows = await this.prisma.accessLevel.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: AccessLevel): Promise<AccessLevelRecord | null> {
+    const row = await this.prisma.accessLevel.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
+    const row = await this.prisma.accessLevel.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
+    const row = await this.prisma.accessLevel.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: AccessLevel): Promise<void> {
+    await this.prisma.accessLevel.delete({ where: { value } });
   }
 }
 

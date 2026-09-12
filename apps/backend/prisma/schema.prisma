@@ -14,10 +14,17 @@ enum Role {
   STUDENT
 }
 
-enum AccessLevel {
-  READ
-  WRITE
-  MAINTAIN
+model AccessLevel {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  courseAccess CourseAccess[]
+
+  @@map("access_levels")
 }
 
 model Difficulty {
@@ -180,7 +187,8 @@ model CourseAccess {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
   course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  accessLevel AccessLevel
+  accessLevel String
+  accessLevelRef AccessLevel @relation(fields: [accessLevel], references: [value])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 

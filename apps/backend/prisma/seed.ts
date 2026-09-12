@@ -29,6 +29,12 @@ const defaultLabelTypes: Record<string, string> = {
   TAG: 'Tag',
 };
 
+const defaultAccessLevels: Record<string, string> = {
+  READ: 'Lectura',
+  WRITE: 'Escritura',
+  MAINTAIN: 'Mantener',
+};
+
 interface SeedUser {
   email: string;
   username: string;
@@ -154,6 +160,19 @@ async function seedLabelTypes(): Promise<void> {
   }
 }
 
+async function seedAccessLevels(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultAccessLevels)) {
+    await prisma.accessLevel.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Access level ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
@@ -183,6 +202,7 @@ async function main(): Promise<void> {
   await seedDifficulties();
   await seedVideoTypes();
   await seedLabelTypes();
+  await seedAccessLevels();
   await seedSteps();
 }
 

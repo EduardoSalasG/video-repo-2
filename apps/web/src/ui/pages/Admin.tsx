@@ -37,6 +37,7 @@ const TABS = [
   'parametros/dificultades',
   'parametros/tipos-video',
   'parametros/tipos-etiqueta',
+  'parametros/niveles-acceso',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -179,6 +180,8 @@ export const Admin = () => {
   const [loadingVideoTypes, setLoadingVideoTypes] = useState(false);
   const [labelTypes, setLabelTypes] = useState<ParamRecord[]>([]);
   const [loadingLabelTypes, setLoadingLabelTypes] = useState(false);
+  const [accessLevels, setAccessLevels] = useState<ParamRecord[]>([]);
+  const [loadingAccessLevels, setLoadingAccessLevels] = useState(false);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -344,12 +347,22 @@ export const Admin = () => {
       .finally(() => setLoadingLabelTypes(false));
   };
 
+  const loadAccessLevels = () => {
+    setLoadingAccessLevels(true);
+    api
+      .getAccessLevels()
+      .then(setAccessLevels)
+      .catch(() => setAccessLevels([]))
+      .finally(() => setLoadingAccessLevels(false));
+  };
+
   useEffect(() => {
     if (activeTab >= 4) {
       loadPrimaryStyles();
       loadDifficulties();
       loadVideoTypes();
       loadLabelTypes();
+      loadAccessLevels();
     }
   }, [activeTab]);
 
@@ -723,6 +736,39 @@ export const Admin = () => {
       loadLabelTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateAccessLevel = async (value: string, label: string) => {
+    try {
+      await api.createAccessLevel({ value, label });
+      showSuccess('Nivel de acceso creado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateAccessLevel = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateAccessLevel(value, data);
+      showSuccess('Nivel de acceso actualizado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteAccessLevel = async (value: string) => {
+    try {
+      await api.deleteAccessLevel(value);
+      showSuccess('Nivel de acceso eliminado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar nivel de acceso';
       showSuccess(message);
     }
   };
@@ -1548,6 +1594,18 @@ export const Admin = () => {
             onCreate={handleCreateLabelType}
             onUpdate={handleUpdateLabelType}
             onDelete={handleDeleteLabelType}
+          />
+        )}
+
+        {activeTab === 11 && (
+          <ParamMaintainer
+            title="Mantenedor de niveles de acceso"
+            description="Crea, edita y desactiva niveles de acceso (lectura, escritura, mantener, etc.)."
+            items={accessLevels}
+            loading={loadingAccessLevels}
+            onCreate={handleCreateAccessLevel}
+            onUpdate={handleUpdateAccessLevel}
+            onDelete={handleDeleteAccessLevel}
           />
         )}
 

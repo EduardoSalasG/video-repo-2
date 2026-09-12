@@ -255,6 +255,12 @@ export const api = {
   updateLabelType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ labelType: ParamRecord }>('PATCH', `/admin/label-types/${encodeURIComponent(value)}`, data),
   deleteLabelType: (value: string) => request<void>('DELETE', `/admin/label-types/${encodeURIComponent(value)}`),
+  getAccessLevels: () => request<{ accessLevels: ParamRecord[] }>('GET', '/admin/access-levels').then((data) => data.accessLevels),
+  createAccessLevel: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ accessLevel: ParamRecord }>('POST', '/admin/access-levels', data),
+  updateAccessLevel: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ accessLevel: ParamRecord }>('PATCH', `/admin/access-levels/${encodeURIComponent(value)}`, data),
+  deleteAccessLevel: (value: string) => request<void>('DELETE', `/admin/access-levels/${encodeURIComponent(value)}`),
   getVideoLabels: (type: string, q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);

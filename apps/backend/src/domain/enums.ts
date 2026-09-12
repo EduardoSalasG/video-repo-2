@@ -4,11 +4,13 @@ export enum Role {
   STUDENT = 'STUDENT',
 }
 
-export enum AccessLevel {
-  READ = 'READ',
-  WRITE = 'WRITE',
-  MAINTAIN = 'MAINTAIN',
-}
+export const AccessLevel = {
+  READ: 'READ',
+  WRITE: 'WRITE',
+  MAINTAIN: 'MAINTAIN',
+} as const;
+
+export type AccessLevel = string;
 
 export const Difficulty = {
   BEGINNER: 'BEGINNER',

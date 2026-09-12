@@ -282,6 +282,36 @@ export interface ILabelTypeRepository {
   delete(value: LabelType): Promise<void>;
 }
 
+export interface AccessLevelRecord {
+  value: AccessLevel;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAccessLevelInput {
+  value: AccessLevel;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateAccessLevelInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IAccessLevelRepository {
+  findAll(): Promise<AccessLevelRecord[]>;
+  findByValue(value: AccessLevel): Promise<AccessLevelRecord | null>;
+  create(input: CreateAccessLevelInput): Promise<AccessLevelRecord>;
+  update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord>;
+  delete(value: AccessLevel): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

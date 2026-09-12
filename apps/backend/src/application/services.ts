@@ -43,6 +43,10 @@ import {
   LabelTypeRecord,
   CreateLabelTypeInput,
   UpdateLabelTypeInput,
+  IAccessLevelRepository,
+  AccessLevelRecord,
+  CreateAccessLevelInput,
+  UpdateAccessLevelInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -302,7 +306,7 @@ export class CourseAccessService {
   }
 
   private satisfies(level: AccessLevel, minimum: AccessLevel): boolean {
-    const hierarchy = [AccessLevel.READ, AccessLevel.WRITE, AccessLevel.MAINTAIN];
+    const hierarchy: AccessLevel[] = [AccessLevel.READ, AccessLevel.WRITE, AccessLevel.MAINTAIN];
     return hierarchy.indexOf(level) >= hierarchy.indexOf(minimum);
   }
 }
@@ -660,5 +664,37 @@ export class LabelTypeService {
     const existing = await this.labelTypes.findByValue(value);
     if (!existing) throw new NotFoundException('Label type not found');
     return this.labelTypes.delete(value);
+  }
+}
+
+@Injectable()
+export class AccessLevelService {
+  constructor(
+    @Inject(InjectionTokens.ACCESS_LEVEL_REPOSITORY) private readonly accessLevels: IAccessLevelRepository,
+  ) {}
+
+  async list(): Promise<AccessLevelRecord[]> {
+    return this.accessLevels.findAll();
+  }
+
+  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Access level value and label are required');
+    }
+    const existing = await this.accessLevels.findByValue(input.value);
+    if (existing) throw new ConflictException('Access level already exists');
+    return this.accessLevels.create(input);
+  }
+
+  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    return this.accessLevels.update(value, input);
+  }
+
+  async delete(value: AccessLevel): Promise<void> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    return this.accessLevels.delete(value);
   }
 }

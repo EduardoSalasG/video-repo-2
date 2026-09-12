@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
+import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -786,6 +786,55 @@ export class LabelTypesController {
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.labelTypes.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/access-levels')
+export class AccessLevelsController {
+  constructor(private readonly accessLevels: AccessLevelService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const accessLevels = await this.accessLevels.list();
+    return { accessLevels };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const accessLevel = await this.accessLevels.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { accessLevel };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const accessLevel = await this.accessLevels.update(value, body);
+    return { accessLevel };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.accessLevels.delete(value);
     return { ok: true };
   }
 }
