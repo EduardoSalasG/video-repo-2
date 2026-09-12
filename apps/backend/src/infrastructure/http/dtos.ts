@@ -134,7 +134,7 @@ export class CreateVideoMetadataDto {
   @IsString()
   primaryStyle: PrimaryStyle;
 
-  @IsEnum(VideoType)
+  @IsString()
   videoType: VideoType;
 
   @IsInt()

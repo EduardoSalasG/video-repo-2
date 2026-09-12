@@ -17,6 +17,12 @@ const defaultDifficulties: Record<string, string> = {
   ADVANCED: 'Avanzado',
 };
 
+const defaultVideoTypes: Record<string, string> = {
+  STEP: 'Paso',
+  SEQUENCE: 'Secuencia',
+  CHOREOGRAPHY: 'Coreografía',
+};
+
 interface SeedUser {
   email: string;
   username: string;
@@ -116,6 +122,19 @@ async function seedDifficulties(): Promise<void> {
   }
 }
 
+async function seedVideoTypes(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultVideoTypes)) {
+    await prisma.videoType.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Video type ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
@@ -143,6 +162,7 @@ async function main(): Promise<void> {
   await seedUsers();
   await seedPrimaryStyles();
   await seedDifficulties();
+  await seedVideoTypes();
   await seedSteps();
 }
 

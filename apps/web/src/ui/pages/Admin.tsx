@@ -35,6 +35,7 @@ const TABS = [
   'parametros/estilos',
   'usuarios',
   'parametros/dificultades',
+  'parametros/tipos-video',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -69,7 +70,7 @@ const sectionSchema = z.object({
 const videoSchema = z.object({
   difficulty: z.string().min(1, 'La dificultad es obligatoria'),
   primaryStyle: z.string().min(1, 'El estilo es obligatorio'),
-  videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
+  videoType: z.string().min(1, 'El tipo de video es obligatorio'),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
   steps: z.array(z.string()).default([]),
   influences: z.array(z.string()).default([]),
@@ -173,6 +174,8 @@ export const Admin = () => {
   const [loadingStyles, setLoadingStyles] = useState(false);
   const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
   const [loadingDifficulties, setLoadingDifficulties] = useState(false);
+  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
+  const [loadingVideoTypes, setLoadingVideoTypes] = useState(false);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -320,10 +323,20 @@ export const Admin = () => {
       .finally(() => setLoadingDifficulties(false));
   };
 
+  const loadVideoTypes = () => {
+    setLoadingVideoTypes(true);
+    api
+      .getVideoTypes()
+      .then(setVideoTypes)
+      .catch(() => setVideoTypes([]))
+      .finally(() => setLoadingVideoTypes(false));
+  };
+
   useEffect(() => {
     if (activeTab >= 4) {
       loadPrimaryStyles();
       loadDifficulties();
+      loadVideoTypes();
     }
   }, [activeTab]);
 
@@ -631,6 +644,39 @@ export const Admin = () => {
       loadDifficulties();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar dificultad';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateVideoType = async (value: string, label: string) => {
+    try {
+      await api.createVideoType({ value, label });
+      showSuccess('Tipo de video creado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateVideoType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateVideoType(value, data);
+      showSuccess('Tipo de video actualizado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteVideoType = async (value: string) => {
+    try {
+      await api.deleteVideoType(value);
+      showSuccess('Tipo de video eliminado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de video';
       showSuccess(message);
     }
   };
@@ -1202,13 +1248,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.videoType}
               >
-                {Object.entries(videoTypeLabels)
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                {(videoTypes.length > 0
+                  ? videoTypes.filter((t) => t.isActive)
+                  : Object.entries(videoTypeLabels).map(([value, label], index) => ({ value, label, orderIndex: index }))
+                ).map((videoType) => (
+                  <MenuItem key={videoType.value} value={videoType.value}>
+                    {videoType.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 label="Duración (counts)"
@@ -1431,6 +1478,18 @@ export const Admin = () => {
             onCreate={handleCreateDifficulty}
             onUpdate={handleUpdateDifficulty}
             onDelete={handleDeleteDifficulty}
+          />
+        )}
+
+        {activeTab === 9 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de video"
+            description="Crea, edita y desactiva tipos de video (paso, secuencia, coreografía, etc.)."
+            items={videoTypes}
+            loading={loadingVideoTypes}
+            onCreate={handleCreateVideoType}
+            onUpdate={handleUpdateVideoType}
+            onDelete={handleDeleteVideoType}
           />
         )}
 

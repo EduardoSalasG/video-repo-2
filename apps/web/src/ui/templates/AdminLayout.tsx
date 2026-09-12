@@ -63,6 +63,7 @@ const MENU_GROUPS: MenuGroup[] = [
       { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
       { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
       { label: 'Dificultades', path: '/admin/parametros/dificultades', icon: <SchoolIcon /> },
+      { label: 'Tipos de video', path: '/admin/parametros/tipos-video', icon: <SchoolIcon /> },
     ],
   },
 ];

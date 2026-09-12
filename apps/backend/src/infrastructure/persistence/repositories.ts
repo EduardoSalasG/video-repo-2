@@ -32,6 +32,10 @@ import {
   DifficultyRecord,
   CreateDifficultyInput,
   UpdateDifficultyInput,
+  IVideoTypeRepository,
+  VideoTypeRecord,
+  CreateVideoTypeInput,
+  UpdateVideoTypeInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -574,6 +578,65 @@ export class PrismaDifficultyRepository implements IDifficultyRepository {
 
   async delete(value: Difficulty): Promise<void> {
     await this.prisma.difficulty.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaVideoTypeRepository implements IVideoTypeRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): VideoTypeRecord {
+    return {
+      value: row.value as VideoType,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<VideoTypeRecord[]> {
+    const rows = await this.prisma.videoType.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: VideoType): Promise<VideoTypeRecord | null> {
+    const row = await this.prisma.videoType.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateVideoTypeInput): Promise<VideoTypeRecord> {
+    const row = await this.prisma.videoType.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord> {
+    const row = await this.prisma.videoType.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: VideoType): Promise<void> {
+    await this.prisma.videoType.delete({ where: { value } });
   }
 }
 

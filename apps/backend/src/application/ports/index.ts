@@ -222,6 +222,36 @@ export interface IDifficultyRepository {
   delete(value: Difficulty): Promise<void>;
 }
 
+export interface VideoTypeRecord {
+  value: VideoType;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateVideoTypeInput {
+  value: VideoType;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateVideoTypeInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IVideoTypeRepository {
+  findAll(): Promise<VideoTypeRecord[]>;
+  findByValue(value: VideoType): Promise<VideoTypeRecord | null>;
+  create(input: CreateVideoTypeInput): Promise<VideoTypeRecord>;
+  update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord>;
+  delete(value: VideoType): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

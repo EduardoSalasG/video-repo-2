@@ -30,6 +30,7 @@ export const Search = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [primaryStyles, setPrimaryStyles] = useState<ParamRecord[]>([]);
   const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
+  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,10 @@ export const Search = () => {
       .getDifficulties()
       .then(setDifficulties)
       .catch(() => setDifficulties([]));
+    api
+      .getVideoTypes()
+      .then(setVideoTypes)
+      .catch(() => setVideoTypes([]));
   }, []);
 
   const styleOptions = primaryStyles.length > 0
@@ -55,6 +60,7 @@ export const Search = () => {
 
   const getStyleLabel = (value: string) => primaryStyles.find((s) => s.value === value)?.label ?? primaryStyleLabels[value] ?? value;
   const getDifficultyLabel = (value: string) => difficulties.find((d) => d.value === value)?.label ?? difficultyLabels[value] ?? value;
+  const getVideoTypeLabel = (value: string) => videoTypes.find((t) => t.value === value)?.label ?? videoTypeLabels[value] ?? value;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -176,7 +182,7 @@ export const Search = () => {
                     ))}
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                    {getDifficultyLabel(result.metadata.difficulty)} / {getStyleLabel(result.metadata.primaryStyle)} / {videoTypeLabels[result.metadata.videoType]}
+                    {getDifficultyLabel(result.metadata.difficulty)} / {getStyleLabel(result.metadata.primaryStyle)} / {getVideoTypeLabel(result.metadata.videoType)}
                   </Typography>
                 </CardContent>
               </Card>

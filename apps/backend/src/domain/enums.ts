@@ -28,11 +28,13 @@ export const PrimaryStyle = {
 
 export type PrimaryStyle = string;
 
-export enum VideoType {
-  STEP = 'STEP',
-  SEQUENCE = 'SEQUENCE',
-  CHOREOGRAPHY = 'CHOREOGRAPHY',
-}
+export const VideoType = {
+  STEP: 'STEP',
+  SEQUENCE: 'SEQUENCE',
+  CHOREOGRAPHY: 'CHOREOGRAPHY',
+} as const;
+
+export type VideoType = string;
 
 export enum LabelType {
   STEP = 'STEP',

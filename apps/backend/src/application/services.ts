@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty } from '../domain/enums';
+import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty, VideoType } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
@@ -35,6 +35,10 @@ import {
   DifficultyRecord,
   CreateDifficultyInput,
   UpdateDifficultyInput,
+  IVideoTypeRepository,
+  VideoTypeRecord,
+  CreateVideoTypeInput,
+  UpdateVideoTypeInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -588,5 +592,37 @@ export class DifficultyService {
     const existing = await this.difficulties.findByValue(value);
     if (!existing) throw new NotFoundException('Difficulty not found');
     return this.difficulties.delete(value);
+  }
+}
+
+@Injectable()
+export class VideoTypeService {
+  constructor(
+    @Inject(InjectionTokens.VIDEO_TYPE_REPOSITORY) private readonly videoTypes: IVideoTypeRepository,
+  ) {}
+
+  async list(): Promise<VideoTypeRecord[]> {
+    return this.videoTypes.findAll();
+  }
+
+  async create(input: CreateVideoTypeInput): Promise<VideoTypeRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Video type value and label are required');
+    }
+    const existing = await this.videoTypes.findByValue(input.value);
+    if (existing) throw new ConflictException('Video type already exists');
+    return this.videoTypes.create(input);
+  }
+
+  async update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord> {
+    const existing = await this.videoTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Video type not found');
+    return this.videoTypes.update(value, input);
+  }
+
+  async delete(value: VideoType): Promise<void> {
+    const existing = await this.videoTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Video type not found');
+    return this.videoTypes.delete(value);
   }
 }

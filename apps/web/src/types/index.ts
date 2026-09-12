@@ -2,7 +2,7 @@ export type Role = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
 export type AccessLevel = 'READ' | 'WRITE' | 'MAINTAIN';
 export type Difficulty = string;
 export type PrimaryStyle = string;
-export type VideoType = 'STEP' | 'SEQUENCE' | 'CHOREOGRAPHY';
+export type VideoType = string;
 
 export interface ParamRecord {
   value: string;
@@ -15,6 +15,7 @@ export interface ParamRecord {
 
 export type PrimaryStyleRecord = ParamRecord;
 export type DifficultyRecord = ParamRecord;
+export type VideoTypeRecord = ParamRecord;
 
 export interface Course {
   id: string;

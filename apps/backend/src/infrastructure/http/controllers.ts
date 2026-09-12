@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -688,6 +688,55 @@ export class DifficultiesController {
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.difficulties.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/video-types')
+export class VideoTypesController {
+  constructor(private readonly videoTypes: VideoTypeService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const videoTypes = await this.videoTypes.list();
+    return { videoTypes };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const videoType = await this.videoTypes.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { videoType };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const videoType = await this.videoTypes.update(value, body);
+    return { videoType };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.videoTypes.delete(value);
     return { ok: true };
   }
 }

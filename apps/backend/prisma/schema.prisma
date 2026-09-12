@@ -47,10 +47,17 @@ model PrimaryStyle {
   @@map("primary_styles")
 }
 
-enum VideoType {
-  STEP
-  SEQUENCE
-  CHOREOGRAPHY
+model VideoType {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videoMetadata VideoMetadata[]
+
+  @@map("video_types")
 }
 
 enum LabelType {
@@ -148,7 +155,8 @@ model VideoMetadata {
   difficultyRef  Difficulty   @relation(fields: [difficulty], references: [value])
   primaryStyle   String
   primaryStyleRef PrimaryStyle @relation(fields: [primaryStyle], references: [value])
-  videoType      VideoType
+  videoType      String
+  videoTypeRef   VideoType    @relation(fields: [videoType], references: [value])
   durationCounts Int
   steps          String[]
   influences     String[]

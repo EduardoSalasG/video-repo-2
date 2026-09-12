@@ -243,6 +243,12 @@ export const api = {
   updateDifficulty: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ difficulty: ParamRecord }>('PATCH', `/admin/difficulties/${encodeURIComponent(value)}`, data),
   deleteDifficulty: (value: string) => request<void>('DELETE', `/admin/difficulties/${encodeURIComponent(value)}`),
+  getVideoTypes: () => request<{ videoTypes: ParamRecord[] }>('GET', '/admin/video-types').then((data) => data.videoTypes),
+  createVideoType: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ videoType: ParamRecord }>('POST', '/admin/video-types', data),
+  updateVideoType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ videoType: ParamRecord }>('PATCH', `/admin/video-types/${encodeURIComponent(value)}`, data),
+  deleteVideoType: (value: string) => request<void>('DELETE', `/admin/video-types/${encodeURIComponent(value)}`),
   getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);
