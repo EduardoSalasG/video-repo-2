@@ -39,6 +39,10 @@ import {
   VideoTypeRecord,
   CreateVideoTypeInput,
   UpdateVideoTypeInput,
+  ILabelTypeRepository,
+  LabelTypeRecord,
+  CreateLabelTypeInput,
+  UpdateLabelTypeInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -624,5 +628,37 @@ export class VideoTypeService {
     const existing = await this.videoTypes.findByValue(value);
     if (!existing) throw new NotFoundException('Video type not found');
     return this.videoTypes.delete(value);
+  }
+}
+
+@Injectable()
+export class LabelTypeService {
+  constructor(
+    @Inject(InjectionTokens.LABEL_TYPE_REPOSITORY) private readonly labelTypes: ILabelTypeRepository,
+  ) {}
+
+  async list(): Promise<LabelTypeRecord[]> {
+    return this.labelTypes.findAll();
+  }
+
+  async create(input: CreateLabelTypeInput): Promise<LabelTypeRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Label type value and label are required');
+    }
+    const existing = await this.labelTypes.findByValue(input.value);
+    if (existing) throw new ConflictException('Label type already exists');
+    return this.labelTypes.create(input);
+  }
+
+  async update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord> {
+    const existing = await this.labelTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Label type not found');
+    return this.labelTypes.update(value, input);
+  }
+
+  async delete(value: LabelType): Promise<void> {
+    const existing = await this.labelTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Label type not found');
+    return this.labelTypes.delete(value);
   }
 }

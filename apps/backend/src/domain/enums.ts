@@ -36,8 +36,10 @@ export const VideoType = {
 
 export type VideoType = string;
 
-export enum LabelType {
-  STEP = 'STEP',
-  INFLUENCE = 'INFLUENCE',
-  TAG = 'TAG',
-}
+export const LabelType = {
+  STEP: 'STEP',
+  INFLUENCE: 'INFLUENCE',
+  TAG: 'TAG',
+} as const;
+
+export type LabelType = string;

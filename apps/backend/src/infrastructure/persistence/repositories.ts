@@ -36,6 +36,10 @@ import {
   VideoTypeRecord,
   CreateVideoTypeInput,
   UpdateVideoTypeInput,
+  ILabelTypeRepository,
+  LabelTypeRecord,
+  CreateLabelTypeInput,
+  UpdateLabelTypeInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -637,6 +641,65 @@ export class PrismaVideoTypeRepository implements IVideoTypeRepository {
 
   async delete(value: VideoType): Promise<void> {
     await this.prisma.videoType.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaLabelTypeRepository implements ILabelTypeRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): LabelTypeRecord {
+    return {
+      value: row.value as LabelType,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<LabelTypeRecord[]> {
+    const rows = await this.prisma.labelType.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: LabelType): Promise<LabelTypeRecord | null> {
+    const row = await this.prisma.labelType.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateLabelTypeInput): Promise<LabelTypeRecord> {
+    const row = await this.prisma.labelType.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord> {
+    const row = await this.prisma.labelType.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: LabelType): Promise<void> {
+    await this.prisma.labelType.delete({ where: { value } });
   }
 }
 

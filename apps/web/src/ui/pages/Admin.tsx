@@ -36,6 +36,7 @@ const TABS = [
   'usuarios',
   'parametros/dificultades',
   'parametros/tipos-video',
+  'parametros/tipos-etiqueta',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -176,6 +177,8 @@ export const Admin = () => {
   const [loadingDifficulties, setLoadingDifficulties] = useState(false);
   const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
   const [loadingVideoTypes, setLoadingVideoTypes] = useState(false);
+  const [labelTypes, setLabelTypes] = useState<ParamRecord[]>([]);
+  const [loadingLabelTypes, setLoadingLabelTypes] = useState(false);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -332,11 +335,21 @@ export const Admin = () => {
       .finally(() => setLoadingVideoTypes(false));
   };
 
+  const loadLabelTypes = () => {
+    setLoadingLabelTypes(true);
+    api
+      .getLabelTypes()
+      .then(setLabelTypes)
+      .catch(() => setLabelTypes([]))
+      .finally(() => setLoadingLabelTypes(false));
+  };
+
   useEffect(() => {
     if (activeTab >= 4) {
       loadPrimaryStyles();
       loadDifficulties();
       loadVideoTypes();
+      loadLabelTypes();
     }
   }, [activeTab]);
 
@@ -677,6 +690,39 @@ export const Admin = () => {
       loadVideoTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar tipo de video';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateLabelType = async (value: string, label: string) => {
+    try {
+      await api.createLabelType({ value, label });
+      showSuccess('Tipo de etiqueta creado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateLabelType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateLabelType(value, data);
+      showSuccess('Tipo de etiqueta actualizado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de etiqueta';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteLabelType = async (value: string) => {
+    try {
+      await api.deleteLabelType(value);
+      showSuccess('Tipo de etiqueta eliminado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de etiqueta';
       showSuccess(message);
     }
   };
@@ -1490,6 +1536,18 @@ export const Admin = () => {
             onCreate={handleCreateVideoType}
             onUpdate={handleUpdateVideoType}
             onDelete={handleDeleteVideoType}
+          />
+        )}
+
+        {activeTab === 10 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de etiqueta"
+            description="Crea, edita y desactiva tipos de etiqueta (paso, influencia, tag, etc.)."
+            items={labelTypes}
+            loading={loadingLabelTypes}
+            onCreate={handleCreateLabelType}
+            onUpdate={handleUpdateLabelType}
+            onDelete={handleDeleteLabelType}
           />
         )}
 

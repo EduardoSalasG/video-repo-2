@@ -226,9 +226,9 @@ export const api = {
       (data) => data.results,
     );
   },
-  getAdminLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', style?: string) =>
+  getAdminLabels: (type: string, style?: string) =>
     request<{ labels: { id: string; name: string; styles: string[] }[] }>('GET', `/admin/labels?type=${type}${style ? `&style=${style}` : ''}`),
-  createAdminLabel: (data: { type: 'STEP' | 'INFLUENCE' | 'TAG'; name: string; styles: string[] }) =>
+  createAdminLabel: (data: { type: string; name: string; styles: string[] }) =>
     request<{ label: { id: string; name: string; styles: string[] } }>('POST', '/admin/labels', data),
   deleteAdminLabel: (id: string) => request<void>('DELETE', `/admin/labels/${id}`),
   getPrimaryStyles: () => request<{ styles: PrimaryStyleRecord[] }>('GET', '/admin/primary-styles').then((data) => data.styles),
@@ -249,7 +249,13 @@ export const api = {
   updateVideoType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ videoType: ParamRecord }>('PATCH', `/admin/video-types/${encodeURIComponent(value)}`, data),
   deleteVideoType: (value: string) => request<void>('DELETE', `/admin/video-types/${encodeURIComponent(value)}`),
-  getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
+  getLabelTypes: () => request<{ labelTypes: ParamRecord[] }>('GET', '/admin/label-types').then((data) => data.labelTypes),
+  createLabelType: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ labelType: ParamRecord }>('POST', '/admin/label-types', data),
+  updateLabelType: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ labelType: ParamRecord }>('PATCH', `/admin/label-types/${encodeURIComponent(value)}`, data),
+  deleteLabelType: (value: string) => request<void>('DELETE', `/admin/label-types/${encodeURIComponent(value)}`),
+  getVideoLabels: (type: string, q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);
     if (q) query.set('q', q);

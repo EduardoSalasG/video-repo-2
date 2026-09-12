@@ -252,6 +252,36 @@ export interface IVideoTypeRepository {
   delete(value: VideoType): Promise<void>;
 }
 
+export interface LabelTypeRecord {
+  value: LabelType;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateLabelTypeInput {
+  value: LabelType;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateLabelTypeInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface ILabelTypeRepository {
+  findAll(): Promise<LabelTypeRecord[]>;
+  findByValue(value: LabelType): Promise<LabelTypeRecord | null>;
+  create(input: CreateLabelTypeInput): Promise<LabelTypeRecord>;
+  update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord>;
+  delete(value: LabelType): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

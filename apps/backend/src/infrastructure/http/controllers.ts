@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -514,8 +514,8 @@ export class VideoSearchController {
     @Query('q') q?: string,
     @Query('style') style?: string,
   ) {
-    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.TAG;
-    const labels = await this.videos.getLabels(labelType as LabelType, q, style);
+    const labelType = type || LabelType.TAG;
+    const labels = await this.videos.getLabels(labelType, q, style);
     return { labels };
   }
 
@@ -568,8 +568,8 @@ export class LabelsController {
     @Query('type') type: string,
     @Query('style') style?: string,
   ) {
-    const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.STEP;
-    const labels = await this.labels.list(labelType as LabelType, style);
+    const labelType = type || LabelType.STEP;
+    const labels = await this.labels.list(labelType, style);
     return { labels };
   }
 
@@ -578,9 +578,9 @@ export class LabelsController {
   @Roles(Role.ADMIN, Role.INSTRUCTOR)
   @ApiCookieAuth()
   async create(@Body() body: { type: string; name: string; styles: string[] }) {
-    const labelType = Object.values(LabelType).find((t) => t === body.type) ?? LabelType.STEP;
+    const labelType = body.type || LabelType.STEP;
     const styles = body.styles.filter((s) => typeof s === 'string' && s.trim().length > 0);
-    const label = await this.labels.create(labelType as LabelType, body.name, styles);
+    const label = await this.labels.create(labelType, body.name, styles);
     return { label };
   }
 
@@ -737,6 +737,55 @@ export class VideoTypesController {
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.videoTypes.delete(value);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/label-types')
+export class LabelTypesController {
+  constructor(private readonly labelTypes: LabelTypeService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const labelTypes = await this.labelTypes.list();
+    return { labelTypes };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const labelType = await this.labelTypes.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { labelType };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const labelType = await this.labelTypes.update(value, body);
+    return { labelType };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.labelTypes.delete(value);
     return { ok: true };
   }
 }

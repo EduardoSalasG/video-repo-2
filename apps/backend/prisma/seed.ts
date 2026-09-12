@@ -1,4 +1,4 @@
-import { PrismaClient, Role, LabelType } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -21,6 +21,12 @@ const defaultVideoTypes: Record<string, string> = {
   STEP: 'Paso',
   SEQUENCE: 'Secuencia',
   CHOREOGRAPHY: 'Coreografía',
+};
+
+const defaultLabelTypes: Record<string, string> = {
+  STEP: 'Paso',
+  INFLUENCE: 'Influencia',
+  TAG: 'Tag',
 };
 
 interface SeedUser {
@@ -135,14 +141,27 @@ async function seedVideoTypes(): Promise<void> {
   }
 }
 
+async function seedLabelTypes(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultLabelTypes)) {
+    await prisma.labelType.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Label type ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
     for (const step of steps) {
       const label = await prisma.videoLabel.upsert({
-        where: { name_type: { name: step, type: LabelType.STEP } },
+        where: { name_type: { name: step, type: 'STEP' } },
         update: {},
-        create: { name: step, type: LabelType.STEP },
+        create: { name: step, type: 'STEP' },
       });
 
       styleData.push({ labelId: label.id, style });
@@ -163,6 +182,7 @@ async function main(): Promise<void> {
   await seedPrimaryStyles();
   await seedDifficulties();
   await seedVideoTypes();
+  await seedLabelTypes();
   await seedSteps();
 }
 
