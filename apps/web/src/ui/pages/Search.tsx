@@ -15,7 +15,7 @@ import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
-import type { Course, VideoSearchResult } from '../../types';
+import type { Course, VideoSearchResult, ParamRecord } from '../../types';
 
 const resultVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -28,6 +28,9 @@ export const Search = () => {
   const [style, setStyle] = useState('');
   const [courseId, setCourseId] = useState('');
   const [courses, setCourses] = useState<Course[]>([]);
+  const [primaryStyles, setPrimaryStyles] = useState<ParamRecord[]>([]);
+  const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
+  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +40,27 @@ export const Search = () => {
       .getCourses()
       .then(setCourses)
       .catch(() => setCourses([]));
+    api
+      .getPrimaryStyles()
+      .then(setPrimaryStyles)
+      .catch(() => setPrimaryStyles([]));
+    api
+      .getDifficulties()
+      .then(setDifficulties)
+      .catch(() => setDifficulties([]));
+    api
+      .getVideoTypes()
+      .then(setVideoTypes)
+      .catch(() => setVideoTypes([]));
   }, []);
+
+  const styleOptions = primaryStyles.length > 0
+    ? primaryStyles.filter((s) => s.isActive)
+    : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label, isActive: true, orderIndex: 0, createdAt: '', updatedAt: '' }));
+
+  const getStyleLabel = (value: string) => primaryStyles.find((s) => s.value === value)?.label ?? primaryStyleLabels[value] ?? value;
+  const getDifficultyLabel = (value: string) => difficulties.find((d) => d.value === value)?.label ?? difficultyLabels[value] ?? value;
+  const getVideoTypeLabel = (value: string) => videoTypes.find((t) => t.value === value)?.label ?? videoTypeLabels[value] ?? value;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,9 +115,9 @@ export const Search = () => {
                 onChange={(event) => setStyle(event.target.value)}
               >
                 <MenuItem value="">Todos los estilos</MenuItem>
-                {Object.entries(primaryStyleLabels).map(([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
+                {styleOptions.map((style) => (
+                  <MenuItem key={style.value} value={style.value}>
+                    {style.label}
                   </MenuItem>
                 ))}
               </FormField>
@@ -159,7 +182,7 @@ export const Search = () => {
                     ))}
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                    {difficultyLabels[result.metadata.difficulty]} / {primaryStyleLabels[result.metadata.primaryStyle]} / {videoTypeLabels[result.metadata.videoType]}
+                    {getDifficultyLabel(result.metadata.difficulty)} / {getStyleLabel(result.metadata.primaryStyle)} / {getVideoTypeLabel(result.metadata.videoType)}
                   </Typography>
                 </CardContent>
               </Card>

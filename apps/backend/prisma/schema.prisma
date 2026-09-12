@@ -8,42 +8,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  INSTRUCTOR
-  STUDENT
+model Role {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users User[]
+
+  @@map("roles")
 }
 
-enum AccessLevel {
-  READ
-  WRITE
-  MAINTAIN
+model AccessLevel {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  courseAccess CourseAccess[]
+
+  @@map("access_levels")
 }
 
-enum Difficulty {
-  BEGINNER
-  BASIC
-  INTERMEDIATE
-  ADVANCED
+model Difficulty {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videoMetadata VideoMetadata[]
+
+  @@map("difficulties")
 }
 
-enum PrimaryStyle {
-  MAMBO_ON2
-  CASINO
-  SENSUAL_BACHATA
-  MODERN_BACHATA
+model PrimaryStyle {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videoMetadata VideoMetadata[]
+  videoLabels   VideoLabelStyle[]
+
+  @@map("primary_styles")
 }
 
-enum VideoType {
-  STEP
-  SEQUENCE
-  CHOREOGRAPHY
+model VideoType {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videoMetadata VideoMetadata[]
+
+  @@map("video_types")
 }
 
-enum LabelType {
-  STEP
-  INFLUENCE
-  TAG
+model LabelType {
+  value      String   @id
+  label      String
+  orderIndex Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  videoLabels VideoLabel[]
+
+  @@map("label_types")
 }
 
 model User {
@@ -52,7 +93,8 @@ model User {
   username     String   @unique
   firstName    String
   lastName     String
-  role         Role     @default(STUDENT)
+  role         String   @default("STUDENT")
+  roleRef      Role     @relation(fields: [role], references: [value])
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -131,9 +173,12 @@ model VideoMetadata {
   id             String       @id @default(uuid())
   sectionId      String       @unique
   section        Section      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  difficulty     Difficulty
-  primaryStyle   PrimaryStyle
-  videoType      VideoType
+  difficulty     String
+  difficultyRef  Difficulty   @relation(fields: [difficulty], references: [value])
+  primaryStyle   String
+  primaryStyleRef PrimaryStyle @relation(fields: [primaryStyle], references: [value])
+  videoType      String
+  videoTypeRef   VideoType    @relation(fields: [videoType], references: [value])
   durationCounts Int
   steps          String[]
   influences     String[]
@@ -150,7 +195,8 @@ model CourseAccess {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId    String
   course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  accessLevel AccessLevel
+  accessLevel String
+  accessLevelRef AccessLevel @relation(fields: [accessLevel], references: [value])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -176,7 +222,8 @@ model UserSectionProgress {
 model VideoLabel {
   id        String            @id @default(uuid())
   name      String
-  type      LabelType
+  type      String
+  typeRef   LabelType         @relation(fields: [type], references: [value])
   styles    VideoLabelStyle[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -189,7 +236,8 @@ model VideoLabelStyle {
   id        String     @id @default(uuid())
   labelId   String
   label     VideoLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
-  style     PrimaryStyle
+  style     String
+  styleRef  PrimaryStyle @relation(fields: [style], references: [value])
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 

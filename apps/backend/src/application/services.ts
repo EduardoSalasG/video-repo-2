@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Role, AccessLevel, PrimaryStyle, LabelType } from '../domain/enums';
+import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty, VideoType } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
@@ -27,6 +27,30 @@ import {
   StorageFile,
   VideoSearchResult,
   LabelWithStyles,
+  IPrimaryStyleRepository,
+  PrimaryStyleRecord,
+  CreatePrimaryStyleInput,
+  UpdatePrimaryStyleInput,
+  IDifficultyRepository,
+  DifficultyRecord,
+  CreateDifficultyInput,
+  UpdateDifficultyInput,
+  IVideoTypeRepository,
+  VideoTypeRecord,
+  CreateVideoTypeInput,
+  UpdateVideoTypeInput,
+  ILabelTypeRepository,
+  LabelTypeRecord,
+  CreateLabelTypeInput,
+  UpdateLabelTypeInput,
+  IAccessLevelRepository,
+  AccessLevelRecord,
+  CreateAccessLevelInput,
+  UpdateAccessLevelInput,
+  IRoleRepository,
+  RoleRecord,
+  CreateRoleInput,
+  UpdateRoleInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -286,7 +310,7 @@ export class CourseAccessService {
   }
 
   private satisfies(level: AccessLevel, minimum: AccessLevel): boolean {
-    const hierarchy = [AccessLevel.READ, AccessLevel.WRITE, AccessLevel.MAINTAIN];
+    const hierarchy: AccessLevel[] = [AccessLevel.READ, AccessLevel.WRITE, AccessLevel.MAINTAIN];
     return hierarchy.indexOf(level) >= hierarchy.indexOf(minimum);
   }
 }
@@ -412,6 +436,7 @@ export class UserService {
   constructor(
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
     @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
+    @Inject(InjectionTokens.ROLE_REPOSITORY) private readonly roles: IRoleRepository,
   ) {}
 
   async getById(id: string): Promise<SafeUser> {
@@ -421,6 +446,8 @@ export class UserService {
   }
 
   async updateRole(id: string, role: Role): Promise<SafeUser> {
+    const roleRecord = await this.roles.findByValue(role);
+    if (!roleRecord || !roleRecord.isActive) throw new NotFoundException('Role not found');
     const user = await this.users.updateRole(id, role);
     return stripPassword(user);
   }
@@ -516,5 +543,197 @@ export class LabelService {
 
   async delete(id: string): Promise<void> {
     return this.videoLabels.delete(id);
+  }
+}
+
+@Injectable()
+export class StyleService {
+  constructor(
+    @Inject(InjectionTokens.PRIMARY_STYLE_REPOSITORY) private readonly primaryStyles: IPrimaryStyleRepository,
+  ) {}
+
+  async list(): Promise<PrimaryStyleRecord[]> {
+    return this.primaryStyles.findAll();
+  }
+
+  async create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Style value and label are required');
+    }
+    const existing = await this.primaryStyles.findByValue(input.value);
+    if (existing) throw new ConflictException('Style already exists');
+    return this.primaryStyles.create(input);
+  }
+
+  async update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const existing = await this.primaryStyles.findByValue(value);
+    if (!existing) throw new NotFoundException('Style not found');
+    return this.primaryStyles.update(value, input);
+  }
+
+  async delete(value: PrimaryStyle): Promise<void> {
+    const existing = await this.primaryStyles.findByValue(value);
+    if (!existing) throw new NotFoundException('Style not found');
+    return this.primaryStyles.delete(value);
+  }
+}
+
+@Injectable()
+export class DifficultyService {
+  constructor(
+    @Inject(InjectionTokens.DIFFICULTY_REPOSITORY) private readonly difficulties: IDifficultyRepository,
+  ) {}
+
+  async list(): Promise<DifficultyRecord[]> {
+    return this.difficulties.findAll();
+  }
+
+  async create(input: CreateDifficultyInput): Promise<DifficultyRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Difficulty value and label are required');
+    }
+    const existing = await this.difficulties.findByValue(input.value);
+    if (existing) throw new ConflictException('Difficulty already exists');
+    return this.difficulties.create(input);
+  }
+
+  async update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord> {
+    const existing = await this.difficulties.findByValue(value);
+    if (!existing) throw new NotFoundException('Difficulty not found');
+    return this.difficulties.update(value, input);
+  }
+
+  async delete(value: Difficulty): Promise<void> {
+    const existing = await this.difficulties.findByValue(value);
+    if (!existing) throw new NotFoundException('Difficulty not found');
+    return this.difficulties.delete(value);
+  }
+}
+
+@Injectable()
+export class VideoTypeService {
+  constructor(
+    @Inject(InjectionTokens.VIDEO_TYPE_REPOSITORY) private readonly videoTypes: IVideoTypeRepository,
+  ) {}
+
+  async list(): Promise<VideoTypeRecord[]> {
+    return this.videoTypes.findAll();
+  }
+
+  async create(input: CreateVideoTypeInput): Promise<VideoTypeRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Video type value and label are required');
+    }
+    const existing = await this.videoTypes.findByValue(input.value);
+    if (existing) throw new ConflictException('Video type already exists');
+    return this.videoTypes.create(input);
+  }
+
+  async update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord> {
+    const existing = await this.videoTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Video type not found');
+    return this.videoTypes.update(value, input);
+  }
+
+  async delete(value: VideoType): Promise<void> {
+    const existing = await this.videoTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Video type not found');
+    return this.videoTypes.delete(value);
+  }
+}
+
+@Injectable()
+export class LabelTypeService {
+  constructor(
+    @Inject(InjectionTokens.LABEL_TYPE_REPOSITORY) private readonly labelTypes: ILabelTypeRepository,
+  ) {}
+
+  async list(): Promise<LabelTypeRecord[]> {
+    return this.labelTypes.findAll();
+  }
+
+  async create(input: CreateLabelTypeInput): Promise<LabelTypeRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Label type value and label are required');
+    }
+    const existing = await this.labelTypes.findByValue(input.value);
+    if (existing) throw new ConflictException('Label type already exists');
+    return this.labelTypes.create(input);
+  }
+
+  async update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord> {
+    const existing = await this.labelTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Label type not found');
+    return this.labelTypes.update(value, input);
+  }
+
+  async delete(value: LabelType): Promise<void> {
+    const existing = await this.labelTypes.findByValue(value);
+    if (!existing) throw new NotFoundException('Label type not found');
+    return this.labelTypes.delete(value);
+  }
+}
+
+@Injectable()
+export class AccessLevelService {
+  constructor(
+    @Inject(InjectionTokens.ACCESS_LEVEL_REPOSITORY) private readonly accessLevels: IAccessLevelRepository,
+  ) {}
+
+  async list(): Promise<AccessLevelRecord[]> {
+    return this.accessLevels.findAll();
+  }
+
+  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Access level value and label are required');
+    }
+    const existing = await this.accessLevels.findByValue(input.value);
+    if (existing) throw new ConflictException('Access level already exists');
+    return this.accessLevels.create(input);
+  }
+
+  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    return this.accessLevels.update(value, input);
+  }
+
+  async delete(value: AccessLevel): Promise<void> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    return this.accessLevels.delete(value);
+  }
+}
+
+@Injectable()
+export class RoleService {
+  constructor(
+    @Inject(InjectionTokens.ROLE_REPOSITORY) private readonly roles: IRoleRepository,
+  ) {}
+
+  async list(): Promise<RoleRecord[]> {
+    return this.roles.findAll();
+  }
+
+  async create(input: CreateRoleInput): Promise<RoleRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Role value and label are required');
+    }
+    const existing = await this.roles.findByValue(input.value);
+    if (existing) throw new ConflictException('Role already exists');
+    return this.roles.create(input);
+  }
+
+  async update(value: Role, input: UpdateRoleInput): Promise<RoleRecord> {
+    const existing = await this.roles.findByValue(value);
+    if (!existing) throw new NotFoundException('Role not found');
+    return this.roles.update(value, input);
+  }
+
+  async delete(value: Role): Promise<void> {
+    const existing = await this.roles.findByValue(value);
+    if (!existing) throw new NotFoundException('Role not found');
+    return this.roles.delete(value);
   }
 }

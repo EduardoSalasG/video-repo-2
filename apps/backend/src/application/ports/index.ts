@@ -162,6 +162,186 @@ export interface ICourseAccessRepository {
   revoke(userId: string, courseId: string): Promise<void>;
 }
 
+export interface PrimaryStyleRecord {
+  value: PrimaryStyle;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreatePrimaryStyleInput {
+  value: PrimaryStyle;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdatePrimaryStyleInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IPrimaryStyleRepository {
+  findAll(): Promise<PrimaryStyleRecord[]>;
+  findByValue(value: PrimaryStyle): Promise<PrimaryStyleRecord | null>;
+  create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord>;
+  update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord>;
+  delete(value: PrimaryStyle): Promise<void>;
+}
+
+export interface DifficultyRecord {
+  value: Difficulty;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateDifficultyInput {
+  value: Difficulty;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateDifficultyInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IDifficultyRepository {
+  findAll(): Promise<DifficultyRecord[]>;
+  findByValue(value: Difficulty): Promise<DifficultyRecord | null>;
+  create(input: CreateDifficultyInput): Promise<DifficultyRecord>;
+  update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord>;
+  delete(value: Difficulty): Promise<void>;
+}
+
+export interface VideoTypeRecord {
+  value: VideoType;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateVideoTypeInput {
+  value: VideoType;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateVideoTypeInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IVideoTypeRepository {
+  findAll(): Promise<VideoTypeRecord[]>;
+  findByValue(value: VideoType): Promise<VideoTypeRecord | null>;
+  create(input: CreateVideoTypeInput): Promise<VideoTypeRecord>;
+  update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord>;
+  delete(value: VideoType): Promise<void>;
+}
+
+export interface LabelTypeRecord {
+  value: LabelType;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateLabelTypeInput {
+  value: LabelType;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateLabelTypeInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface ILabelTypeRepository {
+  findAll(): Promise<LabelTypeRecord[]>;
+  findByValue(value: LabelType): Promise<LabelTypeRecord | null>;
+  create(input: CreateLabelTypeInput): Promise<LabelTypeRecord>;
+  update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord>;
+  delete(value: LabelType): Promise<void>;
+}
+
+export interface AccessLevelRecord {
+  value: AccessLevel;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAccessLevelInput {
+  value: AccessLevel;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateAccessLevelInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IAccessLevelRepository {
+  findAll(): Promise<AccessLevelRecord[]>;
+  findByValue(value: AccessLevel): Promise<AccessLevelRecord | null>;
+  create(input: CreateAccessLevelInput): Promise<AccessLevelRecord>;
+  update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord>;
+  delete(value: AccessLevel): Promise<void>;
+}
+
+export interface RoleRecord {
+  value: Role;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateRoleInput {
+  value: Role;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateRoleInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IRoleRepository {
+  findAll(): Promise<RoleRecord[]>;
+  findByValue(value: Role): Promise<RoleRecord | null>;
+  create(input: CreateRoleInput): Promise<RoleRecord>;
+  update(value: Role, input: UpdateRoleInput): Promise<RoleRecord>;
+  delete(value: Role): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

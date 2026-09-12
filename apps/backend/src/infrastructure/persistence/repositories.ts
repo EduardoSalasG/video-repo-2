@@ -24,6 +24,30 @@ import {
   UpdateSectionInput,
   CreateVideoMetadataInput,
   UploadedFile,
+  IPrimaryStyleRepository,
+  PrimaryStyleRecord,
+  CreatePrimaryStyleInput,
+  UpdatePrimaryStyleInput,
+  IDifficultyRepository,
+  DifficultyRecord,
+  CreateDifficultyInput,
+  UpdateDifficultyInput,
+  IVideoTypeRepository,
+  VideoTypeRecord,
+  CreateVideoTypeInput,
+  UpdateVideoTypeInput,
+  ILabelTypeRepository,
+  LabelTypeRecord,
+  CreateLabelTypeInput,
+  UpdateLabelTypeInput,
+  IAccessLevelRepository,
+  AccessLevelRecord,
+  CreateAccessLevelInput,
+  UpdateAccessLevelInput,
+  IRoleRepository,
+  RoleRecord,
+  CreateRoleInput,
+  UpdateRoleInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -448,6 +472,360 @@ export class PrismaVideoLabelRepository implements IVideoLabelRepository {
 
   async delete(id: string): Promise<void> {
     await this.prisma.videoLabel.delete({ where: { id } });
+  }
+}
+
+@Injectable()
+export class PrismaPrimaryStyleRepository implements IPrimaryStyleRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PrimaryStyleRecord {
+    return {
+      value: row.value as PrimaryStyle,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<PrimaryStyleRecord[]> {
+    const rows = await this.prisma.primaryStyle.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: PrimaryStyle): Promise<PrimaryStyleRecord | null> {
+    const row = await this.prisma.primaryStyle.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const row = await this.prisma.primaryStyle.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const row = await this.prisma.primaryStyle.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: PrimaryStyle): Promise<void> {
+    await this.prisma.primaryStyle.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaDifficultyRepository implements IDifficultyRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): DifficultyRecord {
+    return {
+      value: row.value as Difficulty,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<DifficultyRecord[]> {
+    const rows = await this.prisma.difficulty.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: Difficulty): Promise<DifficultyRecord | null> {
+    const row = await this.prisma.difficulty.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateDifficultyInput): Promise<DifficultyRecord> {
+    const row = await this.prisma.difficulty.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord> {
+    const row = await this.prisma.difficulty.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: Difficulty): Promise<void> {
+    await this.prisma.difficulty.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaVideoTypeRepository implements IVideoTypeRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): VideoTypeRecord {
+    return {
+      value: row.value as VideoType,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<VideoTypeRecord[]> {
+    const rows = await this.prisma.videoType.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: VideoType): Promise<VideoTypeRecord | null> {
+    const row = await this.prisma.videoType.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateVideoTypeInput): Promise<VideoTypeRecord> {
+    const row = await this.prisma.videoType.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: VideoType, input: UpdateVideoTypeInput): Promise<VideoTypeRecord> {
+    const row = await this.prisma.videoType.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: VideoType): Promise<void> {
+    await this.prisma.videoType.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaLabelTypeRepository implements ILabelTypeRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): LabelTypeRecord {
+    return {
+      value: row.value as LabelType,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<LabelTypeRecord[]> {
+    const rows = await this.prisma.labelType.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: LabelType): Promise<LabelTypeRecord | null> {
+    const row = await this.prisma.labelType.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateLabelTypeInput): Promise<LabelTypeRecord> {
+    const row = await this.prisma.labelType.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: LabelType, input: UpdateLabelTypeInput): Promise<LabelTypeRecord> {
+    const row = await this.prisma.labelType.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: LabelType): Promise<void> {
+    await this.prisma.labelType.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaAccessLevelRepository implements IAccessLevelRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): AccessLevelRecord {
+    return {
+      value: row.value as AccessLevel,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<AccessLevelRecord[]> {
+    const rows = await this.prisma.accessLevel.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: AccessLevel): Promise<AccessLevelRecord | null> {
+    const row = await this.prisma.accessLevel.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
+    const row = await this.prisma.accessLevel.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
+    const row = await this.prisma.accessLevel.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: AccessLevel): Promise<void> {
+    await this.prisma.accessLevel.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaRoleRepository implements IRoleRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): RoleRecord {
+    return {
+      value: row.value as Role,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<RoleRecord[]> {
+    const rows = await this.prisma.role.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: Role): Promise<RoleRecord | null> {
+    const row = await this.prisma.role.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateRoleInput): Promise<RoleRecord> {
+    const row = await this.prisma.role.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: Role, input: UpdateRoleInput): Promise<RoleRecord> {
+    const row = await this.prisma.role.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: Role): Promise<void> {
+    await this.prisma.role.delete({ where: { value } });
   }
 }
 

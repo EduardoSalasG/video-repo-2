@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -13,20 +13,16 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
 import CloseIcon from '@mui/icons-material/Close';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
+import { StatusSnackbar, type StatusSeverity } from '../molecules/StatusSnackbar';
+import { ParamMaintainer } from '../organisms/ParamMaintainer';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import { primaryStyleLabels, videoTypeLabels } from '../../lib/labels';
-import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
+import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess, ParamRecord } from '../../types';
 
 const TABS = [
   'dashboard',
@@ -37,6 +33,11 @@ const TABS = [
   'parametros/pasos',
   'parametros/estilos',
   'usuarios',
+  'parametros/dificultades',
+  'parametros/tipos-video',
+  'parametros/tipos-etiqueta',
+  'parametros/niveles-acceso',
+  'parametros/roles',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -69,9 +70,9 @@ const sectionSchema = z.object({
 });
 
 const videoSchema = z.object({
-  difficulty: z.enum(['BEGINNER', 'BASIC', 'INTERMEDIATE', 'ADVANCED']),
-  primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
-  videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
+  difficulty: z.string().min(1, 'La dificultad es obligatoria'),
+  primaryStyle: z.string().min(1, 'El estilo es obligatorio'),
+  videoType: z.string().min(1, 'El tipo de video es obligatorio'),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
   steps: z.array(z.string()).default([]),
   influences: z.array(z.string()).default([]),
@@ -80,7 +81,7 @@ const videoSchema = z.object({
 
 const roleSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
-  role: z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']),
+  role: z.string().min(1, 'Selecciona un rol'),
 });
 
 const accessSchema = z.object({
@@ -104,8 +105,6 @@ export const Admin = () => {
     if (current.startsWith('parametros/')) return 5;
     return 0;
   }, [tab]);
-
-  const [success, setSuccess] = useState<string | null>(null);
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
@@ -155,10 +154,12 @@ export const Admin = () => {
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const courseImageInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'info' | 'success' | 'error'>('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<StatusSeverity>('info');
   const [stepLabels, setStepLabels] = useState<string[]>([]);
   const [influenceLabels, setInfluenceLabels] = useState<string[]>([]);
   const [tagLabels, setTagLabels] = useState<string[]>([]);
@@ -171,6 +172,19 @@ export const Admin = () => {
   const [newLabelStyles, setNewLabelStyles] = useState<PrimaryStyle[]>([]);
   const [filterLabelStyle, setFilterLabelStyle] = useState<PrimaryStyle | ''>('');
 
+  const [primaryStyles, setPrimaryStyles] = useState<ParamRecord[]>([]);
+  const [loadingStyles, setLoadingStyles] = useState(false);
+  const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
+  const [loadingDifficulties, setLoadingDifficulties] = useState(false);
+  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
+  const [loadingVideoTypes, setLoadingVideoTypes] = useState(false);
+  const [labelTypes, setLabelTypes] = useState<ParamRecord[]>([]);
+  const [loadingLabelTypes, setLoadingLabelTypes] = useState(false);
+  const [accessLevels, setAccessLevels] = useState<ParamRecord[]>([]);
+  const [loadingAccessLevels, setLoadingAccessLevels] = useState(false);
+  const [roles, setRoles] = useState<ParamRecord[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
+
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
 
@@ -180,10 +194,14 @@ export const Admin = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userAccesses, setUserAccesses] = useState<CourseAccess[]>([]);
 
-  const showSuccess = (message: string) => {
-    setSuccess(message);
-    setTimeout(() => setSuccess(null), 3000);
+  const showStatus = (message: string, severity: StatusSeverity) => {
+    setSnackbarSeverity(severity);
+    setSnackbarMessage(message);
+    setSnackbarOpen(true);
   };
+
+  const showSuccess = (message: string) => showStatus(message, 'success');
+  const showError = (message: string) => showStatus(message, 'error');
 
   useEffect(() => {
     if (!selectedUserId) {
@@ -299,6 +317,71 @@ export const Admin = () => {
       .finally(() => setLoadingLabels(false));
   };
 
+  const loadPrimaryStyles = () => {
+    setLoadingStyles(true);
+    api
+      .getPrimaryStyles()
+      .then(setPrimaryStyles)
+      .catch(() => setPrimaryStyles([]))
+      .finally(() => setLoadingStyles(false));
+  };
+
+  const loadDifficulties = () => {
+    setLoadingDifficulties(true);
+    api
+      .getDifficulties()
+      .then(setDifficulties)
+      .catch(() => setDifficulties([]))
+      .finally(() => setLoadingDifficulties(false));
+  };
+
+  const loadVideoTypes = () => {
+    setLoadingVideoTypes(true);
+    api
+      .getVideoTypes()
+      .then(setVideoTypes)
+      .catch(() => setVideoTypes([]))
+      .finally(() => setLoadingVideoTypes(false));
+  };
+
+  const loadLabelTypes = () => {
+    setLoadingLabelTypes(true);
+    api
+      .getLabelTypes()
+      .then(setLabelTypes)
+      .catch(() => setLabelTypes([]))
+      .finally(() => setLoadingLabelTypes(false));
+  };
+
+  const loadAccessLevels = () => {
+    setLoadingAccessLevels(true);
+    api
+      .getAccessLevels()
+      .then(setAccessLevels)
+      .catch(() => setAccessLevels([]))
+      .finally(() => setLoadingAccessLevels(false));
+  };
+
+  const loadRoles = () => {
+    setLoadingRoles(true);
+    api
+      .getRoles()
+      .then(setRoles)
+      .catch(() => setRoles([]))
+      .finally(() => setLoadingRoles(false));
+  };
+
+  useEffect(() => {
+    if (activeTab >= 4) {
+      loadPrimaryStyles();
+      loadDifficulties();
+      loadVideoTypes();
+      loadLabelTypes();
+      loadAccessLevels();
+      loadRoles();
+    }
+  }, [activeTab]);
+
   useEffect(() => {
     loadAdminLabels();
   }, [activeTab, filterLabelStyle]);
@@ -334,6 +417,7 @@ export const Admin = () => {
       }
       setCourseForm({ name: '', description: '' });
       setCourseImage(null);
+      if (courseImageInputRef.current) courseImageInputRef.current.value = '';
       setSnackbarSeverity('success');
       setSnackbarMessage(editingCourseId ? 'Curso actualizado' : 'Curso creado');
     } catch (err) {
@@ -487,6 +571,7 @@ export const Admin = () => {
         },
       );
       setVideoFile(null);
+      if (videoFileInputRef.current) videoFileInputRef.current.value = '';
       setVideoForm({
         difficulty: 'BEGINNER',
         primaryStyle: 'MAMBO_ON2',
@@ -526,7 +611,7 @@ export const Admin = () => {
       loadAdminLabels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear paso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -537,7 +622,205 @@ export const Admin = () => {
       loadAdminLabels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar paso';
-      showSuccess(message);
+      showError(message);
+    }
+  };
+
+  const handleCreateStyle = async (value: string, label: string) => {
+    try {
+      await api.createPrimaryStyle({ value, label });
+      showSuccess('Estilo creado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear estilo';
+      showError(message);
+    }
+  };
+
+  const handleUpdateStyle = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updatePrimaryStyle(value, data);
+      showSuccess('Estilo actualizado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar estilo';
+      showError(message);
+    }
+  };
+
+  const handleDeleteStyle = async (value: string) => {
+    try {
+      await api.deletePrimaryStyle(value);
+      showSuccess('Estilo eliminado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar estilo';
+      showError(message);
+    }
+  };
+
+  const handleCreateDifficulty = async (value: string, label: string) => {
+    try {
+      await api.createDifficulty({ value, label });
+      showSuccess('Dificultad creada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear dificultad';
+      showError(message);
+    }
+  };
+
+  const handleUpdateDifficulty = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateDifficulty(value, data);
+      showSuccess('Dificultad actualizada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar dificultad';
+      showError(message);
+    }
+  };
+
+  const handleDeleteDifficulty = async (value: string) => {
+    try {
+      await api.deleteDifficulty(value);
+      showSuccess('Dificultad eliminada');
+      loadDifficulties();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar dificultad';
+      showError(message);
+    }
+  };
+
+  const handleCreateVideoType = async (value: string, label: string) => {
+    try {
+      await api.createVideoType({ value, label });
+      showSuccess('Tipo de video creado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de video';
+      showError(message);
+    }
+  };
+
+  const handleUpdateVideoType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateVideoType(value, data);
+      showSuccess('Tipo de video actualizado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de video';
+      showError(message);
+    }
+  };
+
+  const handleDeleteVideoType = async (value: string) => {
+    try {
+      await api.deleteVideoType(value);
+      showSuccess('Tipo de video eliminado');
+      loadVideoTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de video';
+      showError(message);
+    }
+  };
+
+  const handleCreateLabelType = async (value: string, label: string) => {
+    try {
+      await api.createLabelType({ value, label });
+      showSuccess('Tipo de etiqueta creado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear tipo de etiqueta';
+      showError(message);
+    }
+  };
+
+  const handleUpdateLabelType = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateLabelType(value, data);
+      showSuccess('Tipo de etiqueta actualizado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar tipo de etiqueta';
+      showError(message);
+    }
+  };
+
+  const handleDeleteLabelType = async (value: string) => {
+    try {
+      await api.deleteLabelType(value);
+      showSuccess('Tipo de etiqueta eliminado');
+      loadLabelTypes();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar tipo de etiqueta';
+      showError(message);
+    }
+  };
+
+  const handleCreateAccessLevel = async (value: string, label: string) => {
+    try {
+      await api.createAccessLevel({ value, label });
+      showSuccess('Nivel de acceso creado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear nivel de acceso';
+      showError(message);
+    }
+  };
+
+  const handleUpdateAccessLevel = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateAccessLevel(value, data);
+      showSuccess('Nivel de acceso actualizado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar nivel de acceso';
+      showError(message);
+    }
+  };
+
+  const handleDeleteAccessLevel = async (value: string) => {
+    try {
+      await api.deleteAccessLevel(value);
+      showSuccess('Nivel de acceso eliminado');
+      loadAccessLevels();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar nivel de acceso';
+      showError(message);
+    }
+  };
+
+  const handleCreateRole = async (value: string, label: string) => {
+    try {
+      await api.createRole({ value, label });
+      showSuccess('Rol creado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear rol';
+      showError(message);
+    }
+  };
+
+  const handleUpdateRole = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateRole(value, data);
+      showSuccess('Rol actualizado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar rol';
+      showError(message);
+    }
+  };
+
+  const handleDeleteRole = async (value: string) => {
+    try {
+      await api.deleteRole(value);
+      showSuccess('Rol eliminado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar rol';
+      showError(message);
     }
   };
 
@@ -577,6 +860,8 @@ export const Admin = () => {
       .then(() => {
         setVideoLink('');
         setVideoLinkError(null);
+        setVideoFile(null);
+        if (videoFileInputRef.current) videoFileInputRef.current.value = '';
         setVideoForm({
           difficulty: 'BEGINNER',
           primaryStyle: 'MAMBO_ON2',
@@ -662,13 +947,14 @@ export const Admin = () => {
         setUserAccesses((prev) => prev.filter((a) => a.courseId !== courseId));
         showSuccess('Acceso revocado');
       })
-      .catch(() => showSuccess('Error al revocar acceso'));
+      .catch(() => showError('Error al revocar acceso'));
   };
 
   const startEditCourse = (c: Course) => {
     setEditingCourseId(c.id);
     setCourseForm({ name: c.name, description: c.description ?? '' });
     setCourseImage(null);
+    if (courseImageInputRef.current) courseImageInputRef.current.value = '';
   };
 
   const startEditModule = (m: CourseModule) => {
@@ -699,7 +985,7 @@ export const Admin = () => {
         setCourses((prev) => prev.filter((c) => c.id !== courseId));
         showSuccess('Curso eliminado');
       })
-      .catch(() => showSuccess('Error al eliminar curso'));
+      .catch(() => showError('Error al eliminar curso'));
   };
 
   const handleDeleteModule = (moduleId: string) => {
@@ -709,7 +995,7 @@ export const Admin = () => {
         setModules((prev) => prev.filter((m) => m.id !== moduleId));
         showSuccess('Módulo eliminado');
       })
-      .catch(() => showSuccess('Error al eliminar módulo'));
+      .catch(() => showError('Error al eliminar módulo'));
   };
 
   const handleDeleteSection = (sectionId: string) => {
@@ -719,7 +1005,7 @@ export const Admin = () => {
         setSections((prev) => prev.filter((s) => s.id !== sectionId));
         showSuccess('Sección eliminada');
       })
-      .catch(() => showSuccess('Error al eliminar sección'));
+      .catch(() => showError('Error al eliminar sección'));
   };
 
   const renderCourseSelect = (value: string, onChange: (value: string) => void, disabled = false) => (
@@ -775,26 +1061,12 @@ export const Admin = () => {
 
   return (
     <Box>
-      {success && (
-        <Typography color="success.main" sx={{ mt: 2 }}>
-          {success}
-        </Typography>
-      )}
-      <Snackbar
+      <StatusSnackbar
         open={snackbarOpen}
-        autoHideDuration={snackbarSeverity === 'success' ? 6000 : null}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
         onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      />
 
       <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
@@ -845,6 +1117,7 @@ export const Admin = () => {
                   Imagen del curso
                 </Typography>
                 <input
+                  ref={courseImageInputRef}
                   type="file"
                   accept="image/*"
                   disabled={courseUploading}
@@ -863,6 +1136,7 @@ export const Admin = () => {
                     setEditingCourseId(null);
                     setCourseForm({ name: '', description: '' });
                     setCourseImage(null);
+                    if (courseImageInputRef.current) courseImageInputRef.current.value = '';
                   }}
                 >
                   Cancelar
@@ -1072,10 +1346,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.difficulty}
               >
-                <MenuItem value="BEGINNER">Principiante</MenuItem>
-                <MenuItem value="BASIC">Básico</MenuItem>
-                <MenuItem value="INTERMEDIATE">Intermedio</MenuItem>
-                <MenuItem value="ADVANCED">Avanzado</MenuItem>
+                {(difficulties.length > 0
+                  ? difficulties.filter((d) => d.isActive)
+                  : Object.entries(difficultyLabels).map(([value, label], index) => ({ value, label, orderIndex: index }))
+                ).map((difficulty) => (
+                  <MenuItem key={difficulty.value} value={difficulty.value}>
+                    {difficulty.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 select
@@ -1086,13 +1364,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.primaryStyle}
               >
-                {Object.entries(primaryStyleLabels)
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                {(primaryStyles.length > 0
+                  ? primaryStyles.filter((s) => s.isActive)
+                  : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label }))
+                ).map((style) => (
+                  <MenuItem key={style.value} value={style.value}>
+                    {style.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 select
@@ -1103,13 +1382,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.videoType}
               >
-                {Object.entries(videoTypeLabels)
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                {(videoTypes.length > 0
+                  ? videoTypes.filter((t) => t.isActive)
+                  : Object.entries(videoTypeLabels).map(([value, label], index) => ({ value, label, orderIndex: index }))
+                ).map((videoType) => (
+                  <MenuItem key={videoType.value} value={videoType.value}>
+                    {videoType.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 label="Duración (counts)"
@@ -1179,6 +1459,7 @@ export const Admin = () => {
                   Archivo de video
                 </Typography>
                 <input
+                  ref={videoFileInputRef}
                   type="file"
                   accept="video/*"
                   disabled={uploading}
@@ -1227,13 +1508,14 @@ export const Admin = () => {
               onChange={(event) => setFilterLabelStyle(event.target.value as PrimaryStyle | '')}
             >
               <MenuItem value="">Todos</MenuItem>
-              {Object.entries(primaryStyleLabels)
-                .sort((a, b) => a[1].localeCompare(b[1]))
-                .map(([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
-                  </MenuItem>
-                ))}
+              {(primaryStyles.length > 0
+                ? primaryStyles
+                : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label }))
+              ).map((style) => (
+                <MenuItem key={style.value} value={style.value}>
+                  {style.label}
+                </MenuItem>
+              ))}
             </FormField>
             <Box component="form" onSubmit={handleCreateLabel} noValidate>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
@@ -1246,8 +1528,8 @@ export const Admin = () => {
                 />
                 <Autocomplete
                   multiple
-                  options={Object.keys(primaryStyleLabels) as PrimaryStyle[]}
-                  getOptionLabel={(option) => primaryStyleLabels[option]}
+                  options={primaryStyles.map((s) => s.value)}
+                  getOptionLabel={(option) => primaryStyles.find((s) => s.value === option)?.label ?? option}
                   value={newLabelStyles}
                   onChange={(_event, value) => setNewLabelStyles(value)}
                   renderInput={(params) => (
@@ -1288,7 +1570,12 @@ export const Admin = () => {
                       secondary={
                         <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5} sx={{ mt: 0.5 }}>
                           {label.styles.map((style) => (
-                            <Chip key={style} label={primaryStyleLabels[style]} size="small" variant="outlined" />
+                            <Chip
+                              key={style}
+                              label={primaryStyles.find((s) => s.value === style)?.label ?? primaryStyleLabels[style] ?? style}
+                              size="small"
+                              variant="outlined"
+                            />
                           ))}
                         </Stack>
                       }
@@ -1306,37 +1593,75 @@ export const Admin = () => {
         )}
 
         {activeTab === 6 && (
-          <Stack spacing={3}>
-            <Box>
-              <Typography variant="h5" component="h2">
-                Estilos
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Los estilos son Mambo, Bachata Sensual, Bachata Moderna y Casino. Aquí se muestran los pasos asociados a cada uno.
-              </Typography>
-            </Box>
-            {loadingLabels && <Typography color="text.secondary">Cargando...</Typography>}
-            {Object.entries(primaryStyleLabels)
-              .sort((a, b) => a[1].localeCompare(b[1]))
-              .map(([style, label]) => {
-                const styleSteps = adminLabels.filter((l) => l.styles.includes(style as PrimaryStyle));
-                return (
-                  <Accordion key={style} defaultExpanded>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
-                        {styleSteps.map((step) => (
-                          <Chip key={step.id} label={step.name} size="small" />
-                        ))}
-                        {styleSteps.length === 0 && <Typography color="text.secondary">Sin pasos</Typography>}
-                      </Stack>
-                    </AccordionDetails>
-                  </Accordion>
-                );
-              })}
-          </Stack>
+          <ParamMaintainer
+            title="Mantenedor de estilos"
+            description="Crea, edita y desactiva estilos principales. Estos valores alimentan los selects de videos y pasos."
+            items={primaryStyles}
+            loading={loadingStyles}
+            onCreate={handleCreateStyle}
+            onUpdate={handleUpdateStyle}
+            onDelete={handleDeleteStyle}
+          />
+        )}
+
+        {activeTab === 8 && (
+          <ParamMaintainer
+            title="Mantenedor de dificultades"
+            description="Crea, edita y desactiva niveles de dificultad. El orden define cómo se listan en los formularios."
+            items={difficulties}
+            loading={loadingDifficulties}
+            onCreate={handleCreateDifficulty}
+            onUpdate={handleUpdateDifficulty}
+            onDelete={handleDeleteDifficulty}
+          />
+        )}
+
+        {activeTab === 9 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de video"
+            description="Crea, edita y desactiva tipos de video (paso, secuencia, coreografía, etc.)."
+            items={videoTypes}
+            loading={loadingVideoTypes}
+            onCreate={handleCreateVideoType}
+            onUpdate={handleUpdateVideoType}
+            onDelete={handleDeleteVideoType}
+          />
+        )}
+
+        {activeTab === 10 && (
+          <ParamMaintainer
+            title="Mantenedor de tipos de etiqueta"
+            description="Crea, edita y desactiva tipos de etiqueta (paso, influencia, tag, etc.)."
+            items={labelTypes}
+            loading={loadingLabelTypes}
+            onCreate={handleCreateLabelType}
+            onUpdate={handleUpdateLabelType}
+            onDelete={handleDeleteLabelType}
+          />
+        )}
+
+        {activeTab === 11 && (
+          <ParamMaintainer
+            title="Mantenedor de niveles de acceso"
+            description="Crea, edita y desactiva niveles de acceso (lectura, escritura, mantener, etc.)."
+            items={accessLevels}
+            loading={loadingAccessLevels}
+            onCreate={handleCreateAccessLevel}
+            onUpdate={handleUpdateAccessLevel}
+            onDelete={handleDeleteAccessLevel}
+          />
+        )}
+
+        {activeTab === 12 && (
+          <ParamMaintainer
+            title="Mantenedor de roles"
+            description="Crea, edita y desactiva roles de usuario (admin, instructor, estudiante, etc.)."
+            items={roles}
+            loading={loadingRoles}
+            onCreate={handleCreateRole}
+            onUpdate={handleUpdateRole}
+            onDelete={handleDeleteRole}
+          />
         )}
 
         {activeTab === 7 && (
@@ -1361,7 +1686,7 @@ export const Admin = () => {
                 <Typography><strong>Nombre:</strong> {selectedUser.firstName} {selectedUser.lastName}</Typography>
                 <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
                 <Typography><strong>Usuario:</strong> {selectedUser.username}</Typography>
-                <Typography><strong>Rol:</strong> {selectedUser.role}</Typography>
+                <Typography><strong>Rol:</strong> {roles.find((r) => r.value === selectedUser.role)?.label ?? selectedUser.role}</Typography>
               </Paper>
             )}
             {selectedUserId && (
@@ -1379,13 +1704,18 @@ export const Admin = () => {
                     }
                     fieldError={roleErrors.role}
                   >
-                    {Object.entries({ ADMIN: 'Admin', INSTRUCTOR: 'Instructor', STUDENT: 'Estudiante' })
-                      .sort((a, b) => a[1].localeCompare(b[1]))
-                      .map(([value, label]) => (
-                        <MenuItem key={value} value={value}>
-                          {label}
-                        </MenuItem>
-                      ))}
+                    {(roles.length > 0
+                      ? roles.filter((r) => r.isActive)
+                      : [
+                          { value: 'ADMIN', label: 'Admin' },
+                          { value: 'INSTRUCTOR', label: 'Instructor' },
+                          { value: 'STUDENT', label: 'Estudiante' },
+                        ]
+                    ).map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        {role.label}
+                      </MenuItem>
+                    ))}
                   </FormField>
                   <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                     Actualizar rol
@@ -1412,7 +1742,7 @@ export const Admin = () => {
                       >
                         <ListItemText
                           primary={access.course?.name ?? access.courseId}
-                          secondary={access.accessLevel}
+                          secondary={accessLevels.find((l) => l.value === access.accessLevel)?.label ?? access.accessLevel}
                         />
                       </ListItem>
                     ))}
