@@ -8,6 +8,7 @@ import type {
   CourseAccess,
   VideoSearchResult,
   PrimaryStyleRecord,
+  ParamRecord,
 } from '../types';
 
 import { ApiError } from './error';
@@ -236,6 +237,12 @@ export const api = {
   updatePrimaryStyle: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ style: PrimaryStyleRecord }>('PATCH', `/admin/primary-styles/${encodeURIComponent(value)}`, data),
   deletePrimaryStyle: (value: string) => request<void>('DELETE', `/admin/primary-styles/${encodeURIComponent(value)}`),
+  getDifficulties: () => request<{ difficulties: ParamRecord[] }>('GET', '/admin/difficulties').then((data) => data.difficulties),
+  createDifficulty: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ difficulty: ParamRecord }>('POST', '/admin/difficulties', data),
+  updateDifficulty: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ difficulty: ParamRecord }>('PATCH', `/admin/difficulties/${encodeURIComponent(value)}`, data),
+  deleteDifficulty: (value: string) => request<void>('DELETE', `/admin/difficulties/${encodeURIComponent(value)}`),
   getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);

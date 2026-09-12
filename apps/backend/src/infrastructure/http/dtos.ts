@@ -128,7 +128,7 @@ export class UpdateSectionDto {
 }
 
 export class CreateVideoMetadataDto {
-  @IsEnum(Difficulty)
+  @IsString()
   difficulty: Difficulty;
 
   @IsString()

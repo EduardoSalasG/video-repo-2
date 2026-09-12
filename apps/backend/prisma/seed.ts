@@ -10,6 +10,13 @@ const defaultPrimaryStyles: Record<string, string> = {
   MODERN_BACHATA: 'Bachata Moderna',
 };
 
+const defaultDifficulties: Record<string, string> = {
+  BEGINNER: 'Principiante',
+  BASIC: 'Básico',
+  INTERMEDIATE: 'Intermedio',
+  ADVANCED: 'Avanzado',
+};
+
 interface SeedUser {
   email: string;
   username: string;
@@ -96,6 +103,19 @@ async function seedPrimaryStyles(): Promise<void> {
   }
 }
 
+async function seedDifficulties(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultDifficulties)) {
+    await prisma.difficulty.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Difficulty ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
@@ -122,6 +142,7 @@ async function seedSteps(): Promise<void> {
 async function main(): Promise<void> {
   await seedUsers();
   await seedPrimaryStyles();
+  await seedDifficulties();
   await seedSteps();
 }
 

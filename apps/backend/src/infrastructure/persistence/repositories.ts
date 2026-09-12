@@ -28,6 +28,10 @@ import {
   PrimaryStyleRecord,
   CreatePrimaryStyleInput,
   UpdatePrimaryStyleInput,
+  IDifficultyRepository,
+  DifficultyRecord,
+  CreateDifficultyInput,
+  UpdateDifficultyInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -511,6 +515,65 @@ export class PrismaPrimaryStyleRepository implements IPrimaryStyleRepository {
 
   async delete(value: PrimaryStyle): Promise<void> {
     await this.prisma.primaryStyle.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaDifficultyRepository implements IDifficultyRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): DifficultyRecord {
+    return {
+      value: row.value as Difficulty,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<DifficultyRecord[]> {
+    const rows = await this.prisma.difficulty.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: Difficulty): Promise<DifficultyRecord | null> {
+    const row = await this.prisma.difficulty.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateDifficultyInput): Promise<DifficultyRecord> {
+    const row = await this.prisma.difficulty.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord> {
+    const row = await this.prisma.difficulty.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: Difficulty): Promise<void> {
+    await this.prisma.difficulty.delete({ where: { value } });
   }
 }
 

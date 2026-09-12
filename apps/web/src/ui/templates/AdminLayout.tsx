@@ -62,6 +62,7 @@ const MENU_GROUPS: MenuGroup[] = [
     items: [
       { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
       { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
+      { label: 'Dificultades', path: '/admin/parametros/dificultades', icon: <SchoolIcon /> },
     ],
   },
 ];

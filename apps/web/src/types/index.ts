@@ -1,17 +1,20 @@
 export type Role = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
 export type AccessLevel = 'READ' | 'WRITE' | 'MAINTAIN';
-export type Difficulty = 'BEGINNER' | 'BASIC' | 'INTERMEDIATE' | 'ADVANCED';
+export type Difficulty = string;
 export type PrimaryStyle = string;
 export type VideoType = 'STEP' | 'SEQUENCE' | 'CHOREOGRAPHY';
 
-export interface PrimaryStyleRecord {
-  value: PrimaryStyle;
+export interface ParamRecord {
+  value: string;
   label: string;
   orderIndex: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export type PrimaryStyleRecord = ParamRecord;
+export type DifficultyRecord = ParamRecord;
 
 export interface Course {
   id: string;

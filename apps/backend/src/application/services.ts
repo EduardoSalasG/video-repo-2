@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { Role, AccessLevel, PrimaryStyle, LabelType } from '../domain/enums';
+import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
 import {
@@ -31,6 +31,10 @@ import {
   PrimaryStyleRecord,
   CreatePrimaryStyleInput,
   UpdatePrimaryStyleInput,
+  IDifficultyRepository,
+  DifficultyRecord,
+  CreateDifficultyInput,
+  UpdateDifficultyInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -552,5 +556,37 @@ export class StyleService {
     const existing = await this.primaryStyles.findByValue(value);
     if (!existing) throw new NotFoundException('Style not found');
     return this.primaryStyles.delete(value);
+  }
+}
+
+@Injectable()
+export class DifficultyService {
+  constructor(
+    @Inject(InjectionTokens.DIFFICULTY_REPOSITORY) private readonly difficulties: IDifficultyRepository,
+  ) {}
+
+  async list(): Promise<DifficultyRecord[]> {
+    return this.difficulties.findAll();
+  }
+
+  async create(input: CreateDifficultyInput): Promise<DifficultyRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Difficulty value and label are required');
+    }
+    const existing = await this.difficulties.findByValue(input.value);
+    if (existing) throw new ConflictException('Difficulty already exists');
+    return this.difficulties.create(input);
+  }
+
+  async update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord> {
+    const existing = await this.difficulties.findByValue(value);
+    if (!existing) throw new NotFoundException('Difficulty not found');
+    return this.difficulties.update(value, input);
+  }
+
+  async delete(value: Difficulty): Promise<void> {
+    const existing = await this.difficulties.findByValue(value);
+    if (!existing) throw new NotFoundException('Difficulty not found');
+    return this.difficulties.delete(value);
   }
 }

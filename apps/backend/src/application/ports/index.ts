@@ -192,6 +192,36 @@ export interface IPrimaryStyleRepository {
   delete(value: PrimaryStyle): Promise<void>;
 }
 
+export interface DifficultyRecord {
+  value: Difficulty;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateDifficultyInput {
+  value: Difficulty;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateDifficultyInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IDifficultyRepository {
+  findAll(): Promise<DifficultyRecord[]>;
+  findByValue(value: Difficulty): Promise<DifficultyRecord | null>;
+  create(input: CreateDifficultyInput): Promise<DifficultyRecord>;
+  update(value: Difficulty, input: UpdateDifficultyInput): Promise<DifficultyRecord>;
+  delete(value: Difficulty): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;
