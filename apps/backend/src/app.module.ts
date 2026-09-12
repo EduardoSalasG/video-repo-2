@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from './application/services';
 import { InjectionTokens } from './application/tokens';
-import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController, DifficultiesController, VideoTypesController, LabelTypesController, AccessLevelsController, RolesController } from './infrastructure/http/controllers';
+import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController, DifficultiesController, VideoTypesController, LabelTypesController, AccessLevelsController, RolesController, ParamsController } from './infrastructure/http/controllers';
 import { PrismaService } from './infrastructure/persistence/prisma.service';
 import {
   PrismaUserRepository,
@@ -59,6 +59,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     LabelTypesController,
     AccessLevelsController,
     RolesController,
+    ParamsController,
   ],
   providers: [
     { provide: InjectionTokens.TOKEN_SERVICE, useClass: JwtTokenService },

@@ -27,6 +27,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { Typography } from '../atoms/Typography';
+import { Footer } from '../molecules/Footer';
 import { useAuth } from '../../hooks/useAuth';
 
 const DRAWER_WIDTH = 240;
@@ -283,22 +284,24 @@ export const AdminLayout = () => {
       )}
       {isMobile && (
         <>
-          <IconButton
-            onClick={() => setMobileOpen((prev) => !prev)}
-            aria-label="Abrir menú"
-            sx={{
-              position: 'fixed',
-              top: 'calc(8px + env(safe-area-inset-top))',
-              left: 8,
-              zIndex: (t) => t.zIndex.drawer + 2,
-              backgroundColor: 'rgba(255, 255, 255, 0.92)',
-              backdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: 1,
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
-            }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {!mobileOpen && (
+            <IconButton
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menú"
+              sx={{
+                position: 'fixed',
+                top: 'calc(8px + env(safe-area-inset-top))',
+                left: 8,
+                zIndex: (t) => t.zIndex.drawer + 2,
+                backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                boxShadow: 1,
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Drawer
             variant="temporary"
             anchor="left"
@@ -318,17 +321,17 @@ export const AdminLayout = () => {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                gap: 1.5,
                 px: 2,
                 minHeight: 64,
               }}
             >
+              <IconButton onClick={() => setMobileOpen(false)} size="small" aria-label="Cerrar menú" edge="start">
+                <MenuIcon />
+              </IconButton>
               <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
                 Administración
               </Typography>
-              <IconButton onClick={() => setMobileOpen(false)} size="small" aria-label="Cerrar menú">
-                <ChevronLeftIcon />
-              </IconButton>
             </Toolbar>
             <Divider />
             {menuContent(true, handleNavigate)}
@@ -340,7 +343,7 @@ export const AdminLayout = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
-          pt: isMobile ? 'calc(56px + env(safe-area-inset-top))' : 3,
+          pt: isMobile ? 'calc(72px + env(safe-area-inset-top))' : 3,
           pb: isMobile ? 'calc(24px + env(safe-area-inset-bottom))' : 3,
           width: { sm: `calc(100% - ${open ? DRAWER_WIDTH : COLLAPSED_WIDTH}px)` },
           height: { xs: '100dvh', sm: '100vh' },
@@ -348,9 +351,12 @@ export const AdminLayout = () => {
           WebkitOverflowScrolling: 'touch',
           backgroundColor: '#fafafa',
           transition: 'width 250ms ease',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Outlet />
+        <Footer />
       </Box>
     </Box>
   );

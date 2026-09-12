@@ -274,4 +274,14 @@ export const api = {
     if (style) query.set('style', style);
     return request<{ labels: string[] }>('GET', `/videos/labels?${query.toString()}`).then((data) => data.labels);
   },
+
+  getParams: () =>
+    request<{
+      primaryStyles: ParamRecord[];
+      difficulties: ParamRecord[];
+      videoTypes: ParamRecord[];
+      labelTypes: ParamRecord[];
+      accessLevels: ParamRecord[];
+      roles: ParamRecord[];
+    }>('GET', '/params'),
 };

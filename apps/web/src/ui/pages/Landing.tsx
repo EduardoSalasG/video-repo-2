@@ -3,10 +3,11 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
+import { Footer } from '../molecules/Footer';
 import { Link } from 'react-router-dom';
 
 export const Landing = () => (
-  <Box>
+  <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
     <Box
       sx={{
         bgcolor: 'primary.main',
@@ -95,5 +96,6 @@ export const Landing = () => (
         </Grid>
       </Grid>
     </Container>
+    <Footer />
   </Box>
 );
