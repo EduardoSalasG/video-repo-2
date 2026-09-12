@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -154,6 +154,8 @@ export const Admin = () => {
   });
   const [videoErrors, setVideoErrors] = useState<Partial<Record<keyof VideoFormData, string>>>({});
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
+  const courseImageInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -415,6 +417,7 @@ export const Admin = () => {
       }
       setCourseForm({ name: '', description: '' });
       setCourseImage(null);
+      if (courseImageInputRef.current) courseImageInputRef.current.value = '';
       setSnackbarSeverity('success');
       setSnackbarMessage(editingCourseId ? 'Curso actualizado' : 'Curso creado');
     } catch (err) {
@@ -568,6 +571,7 @@ export const Admin = () => {
         },
       );
       setVideoFile(null);
+      if (videoFileInputRef.current) videoFileInputRef.current.value = '';
       setVideoForm({
         difficulty: 'BEGINNER',
         primaryStyle: 'MAMBO_ON2',
@@ -856,6 +860,8 @@ export const Admin = () => {
       .then(() => {
         setVideoLink('');
         setVideoLinkError(null);
+        setVideoFile(null);
+        if (videoFileInputRef.current) videoFileInputRef.current.value = '';
         setVideoForm({
           difficulty: 'BEGINNER',
           primaryStyle: 'MAMBO_ON2',
@@ -948,6 +954,7 @@ export const Admin = () => {
     setEditingCourseId(c.id);
     setCourseForm({ name: c.name, description: c.description ?? '' });
     setCourseImage(null);
+    if (courseImageInputRef.current) courseImageInputRef.current.value = '';
   };
 
   const startEditModule = (m: CourseModule) => {
@@ -1110,6 +1117,7 @@ export const Admin = () => {
                   Imagen del curso
                 </Typography>
                 <input
+                  ref={courseImageInputRef}
                   type="file"
                   accept="image/*"
                   disabled={courseUploading}
@@ -1128,6 +1136,7 @@ export const Admin = () => {
                     setEditingCourseId(null);
                     setCourseForm({ name: '', description: '' });
                     setCourseImage(null);
+                    if (courseImageInputRef.current) courseImageInputRef.current.value = '';
                   }}
                 >
                   Cancelar
@@ -1450,6 +1459,7 @@ export const Admin = () => {
                   Archivo de video
                 </Typography>
                 <input
+                  ref={videoFileInputRef}
                   type="file"
                   accept="video/*"
                   disabled={uploading}
