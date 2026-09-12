@@ -131,7 +131,7 @@ export class CreateVideoMetadataDto {
   @IsEnum(Difficulty)
   difficulty: Difficulty;
 
-  @IsEnum(PrimaryStyle)
+  @IsString()
   primaryStyle: PrimaryStyle;
 
   @IsEnum(VideoType)

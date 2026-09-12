@@ -24,6 +24,10 @@ import {
   UpdateSectionInput,
   CreateVideoMetadataInput,
   UploadedFile,
+  IPrimaryStyleRepository,
+  PrimaryStyleRecord,
+  CreatePrimaryStyleInput,
+  UpdatePrimaryStyleInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -448,6 +452,65 @@ export class PrismaVideoLabelRepository implements IVideoLabelRepository {
 
   async delete(id: string): Promise<void> {
     await this.prisma.videoLabel.delete({ where: { id } });
+  }
+}
+
+@Injectable()
+export class PrismaPrimaryStyleRepository implements IPrimaryStyleRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PrimaryStyleRecord {
+    return {
+      value: row.value as PrimaryStyle,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<PrimaryStyleRecord[]> {
+    const rows = await this.prisma.primaryStyle.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: PrimaryStyle): Promise<PrimaryStyleRecord | null> {
+    const row = await this.prisma.primaryStyle.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const row = await this.prisma.primaryStyle.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const row = await this.prisma.primaryStyle.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: PrimaryStyle): Promise<void> {
+    await this.prisma.primaryStyle.delete({ where: { value } });
   }
 }
 

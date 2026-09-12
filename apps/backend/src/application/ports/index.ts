@@ -162,6 +162,36 @@ export interface ICourseAccessRepository {
   revoke(userId: string, courseId: string): Promise<void>;
 }
 
+export interface PrimaryStyleRecord {
+  value: PrimaryStyle;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreatePrimaryStyleInput {
+  value: PrimaryStyle;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdatePrimaryStyleInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IPrimaryStyleRepository {
+  findAll(): Promise<PrimaryStyleRecord[]>;
+  findByValue(value: PrimaryStyle): Promise<PrimaryStyleRecord | null>;
+  create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord>;
+  update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord>;
+  delete(value: PrimaryStyle): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

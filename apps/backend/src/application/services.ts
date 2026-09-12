@@ -27,6 +27,10 @@ import {
   StorageFile,
   VideoSearchResult,
   LabelWithStyles,
+  IPrimaryStyleRepository,
+  PrimaryStyleRecord,
+  CreatePrimaryStyleInput,
+  UpdatePrimaryStyleInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -516,5 +520,37 @@ export class LabelService {
 
   async delete(id: string): Promise<void> {
     return this.videoLabels.delete(id);
+  }
+}
+
+@Injectable()
+export class StyleService {
+  constructor(
+    @Inject(InjectionTokens.PRIMARY_STYLE_REPOSITORY) private readonly primaryStyles: IPrimaryStyleRepository,
+  ) {}
+
+  async list(): Promise<PrimaryStyleRecord[]> {
+    return this.primaryStyles.findAll();
+  }
+
+  async create(input: CreatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Style value and label are required');
+    }
+    const existing = await this.primaryStyles.findByValue(input.value);
+    if (existing) throw new ConflictException('Style already exists');
+    return this.primaryStyles.create(input);
+  }
+
+  async update(value: PrimaryStyle, input: UpdatePrimaryStyleInput): Promise<PrimaryStyleRecord> {
+    const existing = await this.primaryStyles.findByValue(value);
+    if (!existing) throw new NotFoundException('Style not found');
+    return this.primaryStyles.update(value, input);
+  }
+
+  async delete(value: PrimaryStyle): Promise<void> {
+    const existing = await this.primaryStyles.findByValue(value);
+    if (!existing) throw new NotFoundException('Style not found');
+    return this.primaryStyles.delete(value);
   }
 }

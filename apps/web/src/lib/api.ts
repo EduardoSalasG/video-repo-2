@@ -7,6 +7,7 @@ import type {
   User,
   CourseAccess,
   VideoSearchResult,
+  PrimaryStyleRecord,
 } from '../types';
 
 import { ApiError } from './error';
@@ -229,6 +230,12 @@ export const api = {
   createAdminLabel: (data: { type: 'STEP' | 'INFLUENCE' | 'TAG'; name: string; styles: string[] }) =>
     request<{ label: { id: string; name: string; styles: string[] } }>('POST', '/admin/labels', data),
   deleteAdminLabel: (id: string) => request<void>('DELETE', `/admin/labels/${id}`),
+  getPrimaryStyles: () => request<{ styles: PrimaryStyleRecord[] }>('GET', '/admin/primary-styles').then((data) => data.styles),
+  createPrimaryStyle: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ style: PrimaryStyleRecord }>('POST', '/admin/primary-styles', data),
+  updatePrimaryStyle: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ style: PrimaryStyleRecord }>('PATCH', `/admin/primary-styles/${encodeURIComponent(value)}`, data),
+  deletePrimaryStyle: (value: string) => request<void>('DELETE', `/admin/primary-styles/${encodeURIComponent(value)}`),
   getVideoLabels: (type: 'STEP' | 'INFLUENCE' | 'TAG', q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);

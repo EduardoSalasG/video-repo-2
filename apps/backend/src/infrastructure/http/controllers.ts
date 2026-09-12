@@ -25,7 +25,7 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, UserService, VideoService } from '../../application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
 import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
@@ -502,8 +502,7 @@ export class VideoSearchController {
     @Query('style') style?: string,
     @Query('courseId') courseId?: string,
   ) {
-    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
-    const results = await this.videos.search(user, { q, style: styleEnum as PrimaryStyle | undefined, courseId });
+    const results = await this.videos.search(user, { q, style, courseId });
     return { results };
   }
 
@@ -516,8 +515,7 @@ export class VideoSearchController {
     @Query('style') style?: string,
   ) {
     const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.TAG;
-    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
-    const labels = await this.videos.getLabels(labelType as LabelType, q, styleEnum as PrimaryStyle | undefined);
+    const labels = await this.videos.getLabels(labelType as LabelType, q, style);
     return { labels };
   }
 
@@ -571,8 +569,7 @@ export class LabelsController {
     @Query('style') style?: string,
   ) {
     const labelType = Object.values(LabelType).find((t) => t === type) ?? LabelType.STEP;
-    const styleEnum = style ? Object.values(PrimaryStyle).find((s) => s === style) : undefined;
-    const labels = await this.labels.list(labelType as LabelType, styleEnum as PrimaryStyle | undefined);
+    const labels = await this.labels.list(labelType as LabelType, style);
     return { labels };
   }
 
@@ -582,10 +579,8 @@ export class LabelsController {
   @ApiCookieAuth()
   async create(@Body() body: { type: string; name: string; styles: string[] }) {
     const labelType = Object.values(LabelType).find((t) => t === body.type) ?? LabelType.STEP;
-    const styleEnums = body.styles
-      .map((s) => Object.values(PrimaryStyle).find((ps) => ps === s))
-      .filter((s): s is PrimaryStyle => s !== undefined);
-    const label = await this.labels.create(labelType as LabelType, body.name, styleEnums);
+    const styles = body.styles.filter((s) => typeof s === 'string' && s.trim().length > 0);
+    const label = await this.labels.create(labelType as LabelType, body.name, styles);
     return { label };
   }
 
@@ -595,6 +590,55 @@ export class LabelsController {
   @ApiCookieAuth()
   async delete(@Param('id') id: string) {
     await this.labels.delete(id);
+    return { ok: true };
+  }
+}
+
+@Controller('admin/primary-styles')
+export class PrimaryStylesController {
+  constructor(private readonly styles: StyleService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async list() {
+    const styles = await this.styles.list();
+    return { styles };
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
+    const style = await this.styles.create({
+      value: body.value,
+      label: body.label,
+      orderIndex: body.orderIndex,
+      isActive: body.isActive,
+    });
+    return { style };
+  }
+
+  @Patch(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async update(
+    @Param('value') value: string,
+    @Body() body: { label?: string; orderIndex?: number; isActive?: boolean },
+  ) {
+    const style = await this.styles.update(value, body);
+    return { style };
+  }
+
+  @Delete(':value')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @ApiCookieAuth()
+  async delete(@Param('value') value: string) {
+    await this.styles.delete(value);
     return { ok: true };
   }
 }
