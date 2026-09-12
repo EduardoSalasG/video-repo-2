@@ -25,6 +25,12 @@ createRoot(root).render(
       <CssBaseline />
       <GlobalStyles
         styles={{
+          html: {
+            scrollbarWidth: 'none',
+          },
+          '::-webkit-scrollbar': {
+            display: 'none',
+          },
           '@media (prefers-reduced-motion: reduce)': {
             '*, *::before, *::after': {
               animationDuration: '0.01ms !important',

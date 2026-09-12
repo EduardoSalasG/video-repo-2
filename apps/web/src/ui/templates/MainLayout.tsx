@@ -75,7 +75,15 @@ export const MainLayout = () => {
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        scrollbarWidth: 'none',
+        '&::-webkit-scrollbar': { display: 'none' },
+      }}
+    >
       {!isMobile && <Header />}
       <Container
         maxWidth="md"

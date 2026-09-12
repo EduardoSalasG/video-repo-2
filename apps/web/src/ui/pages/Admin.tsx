@@ -127,6 +127,7 @@ export const Admin = () => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState({ courses: 0, users: 0 });
   const [loadingDashboard, setLoadingDashboard] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
   const [courseImage, setCourseImage] = useState<File | null>(null);
@@ -229,16 +230,22 @@ export const Admin = () => {
       .finally(() => setLoadingCourses(false));
   }, []);
 
-  useEffect(() => {
+  const loadDashboard = () => {
     setLoadingDashboard(true);
+    setDashboardError(null);
     api
       .getDashboard()
       .then(setDashboard)
-      .catch(() => {
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Error al cargar el dashboard';
         setDashboard({ courses: 0, users: 0 });
-        showError('No se pudo cargar el dashboard');
+        setDashboardError(message);
       })
       .finally(() => setLoadingDashboard(false));
+  };
+
+  useEffect(() => {
+    loadDashboard();
   }, []);
 
   useEffect(() => {
@@ -1082,6 +1089,15 @@ export const Admin = () => {
             </Typography>
             {loadingDashboard ? (
               <Typography color="text.secondary">Cargando dashboard...</Typography>
+            ) : dashboardError ? (
+              <Paper sx={{ p: 3, borderRadius: 2 }}>
+                <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+                  No se pudo cargar el dashboard: {dashboardError}
+                </Typography>
+                <Button variant="outlined" onClick={loadDashboard}>
+                  Reintentar
+                </Button>
+              </Paper>
             ) : (
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>

@@ -91,7 +91,15 @@ export const AdminLayout = () => {
 
   const menuContent = (expanded: boolean, onNavigate: (path: string) => void) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: 1,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
         {STANDALONE_ITEMS.map((item) => (
           <ListItemButton
             key={item.path}
@@ -343,12 +351,14 @@ export const AdminLayout = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
-          pt: isMobile ? 'calc(72px + env(safe-area-inset-top))' : 3,
+          pt: isMobile ? 'calc(96px + env(safe-area-inset-top))' : 3,
           pb: isMobile ? 'calc(24px + env(safe-area-inset-bottom))' : 3,
           width: { sm: `calc(100% - ${open ? DRAWER_WIDTH : COLLAPSED_WIDTH}px)` },
           height: { xs: '100dvh', sm: '100vh' },
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
           backgroundColor: '#fafafa',
           transition: 'width 250ms ease',
           display: 'flex',
