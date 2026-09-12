@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsInt, IsArray, IsUUID, ValidateNested, IsUrl } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsInt, IsArray, IsUUID, ValidateNested, IsUrl } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Role, AccessLevel, Difficulty, PrimaryStyle, VideoType } from '../../domain/enums';
 
@@ -22,7 +22,7 @@ export class RegisterDto {
   @MinLength(8)
   password: string;
 
-  @IsEnum(Role)
+  @IsString()
   @IsOptional()
   role?: Role;
 }
@@ -176,7 +176,7 @@ export class GrantCourseAccessDto {
 }
 
 export class UpdateUserRoleDto {
-  @IsEnum(Role)
+  @IsString()
   role: Role;
 }
 

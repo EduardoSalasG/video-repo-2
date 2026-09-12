@@ -261,6 +261,12 @@ export const api = {
   updateAccessLevel: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ accessLevel: ParamRecord }>('PATCH', `/admin/access-levels/${encodeURIComponent(value)}`, data),
   deleteAccessLevel: (value: string) => request<void>('DELETE', `/admin/access-levels/${encodeURIComponent(value)}`),
+  getRoles: () => request<{ roles: ParamRecord[] }>('GET', '/admin/roles').then((data) => data.roles),
+  createRole: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ role: ParamRecord }>('POST', '/admin/roles', data),
+  updateRole: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
+    request<{ role: ParamRecord }>('PATCH', `/admin/roles/${encodeURIComponent(value)}`, data),
+  deleteRole: (value: string) => request<void>('DELETE', `/admin/roles/${encodeURIComponent(value)}`),
   getVideoLabels: (type: string, q?: string, style?: string) => {
     const query = new URLSearchParams();
     query.set('type', type);

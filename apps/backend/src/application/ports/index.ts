@@ -312,6 +312,36 @@ export interface IAccessLevelRepository {
   delete(value: AccessLevel): Promise<void>;
 }
 
+export interface RoleRecord {
+  value: Role;
+  label: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateRoleInput {
+  value: Role;
+  label: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateRoleInput {
+  label?: string;
+  orderIndex?: number;
+  isActive?: boolean;
+}
+
+export interface IRoleRepository {
+  findAll(): Promise<RoleRecord[]>;
+  findByValue(value: Role): Promise<RoleRecord | null>;
+  create(input: CreateRoleInput): Promise<RoleRecord>;
+  update(value: Role, input: UpdateRoleInput): Promise<RoleRecord>;
+  delete(value: Role): Promise<void>;
+}
+
 export interface IProgressRepository {
   findByUserAndSection(userId: string, sectionId: string): Promise<UserSectionProgress | null>;
   findCompletedByCourse(userId: string, courseId: string): Promise<string[]>;

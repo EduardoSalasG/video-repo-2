@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'INSTRUCTOR' | 'STUDENT';
+export type Role = string;
 export type AccessLevel = string;
 export type Difficulty = string;
 export type PrimaryStyle = string;
@@ -17,6 +17,7 @@ export type PrimaryStyleRecord = ParamRecord;
 export type DifficultyRecord = ParamRecord;
 export type VideoTypeRecord = ParamRecord;
 export type AccessLevelRecord = ParamRecord;
+export type RoleRecord = ParamRecord;
 
 export interface Course {
   id: string;

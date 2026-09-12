@@ -47,6 +47,10 @@ import {
   AccessLevelRecord,
   CreateAccessLevelInput,
   UpdateAccessLevelInput,
+  IRoleRepository,
+  RoleRecord,
+  CreateRoleInput,
+  UpdateRoleInput,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -432,6 +436,7 @@ export class UserService {
   constructor(
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
     @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
+    @Inject(InjectionTokens.ROLE_REPOSITORY) private readonly roles: IRoleRepository,
   ) {}
 
   async getById(id: string): Promise<SafeUser> {
@@ -441,6 +446,8 @@ export class UserService {
   }
 
   async updateRole(id: string, role: Role): Promise<SafeUser> {
+    const roleRecord = await this.roles.findByValue(role);
+    if (!roleRecord || !roleRecord.isActive) throw new NotFoundException('Role not found');
     const user = await this.users.updateRole(id, role);
     return stripPassword(user);
   }
@@ -696,5 +703,37 @@ export class AccessLevelService {
     const existing = await this.accessLevels.findByValue(value);
     if (!existing) throw new NotFoundException('Access level not found');
     return this.accessLevels.delete(value);
+  }
+}
+
+@Injectable()
+export class RoleService {
+  constructor(
+    @Inject(InjectionTokens.ROLE_REPOSITORY) private readonly roles: IRoleRepository,
+  ) {}
+
+  async list(): Promise<RoleRecord[]> {
+    return this.roles.findAll();
+  }
+
+  async create(input: CreateRoleInput): Promise<RoleRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Role value and label are required');
+    }
+    const existing = await this.roles.findByValue(input.value);
+    if (existing) throw new ConflictException('Role already exists');
+    return this.roles.create(input);
+  }
+
+  async update(value: Role, input: UpdateRoleInput): Promise<RoleRecord> {
+    const existing = await this.roles.findByValue(value);
+    if (!existing) throw new NotFoundException('Role not found');
+    return this.roles.update(value, input);
+  }
+
+  async delete(value: Role): Promise<void> {
+    const existing = await this.roles.findByValue(value);
+    if (!existing) throw new NotFoundException('Role not found');
+    return this.roles.delete(value);
   }
 }

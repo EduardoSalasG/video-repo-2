@@ -1,7 +1,13 @@
-import { PrismaClient, Role } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+const defaultRoles: Record<string, string> = {
+  ADMIN: 'Admin',
+  INSTRUCTOR: 'Instructor',
+  STUDENT: 'Estudiante',
+};
 
 const defaultPrimaryStyles: Record<string, string> = {
   MAMBO_ON2: 'Mambo',
@@ -40,7 +46,7 @@ interface SeedUser {
   username: string;
   firstName: string;
   lastName: string;
-  role: Role;
+  role: string;
   password: string;
 }
 
@@ -50,7 +56,7 @@ const defaultUsers: SeedUser[] = [
     username: 'admin',
     firstName: 'Admin',
     lastName: 'User',
-    role: Role.ADMIN,
+    role: 'ADMIN',
     password: process.env.ADMIN_PASSWORD ?? 'admin123',
   },
   {
@@ -58,7 +64,7 @@ const defaultUsers: SeedUser[] = [
     username: 'instructor',
     firstName: 'Instructor',
     lastName: 'User',
-    role: Role.INSTRUCTOR,
+    role: 'INSTRUCTOR',
     password: process.env.INSTRUCTOR_PASSWORD ?? 'instructor123',
   },
   {
@@ -66,7 +72,7 @@ const defaultUsers: SeedUser[] = [
     username: 'student',
     firstName: 'Student',
     lastName: 'User',
-    role: Role.STUDENT,
+    role: 'STUDENT',
     password: process.env.STUDENT_PASSWORD ?? 'student123',
   },
 ];
@@ -86,6 +92,19 @@ const defaultStepsByStyle: Record<string, string[]> = {
   MODERN_BACHATA: [...baseSteps],
   CASINO: [],
 };
+
+async function seedRoles(): Promise<void> {
+  let orderIndex = 0;
+  for (const [value, label] of Object.entries(defaultRoles)) {
+    await prisma.role.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Role ${value} seeded`);
+  }
+}
 
 async function seedUsers(): Promise<void> {
   for (const user of defaultUsers) {
@@ -197,6 +216,7 @@ async function seedSteps(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  await seedRoles();
   await seedUsers();
   await seedPrimaryStyles();
   await seedDifficulties();

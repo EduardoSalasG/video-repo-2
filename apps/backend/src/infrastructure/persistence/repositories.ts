@@ -44,6 +44,10 @@ import {
   AccessLevelRecord,
   CreateAccessLevelInput,
   UpdateAccessLevelInput,
+  IRoleRepository,
+  RoleRecord,
+  CreateRoleInput,
+  UpdateRoleInput,
 } from '../../application/ports';
 
 @Injectable()
@@ -763,6 +767,65 @@ export class PrismaAccessLevelRepository implements IAccessLevelRepository {
 
   async delete(value: AccessLevel): Promise<void> {
     await this.prisma.accessLevel.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaRoleRepository implements IRoleRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): RoleRecord {
+    return {
+      value: row.value as Role,
+      label: row.label,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<RoleRecord[]> {
+    const rows = await this.prisma.role.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findByValue(value: Role): Promise<RoleRecord | null> {
+    const row = await this.prisma.role.findUnique({ where: { value } });
+    return row ? this.toRecord(row) : null;
+  }
+
+  async create(input: CreateRoleInput): Promise<RoleRecord> {
+    const row = await this.prisma.role.create({
+      data: {
+        value: input.value,
+        label: input.label,
+        orderIndex: input.orderIndex ?? 0,
+        isActive: input.isActive ?? true,
+      },
+    });
+    return this.toRecord(row);
+  }
+
+  async update(value: Role, input: UpdateRoleInput): Promise<RoleRecord> {
+    const row = await this.prisma.role.update({
+      where: { value },
+      data: input,
+    });
+    return this.toRecord(row);
+  }
+
+  async delete(value: Role): Promise<void> {
+    await this.prisma.role.delete({ where: { value } });
   }
 }
 

@@ -38,6 +38,7 @@ const TABS = [
   'parametros/tipos-video',
   'parametros/tipos-etiqueta',
   'parametros/niveles-acceso',
+  'parametros/roles',
 ];
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
@@ -81,7 +82,7 @@ const videoSchema = z.object({
 
 const roleSchema = z.object({
   userId: z.string().min(1, 'El ID de usuario es obligatorio'),
-  role: z.enum(['ADMIN', 'INSTRUCTOR', 'STUDENT']),
+  role: z.string().min(1, 'Selecciona un rol'),
 });
 
 const accessSchema = z.object({
@@ -182,6 +183,8 @@ export const Admin = () => {
   const [loadingLabelTypes, setLoadingLabelTypes] = useState(false);
   const [accessLevels, setAccessLevels] = useState<ParamRecord[]>([]);
   const [loadingAccessLevels, setLoadingAccessLevels] = useState(false);
+  const [roles, setRoles] = useState<ParamRecord[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -356,6 +359,15 @@ export const Admin = () => {
       .finally(() => setLoadingAccessLevels(false));
   };
 
+  const loadRoles = () => {
+    setLoadingRoles(true);
+    api
+      .getRoles()
+      .then(setRoles)
+      .catch(() => setRoles([]))
+      .finally(() => setLoadingRoles(false));
+  };
+
   useEffect(() => {
     if (activeTab >= 4) {
       loadPrimaryStyles();
@@ -363,6 +375,7 @@ export const Admin = () => {
       loadVideoTypes();
       loadLabelTypes();
       loadAccessLevels();
+      loadRoles();
     }
   }, [activeTab]);
 
@@ -769,6 +782,39 @@ export const Admin = () => {
       loadAccessLevels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar nivel de acceso';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateRole = async (value: string, label: string) => {
+    try {
+      await api.createRole({ value, label });
+      showSuccess('Rol creado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear rol';
+      showSuccess(message);
+    }
+  };
+
+  const handleUpdateRole = async (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) => {
+    try {
+      await api.updateRole(value, data);
+      showSuccess('Rol actualizado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar rol';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteRole = async (value: string) => {
+    try {
+      await api.deleteRole(value);
+      showSuccess('Rol eliminado');
+      loadRoles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar rol';
       showSuccess(message);
     }
   };
@@ -1609,6 +1655,18 @@ export const Admin = () => {
           />
         )}
 
+        {activeTab === 12 && (
+          <ParamMaintainer
+            title="Mantenedor de roles"
+            description="Crea, edita y desactiva roles de usuario (admin, instructor, estudiante, etc.)."
+            items={roles}
+            loading={loadingRoles}
+            onCreate={handleCreateRole}
+            onUpdate={handleUpdateRole}
+            onDelete={handleDeleteRole}
+          />
+        )}
+
         {activeTab === 7 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2">
@@ -1631,7 +1689,7 @@ export const Admin = () => {
                 <Typography><strong>Nombre:</strong> {selectedUser.firstName} {selectedUser.lastName}</Typography>
                 <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
                 <Typography><strong>Usuario:</strong> {selectedUser.username}</Typography>
-                <Typography><strong>Rol:</strong> {selectedUser.role}</Typography>
+                <Typography><strong>Rol:</strong> {roles.find((r) => r.value === selectedUser.role)?.label ?? selectedUser.role}</Typography>
               </Paper>
             )}
             {selectedUserId && (
@@ -1649,13 +1707,18 @@ export const Admin = () => {
                     }
                     fieldError={roleErrors.role}
                   >
-                    {Object.entries({ ADMIN: 'Admin', INSTRUCTOR: 'Instructor', STUDENT: 'Estudiante' })
-                      .sort((a, b) => a[1].localeCompare(b[1]))
-                      .map(([value, label]) => (
-                        <MenuItem key={value} value={value}>
-                          {label}
-                        </MenuItem>
-                      ))}
+                    {(roles.length > 0
+                      ? roles.filter((r) => r.isActive)
+                      : [
+                          { value: 'ADMIN', label: 'Admin' },
+                          { value: 'INSTRUCTOR', label: 'Instructor' },
+                          { value: 'STUDENT', label: 'Estudiante' },
+                        ]
+                    ).map((role) => (
+                      <MenuItem key={role.value} value={role.value}>
+                        {role.label}
+                      </MenuItem>
+                    ))}
                   </FormField>
                   <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
                     Actualizar rol
@@ -1682,7 +1745,7 @@ export const Admin = () => {
                       >
                         <ListItemText
                           primary={access.course?.name ?? access.courseId}
-                          secondary={access.accessLevel}
+                          secondary={accessLevels.find((l) => l.value === access.accessLevel)?.label ?? access.accessLevel}
                         />
                       </ListItem>
                     ))}
