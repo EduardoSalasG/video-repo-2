@@ -13,12 +13,11 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
 import CloseIcon from '@mui/icons-material/Close';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
+import { StatusSnackbar, type StatusSeverity } from '../molecules/StatusSnackbar';
 import { ParamMaintainer } from '../organisms/ParamMaintainer';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
@@ -107,8 +106,6 @@ export const Admin = () => {
     return 0;
   }, [tab]);
 
-  const [success, setSuccess] = useState<string | null>(null);
-
   const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
 
@@ -160,7 +157,7 @@ export const Admin = () => {
   const [uploading, setUploading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'info' | 'success' | 'error'>('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<StatusSeverity>('info');
   const [stepLabels, setStepLabels] = useState<string[]>([]);
   const [influenceLabels, setInfluenceLabels] = useState<string[]>([]);
   const [tagLabels, setTagLabels] = useState<string[]>([]);
@@ -195,10 +192,14 @@ export const Admin = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userAccesses, setUserAccesses] = useState<CourseAccess[]>([]);
 
-  const showSuccess = (message: string) => {
-    setSuccess(message);
-    setTimeout(() => setSuccess(null), 3000);
+  const showStatus = (message: string, severity: StatusSeverity) => {
+    setSnackbarSeverity(severity);
+    setSnackbarMessage(message);
+    setSnackbarOpen(true);
   };
+
+  const showSuccess = (message: string) => showStatus(message, 'success');
+  const showError = (message: string) => showStatus(message, 'error');
 
   useEffect(() => {
     if (!selectedUserId) {
@@ -606,7 +607,7 @@ export const Admin = () => {
       loadAdminLabels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear paso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -617,7 +618,7 @@ export const Admin = () => {
       loadAdminLabels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar paso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -628,7 +629,7 @@ export const Admin = () => {
       loadPrimaryStyles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear estilo';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -639,7 +640,7 @@ export const Admin = () => {
       loadPrimaryStyles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar estilo';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -650,7 +651,7 @@ export const Admin = () => {
       loadPrimaryStyles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar estilo';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -661,7 +662,7 @@ export const Admin = () => {
       loadDifficulties();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear dificultad';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -672,7 +673,7 @@ export const Admin = () => {
       loadDifficulties();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar dificultad';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -683,7 +684,7 @@ export const Admin = () => {
       loadDifficulties();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar dificultad';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -694,7 +695,7 @@ export const Admin = () => {
       loadVideoTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear tipo de video';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -705,7 +706,7 @@ export const Admin = () => {
       loadVideoTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar tipo de video';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -716,7 +717,7 @@ export const Admin = () => {
       loadVideoTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar tipo de video';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -727,7 +728,7 @@ export const Admin = () => {
       loadLabelTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear tipo de etiqueta';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -738,7 +739,7 @@ export const Admin = () => {
       loadLabelTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar tipo de etiqueta';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -749,7 +750,7 @@ export const Admin = () => {
       loadLabelTypes();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar tipo de etiqueta';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -760,7 +761,7 @@ export const Admin = () => {
       loadAccessLevels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear nivel de acceso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -771,7 +772,7 @@ export const Admin = () => {
       loadAccessLevels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar nivel de acceso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -782,7 +783,7 @@ export const Admin = () => {
       loadAccessLevels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar nivel de acceso';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -793,7 +794,7 @@ export const Admin = () => {
       loadRoles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear rol';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -804,7 +805,7 @@ export const Admin = () => {
       loadRoles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al actualizar rol';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -815,7 +816,7 @@ export const Admin = () => {
       loadRoles();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar rol';
-      showSuccess(message);
+      showError(message);
     }
   };
 
@@ -940,7 +941,7 @@ export const Admin = () => {
         setUserAccesses((prev) => prev.filter((a) => a.courseId !== courseId));
         showSuccess('Acceso revocado');
       })
-      .catch(() => showSuccess('Error al revocar acceso'));
+      .catch(() => showError('Error al revocar acceso'));
   };
 
   const startEditCourse = (c: Course) => {
@@ -977,7 +978,7 @@ export const Admin = () => {
         setCourses((prev) => prev.filter((c) => c.id !== courseId));
         showSuccess('Curso eliminado');
       })
-      .catch(() => showSuccess('Error al eliminar curso'));
+      .catch(() => showError('Error al eliminar curso'));
   };
 
   const handleDeleteModule = (moduleId: string) => {
@@ -987,7 +988,7 @@ export const Admin = () => {
         setModules((prev) => prev.filter((m) => m.id !== moduleId));
         showSuccess('Módulo eliminado');
       })
-      .catch(() => showSuccess('Error al eliminar módulo'));
+      .catch(() => showError('Error al eliminar módulo'));
   };
 
   const handleDeleteSection = (sectionId: string) => {
@@ -997,7 +998,7 @@ export const Admin = () => {
         setSections((prev) => prev.filter((s) => s.id !== sectionId));
         showSuccess('Sección eliminada');
       })
-      .catch(() => showSuccess('Error al eliminar sección'));
+      .catch(() => showError('Error al eliminar sección'));
   };
 
   const renderCourseSelect = (value: string, onChange: (value: string) => void, disabled = false) => (
@@ -1053,26 +1054,12 @@ export const Admin = () => {
 
   return (
     <Box>
-      {success && (
-        <Typography color="success.main" sx={{ mt: 2 }}>
-          {success}
-        </Typography>
-      )}
-      <Snackbar
+      <StatusSnackbar
         open={snackbarOpen}
-        autoHideDuration={snackbarSeverity === 'success' ? 6000 : null}
+        message={snackbarMessage}
+        severity={snackbarSeverity}
         onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      />
 
       <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
