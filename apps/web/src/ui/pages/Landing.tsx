@@ -21,34 +21,46 @@ export const Landing = () => (
           sx={{ fontSize: { xs: '2rem', sm: '3.5rem' } }}
           gutterBottom
         >
-          Aprende danza paso a paso
+          Tu biblioteca de baile
         </Typography>
         <Typography
           variant="h5"
           component="p"
           sx={{ mb: 4, fontSize: { xs: '1.1rem', sm: '1.5rem' } }}
         >
-          Clases grabadas, recursos descargables y seguimiento de progreso.
+          Pasos, secuencias y coreografías en video, organizados por estilo y
+          dificultad.
         </Typography>
         <Button
           component={Link}
           to="/app"
           variant="contained"
-          color="secondary"
           size="large"
-          aria-label="Comenzar ahora"
+          aria-label="Explorar la biblioteca"
+          sx={{
+            backgroundColor: '#ffffff',
+            color: '#111111',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.9)' },
+          }}
         >
-          Comenzar
+          Explorar
         </Button>
         <Button
           component={Link}
           to="/login"
           variant="outlined"
-          color="inherit"
           size="large"
-          sx={{ ml: 2 }}
+          sx={{
+            ml: 2,
+            color: '#ffffff',
+            borderColor: 'rgba(255,255,255,0.5)',
+            '&:hover': {
+              borderColor: '#ffffff',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+            },
+          }}
         >
-          Login
+          Iniciar sesión
         </Button>
       </Container>
     </Box>
@@ -60,24 +72,25 @@ export const Landing = () => (
             Acceso ilimitado
           </Typography>
           <Typography color="text.secondary">
-            Visualiza el contenido las veces que necesites, desde cualquier
+            Mira el contenido las veces que quieras, desde cualquier
             dispositivo.
           </Typography>
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <Typography variant="h6" component="h2" gutterBottom>
-            Progreso personalizado
+            Organizado por estilo
           </Typography>
           <Typography color="text.secondary">
-            Sigue tu avance por módulos y secciones, nunca pierdas el ritmo.
+            Encuentra rápidamente pasos y coreografías por estilo, dificultad o
+            tag.
           </Typography>
         </Grid>
         <Grid item xs={12} sm={6} md={4}>
           <Typography variant="h6" component="h2" gutterBottom>
-            Profesores expertos
+            Contenido profesional
           </Typography>
           <Typography color="text.secondary">
-            Clases grabadas por profesionales del baile y la pedagogía.
+            Videos producidos por bailarines con experiencia en escena.
           </Typography>
         </Grid>
       </Grid>
