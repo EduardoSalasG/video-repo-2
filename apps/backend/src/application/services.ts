@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
 import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty, VideoType } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
@@ -51,6 +51,7 @@ import {
   RoleRecord,
   CreateRoleInput,
   UpdateRoleInput,
+  IEmailService,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -62,10 +63,13 @@ function stripPassword(user: User): SafeUser {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
     @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
     @Inject(InjectionTokens.TOKEN_SERVICE) private readonly tokenService: ITokenService,
+    @Inject(InjectionTokens.EMAIL_SERVICE) private readonly email: IEmailService,
   ) {}
 
   async register(input: CreateUserInput): Promise<SafeUser> {
@@ -77,6 +81,9 @@ export class AuthService {
 
     const passwordHash = await this.hasher.hash(input.password);
     const user = await this.users.create({ ...input, role: input.role ?? Role.STUDENT }, passwordHash);
+    this.email.sendWelcomeEmail(user.email, user.firstName).catch((err) => {
+      this.logger.warn(`No se pudo enviar el email de bienvenida a ${user.email}: ${err instanceof Error ? err.message : err}`);
+    });
     return stripPassword(user);
   }
 

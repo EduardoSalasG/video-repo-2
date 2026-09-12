@@ -126,8 +126,8 @@ export const MainLayout = () => {
             }}
           >
             <BottomNavigationAction label="Cursos" icon={<SchoolIcon />} />
-            <BottomNavigationAction label="Buscar" icon={<SearchIcon />} />
-            <BottomNavigationAction label="Perfil" icon={<PersonIcon />} />
+            <BottomNavigationAction label="Buscar" icon={<SearchIcon />} data-tour="nav-search" />
+            <BottomNavigationAction label="Perfil" icon={<PersonIcon />} data-tour="nav-profile" />
             <BottomNavigationAction
               label="Más"
               icon={<MoreHorizIcon />}

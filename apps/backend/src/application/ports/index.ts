@@ -368,3 +368,7 @@ export interface TokenPayload {
 export interface ITokenService {
   sign(payload: TokenPayload): string;
 }
+
+export interface IEmailService {
+  sendWelcomeEmail(to: string, firstName: string): Promise<void>;
+}

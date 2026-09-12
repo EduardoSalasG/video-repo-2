@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import { Typography } from '../atoms/Typography';
 import { CourseList } from '../organisms/CourseList';
 import { api, ApiError } from '../../lib/api';
+import { useLibraryOnboarding } from '../../hooks/useLibraryOnboarding';
 import type { Course } from '../../types';
 
 export const Library = () => {
@@ -13,6 +14,8 @@ export const Library = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useLibraryOnboarding(!loading);
 
   useEffect(() => {
     setLoading(true);
@@ -31,7 +34,7 @@ export const Library = () => {
 
   return (
     <>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+      <motion.div data-tour="library" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Biblioteca
         </Typography>

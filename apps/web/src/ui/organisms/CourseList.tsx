@@ -8,8 +8,8 @@ interface CourseListProps {
 
 export const CourseList = ({ courses }: CourseListProps) => (
   <Grid container spacing={2}>
-    {courses.map((course) => (
-      <Grid key={course.id} item xs={12} sm={6} md={4}>
+    {courses.map((course, index) => (
+      <Grid key={course.id} item xs={12} sm={6} md={4} {...(index === 0 ? { 'data-tour': 'course-card' } : {})}>
         <VideoCard course={course} />
       </Grid>
     ))}

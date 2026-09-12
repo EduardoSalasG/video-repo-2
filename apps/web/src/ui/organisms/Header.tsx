@@ -70,6 +70,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               to="/app/search"
               color="inherit"
               startIcon={<SearchIcon />}
+              data-tour="nav-search"
               sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Buscar
@@ -89,6 +90,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               to="/app/profile"
               color="inherit"
               startIcon={<PersonIcon />}
+              data-tour="nav-profile"
               sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Perfil

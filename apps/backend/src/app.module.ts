@@ -25,6 +25,7 @@ import {
 } from './infrastructure/persistence/repositories';
 import { JwtAuthGuard, RolesGuard, CourseAccessGuard } from './infrastructure/auth/guards';
 import { JwtStrategy, BcryptPasswordHasher, JwtTokenService } from './infrastructure/auth/adapters';
+import { ResendEmailService } from './infrastructure/email/resend-email.service';
 import { LocalVideoStorage } from './infrastructure/storage/local-video.storage';
 import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
 
@@ -64,6 +65,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
   providers: [
     { provide: InjectionTokens.TOKEN_SERVICE, useClass: JwtTokenService },
     { provide: InjectionTokens.PASSWORD_HASHER, useClass: BcryptPasswordHasher },
+    { provide: InjectionTokens.EMAIL_SERVICE, useClass: ResendEmailService },
     {
       provide: InjectionTokens.VIDEO_STORAGE,
       useClass: process.env.VIDEO_STORAGE === 's3' ? S3VideoStorage : LocalVideoStorage,
