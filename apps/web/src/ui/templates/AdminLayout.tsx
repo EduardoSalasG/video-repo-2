@@ -305,7 +305,7 @@ export const AdminLayout = () => {
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 3 },
-          pb: isMobile ? 10 : 3,
+          pb: isMobile ? 'calc(96px + env(safe-area-inset-bottom))' : 3,
           width: { sm: `calc(100% - ${open ? DRAWER_WIDTH : COLLAPSED_WIDTH}px)` },
           height: { xs: '100dvh', sm: '100vh' },
           overflowY: 'auto',
@@ -330,6 +330,7 @@ export const AdminLayout = () => {
               backgroundColor: 'rgba(255, 255, 255, 0.92)',
               backdropFilter: 'blur(20px) saturate(180%)',
               borderTop: '1px solid rgba(0,0,0,0.08)',
+              pb: 'env(safe-area-inset-bottom)',
               zIndex: (t) => t.zIndex.appBar,
             }}
           >
