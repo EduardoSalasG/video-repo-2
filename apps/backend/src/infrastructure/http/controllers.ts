@@ -887,3 +887,39 @@ export class RolesController {
     return { ok: true };
   }
 }
+
+@ApiTags('params')
+@Controller('params')
+export class ParamsController {
+  constructor(
+    private readonly styles: StyleService,
+    private readonly difficulties: DifficultyService,
+    private readonly videoTypes: VideoTypeService,
+    private readonly labelTypes: LabelTypeService,
+    private readonly accessLevels: AccessLevelService,
+    private readonly rolesService: RoleService,
+  ) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async list() {
+    const [styles, difficulties, videoTypes, labelTypes, accessLevels, roles] = await Promise.all([
+      this.styles.list(),
+      this.difficulties.list(),
+      this.videoTypes.list(),
+      this.labelTypes.list(),
+      this.accessLevels.list(),
+      this.rolesService.list(),
+    ]);
+    const active = <T extends { isActive: boolean }>(items: T[]) => items.filter((i) => i.isActive);
+    return {
+      primaryStyles: active(styles),
+      difficulties: active(difficulties),
+      videoTypes: active(videoTypes),
+      labelTypes: active(labelTypes),
+      accessLevels: active(accessLevels),
+      roles: active(roles),
+    };
+  }
+}

@@ -14,8 +14,9 @@ import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
-import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
-import type { Course, VideoSearchResult, ParamRecord } from '../../types';
+import { useParamLabels } from '../../hooks/useParamLabels';
+import { primaryStyleLabels } from '../../lib/labels';
+import type { Course, VideoSearchResult } from '../../types';
 
 const resultVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -28,9 +29,7 @@ export const Search = () => {
   const [style, setStyle] = useState('');
   const [courseId, setCourseId] = useState('');
   const [courses, setCourses] = useState<Course[]>([]);
-  const [primaryStyles, setPrimaryStyles] = useState<ParamRecord[]>([]);
-  const [difficulties, setDifficulties] = useState<ParamRecord[]>([]);
-  const [videoTypes, setVideoTypes] = useState<ParamRecord[]>([]);
+  const { params, getLabel } = useParamLabels();
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,27 +39,12 @@ export const Search = () => {
       .getCourses()
       .then(setCourses)
       .catch(() => setCourses([]));
-    api
-      .getPrimaryStyles()
-      .then(setPrimaryStyles)
-      .catch(() => setPrimaryStyles([]));
-    api
-      .getDifficulties()
-      .then(setDifficulties)
-      .catch(() => setDifficulties([]));
-    api
-      .getVideoTypes()
-      .then(setVideoTypes)
-      .catch(() => setVideoTypes([]));
   }, []);
 
-  const styleOptions = primaryStyles.length > 0
-    ? primaryStyles.filter((s) => s.isActive)
-    : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label, isActive: true, orderIndex: 0, createdAt: '', updatedAt: '' }));
-
-  const getStyleLabel = (value: string) => primaryStyles.find((s) => s.value === value)?.label ?? primaryStyleLabels[value] ?? value;
-  const getDifficultyLabel = (value: string) => difficulties.find((d) => d.value === value)?.label ?? difficultyLabels[value] ?? value;
-  const getVideoTypeLabel = (value: string) => videoTypes.find((t) => t.value === value)?.label ?? videoTypeLabels[value] ?? value;
+  const styleOptions =
+    params.primaryStyle.length > 0
+      ? params.primaryStyle
+      : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label }));
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -182,7 +166,7 @@ export const Search = () => {
                     ))}
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                    {getDifficultyLabel(result.metadata.difficulty)} / {getStyleLabel(result.metadata.primaryStyle)} / {getVideoTypeLabel(result.metadata.videoType)}
+                    {getLabel('difficulty', result.metadata.difficulty)} / {getLabel('primaryStyle', result.metadata.primaryStyle)} / {getLabel('videoType', result.metadata.videoType)}
                   </Typography>
                 </CardContent>
               </Card>

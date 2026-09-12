@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import { FormField } from '../molecules/FormField';
+import { Footer } from '../molecules/Footer';
 import { Button } from '../atoms/Button';
 import { Typography } from '../atoms/Typography';
 import { useAuth } from '../../hooks/useAuth';
@@ -89,8 +90,8 @@ export const Register = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <motion.div
+    <Container maxWidth="sm" sx={{ py: 8, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <motion.div style={{ flex: 1 }}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: 'spring', bounce: 0, duration: 0.45 }}
@@ -184,6 +185,7 @@ export const Register = () => {
           </Box>
         </Paper>
       </motion.div>
+      <Footer />
     </Container>
   );
 };
