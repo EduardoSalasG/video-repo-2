@@ -17,12 +17,14 @@ export enum Difficulty {
   ADVANCED = 'ADVANCED',
 }
 
-export enum PrimaryStyle {
-  MAMBO_ON2 = 'MAMBO_ON2',
-  CASINO = 'CASINO',
-  SENSUAL_BACHATA = 'SENSUAL_BACHATA',
-  MODERN_BACHATA = 'MODERN_BACHATA',
-}
+export const PrimaryStyle = {
+  MAMBO_ON2: 'MAMBO_ON2',
+  CASINO: 'CASINO',
+  SENSUAL_BACHATA: 'SENSUAL_BACHATA',
+  MODERN_BACHATA: 'MODERN_BACHATA',
+} as const;
+
+export type PrimaryStyle = string;
 
 export enum VideoType {
   STEP = 'STEP',

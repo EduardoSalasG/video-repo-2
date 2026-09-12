@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, UserService, VideoService } from './application/services';
+import { AuthService, CourseService, CourseAccessService, DashboardService, LabelService, ModuleService, ProgressService, SectionService, StyleService, UserService, VideoService } from './application/services';
 import { InjectionTokens } from './application/tokens';
-import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController } from './infrastructure/http/controllers';
+import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController } from './infrastructure/http/controllers';
 import { PrismaService } from './infrastructure/persistence/prisma.service';
 import {
   PrismaUserRepository,
@@ -14,6 +14,7 @@ import {
   PrismaVideoFileRepository,
   PrismaVideoMetadataRepository,
   PrismaVideoLabelRepository,
+  PrismaPrimaryStyleRepository,
   PrismaCourseAccessRepository,
   PrismaProgressRepository,
 } from './infrastructure/persistence/repositories';
@@ -47,6 +48,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     VideoSearchController,
     DashboardController,
     LabelsController,
+    PrimaryStylesController,
   ],
   providers: [
     { provide: InjectionTokens.TOKEN_SERVICE, useClass: JwtTokenService },
@@ -62,6 +64,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     { provide: InjectionTokens.VIDEO_FILE_REPOSITORY, useClass: PrismaVideoFileRepository },
     { provide: InjectionTokens.VIDEO_METADATA_REPOSITORY, useClass: PrismaVideoMetadataRepository },
     { provide: InjectionTokens.VIDEO_LABEL_REPOSITORY, useClass: PrismaVideoLabelRepository },
+    { provide: InjectionTokens.PRIMARY_STYLE_REPOSITORY, useClass: PrismaPrimaryStyleRepository },
     { provide: InjectionTokens.COURSE_ACCESS_REPOSITORY, useClass: PrismaCourseAccessRepository },
     { provide: InjectionTokens.PROGRESS_REPOSITORY, useClass: PrismaProgressRepository },
     PrismaService,

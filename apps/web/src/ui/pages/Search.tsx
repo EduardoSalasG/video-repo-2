@@ -15,7 +15,7 @@ import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
-import type { Course, VideoSearchResult } from '../../types';
+import type { Course, VideoSearchResult, PrimaryStyleRecord } from '../../types';
 
 const resultVariants = {
   hidden: { opacity: 0, y: 12 },
@@ -28,6 +28,7 @@ export const Search = () => {
   const [style, setStyle] = useState('');
   const [courseId, setCourseId] = useState('');
   const [courses, setCourses] = useState<Course[]>([]);
+  const [primaryStyles, setPrimaryStyles] = useState<PrimaryStyleRecord[]>([]);
   const [results, setResults] = useState<VideoSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,17 @@ export const Search = () => {
       .getCourses()
       .then(setCourses)
       .catch(() => setCourses([]));
+    api
+      .getPrimaryStyles()
+      .then(setPrimaryStyles)
+      .catch(() => setPrimaryStyles([]));
   }, []);
+
+  const styleOptions = primaryStyles.length > 0
+    ? primaryStyles.filter((s) => s.isActive)
+    : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label, isActive: true, orderIndex: 0, createdAt: '', updatedAt: '' }));
+
+  const getStyleLabel = (value: string) => primaryStyles.find((s) => s.value === value)?.label ?? primaryStyleLabels[value] ?? value;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,9 +103,9 @@ export const Search = () => {
                 onChange={(event) => setStyle(event.target.value)}
               >
                 <MenuItem value="">Todos los estilos</MenuItem>
-                {Object.entries(primaryStyleLabels).map(([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
+                {styleOptions.map((style) => (
+                  <MenuItem key={style.value} value={style.value}>
+                    {style.label}
                   </MenuItem>
                 ))}
               </FormField>
@@ -159,7 +170,7 @@ export const Search = () => {
                     ))}
                   </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                    {difficultyLabels[result.metadata.difficulty]} / {primaryStyleLabels[result.metadata.primaryStyle]} / {videoTypeLabels[result.metadata.videoType]}
+                    {difficultyLabels[result.metadata.difficulty]} / {getStyleLabel(result.metadata.primaryStyle)} / {videoTypeLabels[result.metadata.videoType]}
                   </Typography>
                 </CardContent>
               </Card>

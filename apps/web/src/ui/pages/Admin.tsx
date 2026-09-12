@@ -15,18 +15,17 @@ import MenuItem from '@mui/material/MenuItem';
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CloseIcon from '@mui/icons-material/Close';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditIcon from '@mui/icons-material/Edit';
 import { Typography } from '../atoms/Typography';
 import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
 import { primaryStyleLabels, videoTypeLabels } from '../../lib/labels';
-import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess } from '../../types';
+import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess, PrimaryStyleRecord } from '../../types';
 
 const TABS = [
   'dashboard',
@@ -70,7 +69,7 @@ const sectionSchema = z.object({
 
 const videoSchema = z.object({
   difficulty: z.enum(['BEGINNER', 'BASIC', 'INTERMEDIATE', 'ADVANCED']),
-  primaryStyle: z.enum(['MAMBO_ON2', 'CASINO', 'SENSUAL_BACHATA', 'MODERN_BACHATA']),
+  primaryStyle: z.string().min(1, 'El estilo es obligatorio'),
   videoType: z.enum(['STEP', 'SEQUENCE', 'CHOREOGRAPHY']),
   durationCounts: z.coerce.number().min(1, 'La duración debe ser mayor a 0'),
   steps: z.array(z.string()).default([]),
@@ -170,6 +169,13 @@ export const Admin = () => {
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelStyles, setNewLabelStyles] = useState<PrimaryStyle[]>([]);
   const [filterLabelStyle, setFilterLabelStyle] = useState<PrimaryStyle | ''>('');
+
+  const [primaryStyles, setPrimaryStyles] = useState<PrimaryStyleRecord[]>([]);
+  const [loadingStyles, setLoadingStyles] = useState(false);
+  const [newStyleValue, setNewStyleValue] = useState('');
+  const [newStyleLabel, setNewStyleLabel] = useState('');
+  const [editingStyle, setEditingStyle] = useState<PrimaryStyleRecord | null>(null);
+  const [styleForm, setStyleForm] = useState({ label: '', orderIndex: 0, isActive: true });
 
   const [roleForm, setRoleForm] = useState<RoleFormData>({ userId: '', role: 'STUDENT' });
   const [roleErrors, setRoleErrors] = useState<Partial<Record<keyof RoleFormData, string>>>({});
@@ -298,6 +304,19 @@ export const Admin = () => {
       .catch(() => setAdminLabels([]))
       .finally(() => setLoadingLabels(false));
   };
+
+  const loadPrimaryStyles = () => {
+    setLoadingStyles(true);
+    api
+      .getPrimaryStyles()
+      .then(setPrimaryStyles)
+      .catch(() => setPrimaryStyles([]))
+      .finally(() => setLoadingStyles(false));
+  };
+
+  useEffect(() => {
+    if (activeTab >= 4) loadPrimaryStyles();
+  }, [activeTab]);
 
   useEffect(() => {
     loadAdminLabels();
@@ -537,6 +556,51 @@ export const Admin = () => {
       loadAdminLabels();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar paso';
+      showSuccess(message);
+    }
+  };
+
+  const handleCreateStyle = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!newStyleValue.trim() || !newStyleLabel.trim()) return;
+    try {
+      await api.createPrimaryStyle({ value: newStyleValue.trim().toUpperCase(), label: newStyleLabel.trim() });
+      setNewStyleValue('');
+      setNewStyleLabel('');
+      showSuccess('Estilo creado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al crear estilo';
+      showSuccess(message);
+    }
+  };
+
+  const handleEditStyle = (style: PrimaryStyleRecord) => {
+    setEditingStyle(style);
+    setStyleForm({ label: style.label, orderIndex: style.orderIndex, isActive: style.isActive });
+  };
+
+  const handleUpdateStyle = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingStyle) return;
+    try {
+      await api.updatePrimaryStyle(editingStyle.value, styleForm);
+      setEditingStyle(null);
+      showSuccess('Estilo actualizado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar estilo';
+      showSuccess(message);
+    }
+  };
+
+  const handleDeleteStyle = async (value: string) => {
+    try {
+      await api.deletePrimaryStyle(value);
+      showSuccess('Estilo eliminado');
+      loadPrimaryStyles();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar estilo';
       showSuccess(message);
     }
   };
@@ -1086,13 +1150,14 @@ export const Admin = () => {
                 }
                 fieldError={videoErrors.primaryStyle}
               >
-                {Object.entries(primaryStyleLabels)
-                  .sort((a, b) => a[1].localeCompare(b[1]))
-                  .map(([value, label]) => (
-                    <MenuItem key={value} value={value}>
-                      {label}
-                    </MenuItem>
-                  ))}
+                {(primaryStyles.length > 0
+                  ? primaryStyles.filter((s) => s.isActive)
+                  : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label }))
+                ).map((style) => (
+                  <MenuItem key={style.value} value={style.value}>
+                    {style.label}
+                  </MenuItem>
+                ))}
               </FormField>
               <FormField
                 select
@@ -1227,13 +1292,14 @@ export const Admin = () => {
               onChange={(event) => setFilterLabelStyle(event.target.value as PrimaryStyle | '')}
             >
               <MenuItem value="">Todos</MenuItem>
-              {Object.entries(primaryStyleLabels)
-                .sort((a, b) => a[1].localeCompare(b[1]))
-                .map(([value, label]) => (
-                  <MenuItem key={value} value={value}>
-                    {label}
-                  </MenuItem>
-                ))}
+              {(primaryStyles.length > 0
+                ? primaryStyles
+                : Object.entries(primaryStyleLabels).map(([value, label]) => ({ value, label }))
+              ).map((style) => (
+                <MenuItem key={style.value} value={style.value}>
+                  {style.label}
+                </MenuItem>
+              ))}
             </FormField>
             <Box component="form" onSubmit={handleCreateLabel} noValidate>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
@@ -1246,8 +1312,8 @@ export const Admin = () => {
                 />
                 <Autocomplete
                   multiple
-                  options={Object.keys(primaryStyleLabels) as PrimaryStyle[]}
-                  getOptionLabel={(option) => primaryStyleLabels[option]}
+                  options={primaryStyles.map((s) => s.value)}
+                  getOptionLabel={(option) => primaryStyles.find((s) => s.value === option)?.label ?? option}
                   value={newLabelStyles}
                   onChange={(_event, value) => setNewLabelStyles(value)}
                   renderInput={(params) => (
@@ -1288,7 +1354,12 @@ export const Admin = () => {
                       secondary={
                         <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5} sx={{ mt: 0.5 }}>
                           {label.styles.map((style) => (
-                            <Chip key={style} label={primaryStyleLabels[style]} size="small" variant="outlined" />
+                            <Chip
+                              key={style}
+                              label={primaryStyles.find((s) => s.value === style)?.label ?? primaryStyleLabels[style] ?? style}
+                              size="small"
+                              variant="outlined"
+                            />
                           ))}
                         </Stack>
                       }
@@ -1309,33 +1380,107 @@ export const Admin = () => {
           <Stack spacing={3}>
             <Box>
               <Typography variant="h5" component="h2">
-                Estilos
+                Mantenedor de estilos
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Los estilos son Mambo, Bachata Sensual, Bachata Moderna y Casino. Aquí se muestran los pasos asociados a cada uno.
+                Crea, edita y desactiva estilos principales. Estos valores alimentan los selects de videos y pasos.
               </Typography>
             </Box>
-            {loadingLabels && <Typography color="text.secondary">Cargando...</Typography>}
-            {Object.entries(primaryStyleLabels)
-              .sort((a, b) => a[1].localeCompare(b[1]))
-              .map(([style, label]) => {
-                const styleSteps = adminLabels.filter((l) => l.styles.includes(style as PrimaryStyle));
-                return (
-                  <Accordion key={style} defaultExpanded>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
-                        {styleSteps.map((step) => (
-                          <Chip key={step.id} label={step.name} size="small" />
-                        ))}
-                        {styleSteps.length === 0 && <Typography color="text.secondary">Sin pasos</Typography>}
+            <Box component="form" onSubmit={handleCreateStyle} noValidate>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                <FormField
+                  label="Valor"
+                  value={newStyleValue}
+                  onChange={(event) => setNewStyleValue(event.target.value)}
+                  margin="none"
+                  sx={{ flex: 1 }}
+                  helperText="Identificador interno, por ejemplo MAMBO_ON2"
+                />
+                <FormField
+                  label="Etiqueta"
+                  value={newStyleLabel}
+                  onChange={(event) => setNewStyleLabel(event.target.value)}
+                  margin="none"
+                  sx={{ flex: 1 }}
+                  helperText="Nombre visible, por ejemplo Mambo"
+                />
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!newStyleValue.trim() || !newStyleLabel.trim()}
+                  sx={{ height: 40 }}
+                >
+                  Agregar
+                </Button>
+              </Stack>
+            </Box>
+            {editingStyle && (
+              <Paper sx={{ p: 2, borderRadius: 2 }}>
+                <Typography variant="h6" component="h3" gutterBottom>
+                  Editar {editingStyle.value}
+                </Typography>
+                <Box component="form" onSubmit={handleUpdateStyle} noValidate>
+                  <Stack spacing={2}>
+                    <FormField
+                      label="Etiqueta"
+                      value={styleForm.label}
+                      onChange={(event) => setStyleForm((f) => ({ ...f, label: event.target.value }))}
+                      margin="none"
+                    />
+                    <TextField
+                      label="Orden"
+                      type="number"
+                      value={styleForm.orderIndex}
+                      onChange={(event) => setStyleForm((f) => ({ ...f, orderIndex: Number(event.target.value) }))}
+                      size="small"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={styleForm.isActive}
+                          onChange={(event) => setStyleForm((f) => ({ ...f, isActive: event.target.checked }))}
+                        />
+                      }
+                      label="Activo"
+                    />
+                    <Stack direction="row" spacing={1}>
+                      <Button type="submit" variant="contained">Guardar</Button>
+                      <Button type="button" variant="outlined" onClick={() => setEditingStyle(null)}>Cancelar</Button>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Paper>
+            )}
+            {loadingStyles && <Typography color="text.secondary">Cargando estilos...</Typography>}
+            <Paper sx={{ p: 2, borderRadius: 2 }}>
+              <List>
+                {primaryStyles.map((style) => (
+                  <ListItem
+                    key={style.value}
+                    secondaryAction={
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <IconButton edge="end" onClick={() => handleEditStyle(style)} color="primary">
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton edge="end" onClick={() => handleDeleteStyle(style.value)} color="error">
+                          <CloseIcon />
+                        </IconButton>
                       </Stack>
-                    </AccordionDetails>
-                  </Accordion>
-                );
-              })}
+                    }
+                  >
+                    <ListItemText
+                      primary={style.label}
+                      secondary={`${style.value} · orden ${style.orderIndex} · ${style.isActive ? 'activo' : 'inactivo'}`}
+                    />
+                  </ListItem>
+                ))}
+                {primaryStyles.length === 0 && !loadingStyles && (
+                  <ListItem>
+                    <ListItemText primary="No hay estilos" />
+                  </ListItem>
+                )}
+              </List>
+            </Paper>
           </Stack>
         )}
 

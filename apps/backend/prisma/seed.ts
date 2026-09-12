@@ -1,7 +1,14 @@
-import { PrismaClient, Role, LabelType, PrimaryStyle } from '@prisma/client';
+import { PrismaClient, Role, LabelType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+const defaultPrimaryStyles: Record<string, string> = {
+  MAMBO_ON2: 'Mambo',
+  CASINO: 'Casino',
+  SENSUAL_BACHATA: 'Bachata Sensual',
+  MODERN_BACHATA: 'Bachata Moderna',
+};
 
 interface SeedUser {
   email: string;
@@ -48,7 +55,7 @@ const baseSteps = [
 
 const mamboExtraSteps = ['Cross Body Lead', 'New York Walk', 'Cross Body Lead Reverse'];
 
-const defaultStepsByStyle: Record<PrimaryStyle, string[]> = {
+const defaultStepsByStyle: Record<string, string[]> = {
   MAMBO_ON2: [...baseSteps, ...mamboExtraSteps],
   SENSUAL_BACHATA: [...baseSteps],
   MODERN_BACHATA: [...baseSteps],
@@ -78,8 +85,19 @@ async function seedUsers(): Promise<void> {
   }
 }
 
+async function seedPrimaryStyles(): Promise<void> {
+  for (const [value, label] of Object.entries(defaultPrimaryStyles)) {
+    await prisma.primaryStyle.upsert({
+      where: { value },
+      update: {},
+      create: { value, label, orderIndex: 0, isActive: true },
+    });
+    console.log(`Primary style ${value} seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
-  const styleData: { labelId: string; style: PrimaryStyle }[] = [];
+  const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
     for (const step of steps) {
       const label = await prisma.videoLabel.upsert({
@@ -88,7 +106,7 @@ async function seedSteps(): Promise<void> {
         create: { name: step, type: LabelType.STEP },
       });
 
-      styleData.push({ labelId: label.id, style: style as PrimaryStyle });
+      styleData.push({ labelId: label.id, style });
       console.log(`Step "${step}" for ${style} seeded`);
     }
   }
@@ -103,6 +121,7 @@ async function seedSteps(): Promise<void> {
 
 async function main(): Promise<void> {
   await seedUsers();
+  await seedPrimaryStyles();
   await seedSteps();
 }
 
