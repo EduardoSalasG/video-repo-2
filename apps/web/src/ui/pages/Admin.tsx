@@ -126,6 +126,7 @@ export const Admin = () => {
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState({ courses: 0, users: 0 });
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
 
   const [courseForm, setCourseForm] = useState<CourseFormData>({ name: '', description: '' });
   const [courseImage, setCourseImage] = useState<File | null>(null);
@@ -229,10 +230,15 @@ export const Admin = () => {
   }, []);
 
   useEffect(() => {
+    setLoadingDashboard(true);
     api
       .getDashboard()
       .then(setDashboard)
-      .catch(() => setDashboard({ courses: 0, users: 0 }));
+      .catch(() => {
+        setDashboard({ courses: 0, users: 0 });
+        showError('No se pudo cargar el dashboard');
+      })
+      .finally(() => setLoadingDashboard(false));
   }, []);
 
   useEffect(() => {
@@ -1074,20 +1080,24 @@ export const Admin = () => {
             <Typography variant="h5" component="h2">
               Dashboard
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
-                <Typography color="text.secondary" variant="body2">
-                  Cursos que administro
-                </Typography>
-                <Typography variant="h3">{dashboard.courses}</Typography>
-              </Paper>
-              <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
-                <Typography color="text.secondary" variant="body2">
-                  Usuarios que administro
-                </Typography>
-                <Typography variant="h3">{dashboard.users}</Typography>
-              </Paper>
-            </Box>
+            {loadingDashboard ? (
+              <Typography color="text.secondary">Cargando dashboard...</Typography>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Cursos que administro
+                  </Typography>
+                  <Typography variant="h3">{dashboard.courses}</Typography>
+                </Paper>
+                <Paper sx={{ p: 3, borderRadius: 2, minWidth: 200 }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Usuarios que administro
+                  </Typography>
+                  <Typography variant="h3">{dashboard.users}</Typography>
+                </Paper>
+              </Box>
+            )}
           </Stack>
         )}
 
@@ -1159,7 +1169,17 @@ export const Admin = () => {
                       </>
                     }
                   >
-                    <ListItemText primary={course.name} secondary={course.description ?? ''} />
+                    <ListItemText
+                      primary={course.name}
+                      secondary={
+                        course.description
+                          ? course.description.length > 20
+                            ? `${course.description.slice(0, 20)}…`
+                            : course.description
+                          : ''
+                      }
+                      sx={{ pr: 14 }}
+                    />
                   </ListItem>
                 ))}
               </List>
