@@ -81,7 +81,7 @@ export class AuthController {
   ) {
     const { user, token } = await this.auth.login(dto.email, dto.password);
     res.cookie('access_token', token, this.cookieOptions(req.headers.origin));
-    return user;
+    return { ...user, token };
   }
 
   @Post('logout')

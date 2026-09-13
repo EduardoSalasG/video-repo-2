@@ -20,8 +20,17 @@ export const API_BASE_URL = API_URL.replace(/\/api\/?$/, '');
 
 export { ApiError } from './error';
 
+const TOKEN_KEY = 'dance.auth.token';
+
+const getToken = () => (typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY));
+const setToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
+const clearToken = () => {
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(TOKEN_KEY);
+};
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
+    clearToken();
     throw new ApiError(401, null, 'No autenticado');
   }
   if (!res.ok) {
@@ -41,6 +50,10 @@ async function request<T>(
   if (!isFormData) {
     headers['Content-Type'] = 'application/json';
   }
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${API_URL}${path}`, {
     method,
@@ -57,6 +70,10 @@ function requestFormData<T>(method: string, path: string, formData: FormData, on
     const xhr = new XMLHttpRequest();
     xhr.open(method, `${API_URL}${path}`);
     xhr.withCredentials = true;
+    const token = getToken();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
 
     if (onProgress) {
       xhr.upload.addEventListener('loadstart', () => onProgress(0));
@@ -77,6 +94,7 @@ function requestFormData<T>(method: string, path: string, formData: FormData, on
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(response as T);
       } else if (xhr.status === 401) {
+        clearToken();
         reject(new ApiError(401, response, 'No autenticado'));
       } else {
         const data = (response as { message?: string | string[] } | null) ?? null;
@@ -98,8 +116,15 @@ export const api = {
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   delete: (path: string) => request<unknown>('DELETE', path),
 
-  login: (email: string, password: string) =>
-    request<{ id: string; email: string; role: string }>('POST', '/auth/login', { email, password }),
+  login: async (email: string, password: string) => {
+    const data = await request<{ id: string; email: string; role: string; token: string }>(
+      'POST',
+      '/auth/login',
+      { email, password },
+    );
+    setToken(data.token);
+    return data;
+  },
 
   register: (data: {
     email: string;
@@ -110,7 +135,13 @@ export const api = {
     role?: string;
   }) => request<User>('POST', '/auth/register', data),
 
-  logout: () => request<{ ok: boolean }>('POST', '/auth/logout'),
+  logout: async () => {
+    try {
+      return await request<{ ok: boolean }>('POST', '/auth/logout');
+    } finally {
+      clearToken();
+    }
+  },
 
   me: () => request<{ userId: string; email: string; role: string }>('GET', '/auth/me'),
 
@@ -165,7 +196,11 @@ export const api = {
   deleteSection: (sectionId: string) => request<void>('DELETE', `/sections/${sectionId}`),
 
   getVideoUrl: (videoFileId: string) => request<{ url: string }>('GET', `/video-files/${videoFileId}`),
-  getVideoStreamUrl: (videoFileId: string) => `${API_URL}/videos/${videoFileId}/stream`,
+  getVideoStreamUrl: (videoFileId: string) => {
+    const token = getToken();
+    const base = `${API_URL}/videos/${videoFileId}/stream`;
+    return token ? `${base}?access_token=${encodeURIComponent(token)}` : base;
+  },
 
   uploadVideo: (
     sectionId: string,
