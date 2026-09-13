@@ -1084,7 +1084,7 @@ export const Admin = () => {
       <Box sx={{ mt: 3 }}>
         {activeTab === 0 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Dashboard
             </Typography>
             {loadingDashboard ? (
@@ -1119,7 +1119,7 @@ export const Admin = () => {
 
         {activeTab === 1 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Cursos
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
@@ -1205,7 +1205,7 @@ export const Admin = () => {
 
         {activeTab === 2 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Módulos
             </Typography>
             {renderCourseSelect(moduleCourse, setModuleCourse)}
@@ -1280,7 +1280,7 @@ export const Admin = () => {
 
         {activeTab === 3 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Secciones
             </Typography>
             {renderCourseSelect(sectionCourse, setSectionCourse)}
@@ -1366,7 +1366,7 @@ export const Admin = () => {
 
         {activeTab === 4 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Subir video
             </Typography>
             {renderCourseSelect(videoCourse, setVideoCourse)}
@@ -1534,7 +1534,7 @@ export const Admin = () => {
 
         {activeTab === 5 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Mantenedor de pasos
             </Typography>
             <FormField
@@ -1702,7 +1702,7 @@ export const Admin = () => {
 
         {activeTab === 7 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2">
+            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Mantenedor de usuarios
             </Typography>
             <UserAutocomplete
