@@ -131,7 +131,7 @@ export const StageCanvas = () => {
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(BG, 0.045);
 
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 60);
+    const camera = new THREE.PerspectiveCamera(compact ? 52 : 42, 1, 0.1, 60);
     camera.position.set(0, 3.15, 10);
     camera.lookAt(0, 0.8, -2);
 
@@ -228,8 +228,15 @@ export const StageCanvas = () => {
 
     // Diagrama de paso básico sobre el piso: huellas que se encienden por tiempo
     const diagram = new THREE.Group();
-    diagram.position.set(2.1, 0.02, -0.4);
-    diagram.rotation.y = -0.12;
+    if (compact) {
+      // Mobile: centrado y más cerca de cámara para que no se corte
+      diagram.position.set(0.5, 0.02, 0.7);
+      diagram.rotation.y = -0.05;
+      diagram.scale.setScalar(0.8);
+    } else {
+      diagram.position.set(2.1, 0.02, -0.4);
+      diagram.rotation.y = -0.12;
+    }
     const stepGeo = new THREE.PlaneGeometry(0.3, 0.72);
     stepGeo.rotateX(-Math.PI / 2); // queda plano; la punta del pie mira a -z
     const footTextures = {

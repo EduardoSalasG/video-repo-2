@@ -212,7 +212,7 @@ export const Landing = () => {
             fontFamily: DISPLAY,
             fontStyle: 'italic',
             fontWeight: 500,
-            fontSize: '1.35rem',
+            fontSize: { xs: '1.15rem', sm: '1.35rem' },
             color: IVORY,
             textDecoration: 'none',
             letterSpacing: '0.01em',
@@ -227,6 +227,7 @@ export const Landing = () => {
             to="/login"
             variant="text"
             sx={{
+              display: { xs: 'none', sm: 'inline-flex' },
               color: IVORY_DIM,
               fontSize: '0.95rem',
               '&:hover': { color: IVORY, bgcolor: 'transparent' },
@@ -239,7 +240,7 @@ export const Landing = () => {
             component={Link}
             to="/register"
             variant="contained"
-            sx={{ ...primaryButtonSx, px: 2.5, py: 1, fontSize: '0.9rem' }}
+            sx={{ ...primaryButtonSx, px: { xs: 2, sm: 2.5 }, py: 1, fontSize: '0.9rem', whiteSpace: 'nowrap' }}
           >
             Crear cuenta
           </Button>
