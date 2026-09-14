@@ -7,7 +7,14 @@ type InputProps = TextFieldProps & {
 };
 
 export const Input = ({ children, ...props }: InputProps) => (
-  <TextField fullWidth variant="outlined" size="small" margin="normal" {...props}>
+  <TextField
+    fullWidth
+    variant="outlined"
+    size="small"
+    margin="normal"
+    slotProps={{ inputLabel: { shrink: props.placeholder ? true : undefined }, ...props.slotProps }}
+    {...props}
+  >
     {children}
   </TextField>
 );
