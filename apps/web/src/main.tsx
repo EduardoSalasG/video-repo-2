@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { RouterProvider } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { theme, brand } from './theme';
 import { router } from './router';
 import { AuthProvider } from './hooks/useAuth';
@@ -99,9 +100,11 @@ createRoot(root).render(
           },
         }}
       />
-      <AuthProvider>
-        <RouterProvider router={router} />
-      </AuthProvider>
+      <MotionConfig reducedMotion="user">
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </MotionConfig>
     </ThemeProvider>
   </StrictMode>
 );

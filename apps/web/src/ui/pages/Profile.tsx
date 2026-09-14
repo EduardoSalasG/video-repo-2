@@ -1,25 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import LogoutIcon from '@mui/icons-material/Logout';
 import { Typography } from '../atoms/Typography';
-import { Button } from '../atoms/Button';
-import { Input } from '../atoms/Input';
 import { useAuth } from '../../hooks/useAuth';
+import { useApiResource } from '../../hooks/useApiResource';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useParamLabels } from '../../hooks/useParamLabels';
 import { api } from '../../lib/api';
-import { ApiError } from '../../lib/error';
 import { brand } from '../../theme';
-import type { User } from '../../types';
 
 const DataRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <Box
@@ -39,72 +29,15 @@ const DataRow = ({ label, children }: { label: string; children: React.ReactNode
 );
 
 export const Profile = () => {
-  const { user, logout } = useAuth();
+  useDocumentTitle('Perfil');
+  const { user } = useAuth();
   const { getLabel } = useParamLabels();
-  const navigate = useNavigate();
 
-  const [profile, setProfile] = useState<User | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    api
-      .getUser(user.id)
-      .then((data) => {
-        if (!cancelled) setProfile(data);
-      })
-      .catch(() => {
-        if (!cancelled) setProfile(null);
-      })
-      .finally(() => {
-        if (!cancelled) setProfileLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/', { replace: true });
-  };
-
-  const handleSubmit = async () => {
-    setError(null);
-    setSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setError('Las contraseñas nuevas no coinciden');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError('La contraseña nueva debe tener al menos 8 caracteres');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      if (!user) return;
-      await api.changePassword(user.id, currentPassword, newPassword);
-      setSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setError(err instanceof ApiError ? (err.message ?? 'Error al cambiar la contraseña') : 'Error al cambiar la contraseña');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: profile, loading: profileLoading } = useApiResource(
+    () => api.getUser(user!.id),
+    [user?.id],
+    null,
+  );
 
   if (!user) {
     return (
@@ -126,20 +59,6 @@ export const Profile = () => {
         year: 'numeric',
       })
     : null;
-
-  const passwordAdornment = (
-    <InputAdornment position="end">
-      <IconButton
-        size="small"
-        edge="end"
-        aria-label={showPasswords ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
-        aria-pressed={showPasswords}
-        onClick={() => setShowPasswords((v) => !v)}
-      >
-        {showPasswords ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-      </IconButton>
-    </InputAdornment>
-  );
 
   return (
     <Box sx={{ maxWidth: 560, mx: 'auto' }}>
@@ -203,85 +122,6 @@ export const Profile = () => {
             )}
           </Box>
         )}
-      </Paper>
-
-      <Paper elevation={0} sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Cambiar contraseña
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Mínimo 8 caracteres.
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Contraseña actualizada correctamente
-          </Alert>
-        )}
-        <Input
-          label="Contraseña actual"
-          type={showPasswords ? 'text' : 'password'}
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          autoComplete="current-password"
-          slotProps={{ input: { endAdornment: passwordAdornment } }}
-        />
-        <Input
-          label="Nueva contraseña"
-          type={showPasswords ? 'text' : 'password'}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          autoComplete="new-password"
-          slotProps={{ input: { endAdornment: passwordAdornment } }}
-        />
-        <Input
-          label="Confirmar nueva contraseña"
-          type={showPasswords ? 'text' : 'password'}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          autoComplete="new-password"
-          slotProps={{ input: { endAdornment: passwordAdornment } }}
-        />
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-          fullWidth
-          sx={{ mt: 2 }}
-        >
-          {loading ? 'Guardando…' : 'Guardar contraseña'}
-        </Button>
-      </Paper>
-
-      <Paper elevation={0} sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
-            flexWrap: 'wrap',
-          }}
-        >
-          <Box>
-            <Typography variant="h6">Sesión</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Cierra tu sesión en este dispositivo.
-            </Typography>
-          </Box>
-          <Button
-            variant="outlined"
-            startIcon={<LogoutIcon fontSize="small" />}
-            onClick={handleLogout}
-            sx={{ flexShrink: 0 }}
-          >
-            Cerrar sesión
-          </Button>
-        </Box>
       </Paper>
     </Box>
   );

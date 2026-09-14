@@ -56,6 +56,7 @@ export interface Section {
   moduleId: string;
   markdownContent: string | null;
   videoFileId: string | null;
+  videoMetadata?: VideoMetadata | null;
   createdAt: string;
   updatedAt: string;
 }

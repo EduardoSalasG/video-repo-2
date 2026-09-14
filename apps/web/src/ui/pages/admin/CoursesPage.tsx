@@ -23,7 +23,7 @@ import { FormField } from '../../molecules/FormField';
 import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { FileUploadField } from '../../organisms/FileUploadField';
-import { PageHeader } from './PageHeader';
+import { PageHeader } from '../../organisms/PageHeader';
 import type { Course } from '../../../types';
 
 const courseSchema = z.object({

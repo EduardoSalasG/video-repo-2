@@ -1,4 +1,4 @@
-import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
 import { VideoCard } from '../molecules/VideoCard';
 import type { Course } from '../../types';
 
@@ -7,11 +7,17 @@ interface CourseListProps {
 }
 
 export const CourseList = ({ courses }: CourseListProps) => (
-  <Grid container spacing={2}>
+  <Box
+    sx={{
+      display: 'grid',
+      gap: 2,
+      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+    }}
+  >
     {courses.map((course, index) => (
-      <Grid key={course.id} item xs={12} sm={6} md={4} {...(index === 0 ? { 'data-tour': 'course-card' } : {})}>
+      <Box key={course.id} {...(index === 0 ? { 'data-tour': 'course-card' } : {})}>
         <VideoCard course={course} />
-      </Grid>
+      </Box>
     ))}
-  </Grid>
+  </Box>
 );

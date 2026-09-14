@@ -41,7 +41,7 @@ export const useLibraryOnboarding = (enabled: boolean) => {
         element: '[data-tour="nav-profile"]',
         popover: {
           title: 'Tu perfil',
-          description: 'Gestiona tu cuenta, tu contraseña y cierra sesión.',
+          description: 'Consulta tu cuenta. En Configuración cambias tu contraseña y cierras sesión.',
         },
       },
     ];

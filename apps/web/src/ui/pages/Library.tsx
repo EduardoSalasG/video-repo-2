@@ -1,36 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
 import { Typography } from '../atoms/Typography';
+import { Button } from '../atoms/Button';
 import { CourseList } from '../organisms/CourseList';
-import { api, ApiError } from '../../lib/api';
+import { api } from '../../lib/api';
+import { useApiResource } from '../../hooks/useApiResource';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useLibraryOnboarding } from '../../hooks/useLibraryOnboarding';
 import type { Course } from '../../types';
 
 export const Library = () => {
-  const navigate = useNavigate();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  useDocumentTitle('Biblioteca');
+  const { data: courses, loading, error, reload } = useApiResource<Course[]>(
+    () => api.getCourses().then((data) => [...data].sort((a, b) => a.name.localeCompare(b.name))),
+    [],
+    [],
+  );
 
-  useLibraryOnboarding(!loading);
-
-  useEffect(() => {
-    setLoading(true);
-    api
-      .getCourses()
-      .then((data) => setCourses([...data].sort((a, b) => a.name.localeCompare(b.name))))
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        setError(err instanceof Error ? err.message : 'Error al cargar cursos');
-      })
-      .finally(() => setLoading(false));
-  }, [navigate]);
+  useLibraryOnboarding(!loading && !error);
 
   return (
     <>
@@ -43,23 +31,30 @@ export const Library = () => {
         </Typography>
       </motion.div>
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress />
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }} aria-busy="true">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} variant="rounded" height={140} sx={{ borderRadius: 3 }} />
+          ))}
         </Box>
       )}
       {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
+        <Box sx={{ textAlign: 'center', py: 6 }} role="alert">
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+          <Button variant="outlined" onClick={reload}>
+            Reintentar
+          </Button>
+        </Box>
       )}
-      {!loading && courses.length > 0 && <CourseList courses={courses} />}
-      {!loading && courses.length === 0 && !error && (
+      {!loading && !error && courses.length > 0 && <CourseList courses={courses} />}
+      {!loading && !error && courses.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography variant="h6" gutterBottom>
             No tienes cursos disponibles
           </Typography>
           <Typography color="text.secondary">
-            Inscríbete en un curso para comenzar tu entrenamiento.
+            Cuando un instructor te habilite un curso, aparecerá aquí.
           </Typography>
         </Box>
       )}
