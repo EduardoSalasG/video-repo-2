@@ -80,8 +80,6 @@ const MENU_GROUPS: MenuGroup[] = [
   },
 ];
 
-const ALL_ITEMS = [...STANDALONE_ITEMS, ...MENU_GROUPS.flatMap((g) => g.items)];
-
 export const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,9 +101,6 @@ export const AdminLayout = () => {
 
   const isActive = (path: string) =>
     path === '/admin' ? location.pathname === '/admin' : location.pathname.startsWith(path);
-
-  const currentLabel =
-    [...ALL_ITEMS].reverse().find((item) => isActive(item.path))?.label ?? 'Administración';
 
   const handleNavigate = () => {
     setMobileOpen(false);
@@ -156,7 +151,15 @@ export const AdminLayout = () => {
       aria-label="Navegación de administración"
       sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
     >
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 1 }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: 1,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
         {standaloneItems.map((item) => (
           <Box key={item.path}>{itemButton(item, expanded)}</Box>
         ))}
@@ -327,7 +330,7 @@ export const AdminLayout = () => {
       {isMobile && (
         <AppBar
           position="static"
-          sx={{ flexShrink: 0, pt: 'env(safe-area-inset-top)' }}
+          sx={{ flexShrink: 0, pt: 'env(safe-area-inset-top)', borderBottom: 'none' }}
         >
           <Toolbar sx={{ minHeight: 48 }}>
             <IconButton
@@ -341,7 +344,7 @@ export const AdminLayout = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
-              {currentLabel}
+              Administración
             </Typography>
           </Toolbar>
         </AppBar>

@@ -180,7 +180,7 @@ export const theme = createTheme({
           '& .MuiInputLabel-root': {
             color: brand.dim,
             transform: 'translate(14px, 14px) scale(1)',
-            '&.Mui-focused, &.MuiFormLabel-filled': {
+            '&.Mui-focused, &.MuiFormLabel-filled, &.MuiInputLabel-shrink': {
               transform: 'translate(14px, -7px) scale(0.75)',
             },
           },

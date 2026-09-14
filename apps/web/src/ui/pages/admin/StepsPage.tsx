@@ -139,7 +139,13 @@ export const StepsPage = () => {
               value={newStyles}
               onChange={(_e, value) => setNewStyles(value)}
               renderInput={(p) => (
-                <TextField {...p} label="Estilos" placeholder="Asocia uno o varios estilos" size="small" />
+                <TextField
+                  {...p}
+                  label="Estilos"
+                  placeholder="Asocia uno o varios estilos"
+                  size="small"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
               )}
               sx={{ flex: 1, minWidth: 200 }}
             />
