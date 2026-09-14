@@ -8,6 +8,7 @@ import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { brand } from '../../theme';
 
 interface HeaderProps {
   onMenu?: () => void;
@@ -18,14 +19,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
   const { user, hasPerm } = useAuth();
 
   return (
-    <AppBar
-      position="sticky"
-      sx={{
-        backgroundColor: 'rgba(255, 255, 255, 0.76)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-      }}
-    >
+    <AppBar position="sticky">
       <Toolbar sx={{ gap: 1 }}>
         {onMenu && (
           <IconButton
@@ -33,7 +27,6 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
             color="inherit"
             onClick={onMenu}
             aria-label="Abrir menú"
-            sx={{ color: '#111111' }}
           >
             <MenuIcon />
           </IconButton>
@@ -42,7 +35,14 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
           <Link to="/app" style={{ textDecoration: 'none', flexGrow: 1 }}>
             <Typography
               variant="h6"
-              sx={{ color: '#111111', letterSpacing: '-0.02em' }}
+              sx={{
+                color: brand.ink,
+                fontFamily: brand.display,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                fontSize: '1.25rem',
+                letterSpacing: '0.01em',
+              }}
             >
               {title}
             </Typography>
@@ -50,7 +50,15 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
         ) : (
           <Typography
             variant="h6"
-            sx={{ flexGrow: 1, color: '#111111', letterSpacing: '-0.02em' }}
+            sx={{
+              flexGrow: 1,
+              color: brand.ink,
+              fontFamily: brand.display,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: '1.25rem',
+              letterSpacing: '0.01em',
+            }}
           >
             {title}
           </Typography>
@@ -61,7 +69,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               component={Link}
               to="/app"
               color="inherit"
-              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Biblioteca
             </Button>
@@ -71,7 +79,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               color="inherit"
               startIcon={<SearchIcon />}
               data-tour="nav-search"
-              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Buscar
             </Button>
@@ -80,7 +88,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
                 component={Link}
                 to="/admin"
                 color="inherit"
-                sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+                sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
               >
                 Administración
               </Button>
@@ -91,7 +99,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               color="inherit"
               startIcon={<PersonIcon />}
               data-tour="nav-profile"
-              sx={{ color: '#111111', fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
+              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
             >
               Perfil
             </Button>

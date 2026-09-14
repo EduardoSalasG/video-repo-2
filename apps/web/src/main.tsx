@@ -4,9 +4,11 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import GlobalStyles from '@mui/material/GlobalStyles';
 import { RouterProvider } from 'react-router-dom';
-import { theme } from './theme';
+import { theme, brand } from './theme';
 import { router } from './router';
 import { AuthProvider } from './hooks/useAuth';
+import '@fontsource-variable/bodoni-moda';
+import '@fontsource-variable/bodoni-moda/wght-italic.css';
 
 if ('serviceWorker' in navigator) {
   import('virtual:pwa-register').then(({ registerSW }) => {
@@ -34,21 +36,23 @@ createRoot(root).render(
           '.driver-popover.dance-onboarding': {
             borderRadius: '16px',
             padding: '8px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            backgroundColor: brand.paper,
+            border: `1px solid ${brand.hairline}`,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
           },
           '.driver-popover.dance-onboarding .driver-popover-title': {
             fontSize: '18px',
             fontWeight: 700,
-            color: '#111111',
+            color: brand.ink,
             letterSpacing: '-0.01em',
           },
           '.driver-popover.dance-onboarding .driver-popover-description': {
             fontSize: '14px',
-            color: '#3f3f46',
+            color: brand.dim,
             lineHeight: 1.6,
           },
           '.driver-popover.dance-onboarding .driver-popover-next-btn': {
-            backgroundColor: '#111111',
+            backgroundColor: brand.accent,
             color: '#ffffff',
             borderRadius: '999px',
             border: 'none',
@@ -59,20 +63,23 @@ createRoot(root).render(
           },
           '.driver-popover.dance-onboarding .driver-popover-prev-btn': {
             backgroundColor: 'transparent',
-            color: '#111111',
+            color: brand.ink,
             borderRadius: '999px',
-            border: '1px solid rgba(0,0,0,0.15)',
+            border: `1px solid ${brand.hairlineStrong}`,
             padding: '8px 20px',
             fontSize: '14px',
             fontWeight: 600,
             textShadow: 'none',
           },
           '.driver-popover.dance-onboarding .driver-popover-close-btn': {
-            color: '#71717a',
+            color: brand.dim,
           },
           '.driver-popover.dance-onboarding .driver-popover-progress-text': {
-            color: '#a1a1aa',
+            color: brand.dim,
             fontSize: '12px',
+          },
+          '.driver-popover.dance-onboarding .driver-popover-arrow': {
+            display: 'none',
           },
           '@media (prefers-reduced-motion: reduce)': {
             '*, *::before, *::after': {

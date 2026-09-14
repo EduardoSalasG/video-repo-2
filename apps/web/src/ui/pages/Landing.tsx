@@ -6,19 +6,18 @@ import Container from '@mui/material/Container';
 import MuiLink from '@mui/material/Link';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
-import '@fontsource-variable/bodoni-moda';
-import '@fontsource-variable/bodoni-moda/wght-italic.css';
+import { brand } from '../../theme';
 
 const StageCanvas = lazy(() =>
   import('../organisms/StageCanvas').then((m) => ({ default: m.StageCanvas }))
 );
 
-const BG = '#08070d';
-const IVORY = '#f0f1fa';
-const IVORY_DIM = '#a3a4c0';
-const ACCENT = '#6e4dff';
-const HAIRLINE = 'rgba(240, 241, 250, 0.09)';
-const DISPLAY = '"Bodoni Moda Variable", "Bodoni Moda", Didot, "Times New Roman", serif';
+const BG = brand.bg;
+const IVORY = brand.ink;
+const IVORY_DIM = brand.dim;
+const ACCENT = brand.accent;
+const HAIRLINE = brand.hairline;
+const DISPLAY = brand.display;
 
 const MARQUEE_ITEMS = [
   'Mambo On2',

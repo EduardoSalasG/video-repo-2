@@ -13,6 +13,7 @@ import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import ExpandLess from '@mui/icons-material/ExpandLess';
+import { brand } from '../../theme';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { Typography } from '../atoms/Typography';
 import { api } from '../../lib/api';
@@ -105,8 +106,8 @@ export const Course = () => {
             sx={{
               mb: 1.5,
               borderRadius: 3,
-              backgroundColor: '#ffffff',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+              backgroundColor: brand.paper,
+              border: `1px solid ${brand.hairline}`,
               overflow: 'hidden',
             }}
           >
@@ -140,7 +141,7 @@ export const Course = () => {
                       >
                         <ListItemText
                           primary={
-                            <Typography variant="body1" sx={{ color: '#111111' }}>
+                            <Typography variant="body1" sx={{ color: brand.ink }}>
                               {section.title}
                             </Typography>
                           }

@@ -10,6 +10,7 @@ import { Footer } from '../molecules/Footer';
 import { Button } from '../atoms/Button';
 import { Typography } from '../atoms/Typography';
 import { useAuth } from '../../hooks/useAuth';
+import { brand } from '../../theme';
 
 const loginSchema = z.object({
   email: z.string().email('Introduce un email válido'),
@@ -53,7 +54,13 @@ export const Login = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        background: `radial-gradient(ellipse 80% 50% at 50% -10%, rgba(110, 77, 255, 0.18), transparent 65%), ${brand.bg}`,
+      }}
+    >
+      <Container maxWidth="sm" sx={{ py: 8, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <motion.div style={{ flex: 1 }}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -64,8 +71,6 @@ export const Login = () => {
           sx={{
             p: { xs: 3, sm: 5 },
             borderRadius: 6,
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.06)',
           }}
         >
           <Typography
@@ -112,7 +117,7 @@ export const Login = () => {
             </Button>
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿No tienes cuenta?{' '}
-              <Button component={Link} to="/register" size="small" sx={{ color: '#111111' }}>
+              <Button component={Link} to="/register" size="small" sx={{ color: brand.accent }}>
                 Regístrate
               </Button>
             </Typography>
@@ -120,6 +125,7 @@ export const Login = () => {
         </Paper>
       </motion.div>
       <Footer />
-    </Container>
+      </Container>
+    </Box>
   );
 };

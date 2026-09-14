@@ -15,6 +15,7 @@ import { FormField } from '../molecules/FormField';
 import { Button } from '../atoms/Button';
 import { StatusSnackbar, type StatusSeverity } from '../molecules/StatusSnackbar';
 import { api } from '../../lib/api';
+import { brand } from '../../theme';
 import type { ParamRecord, PermissionRecord } from '../../types';
 
 interface RolePermissionsMaintainerProps {
@@ -134,7 +135,7 @@ export const RolePermissionsMaintainer = ({ roles }: RolePermissionsMaintainerPr
 
           <Box sx={{ opacity: isSuperuser ? 0.5 : 1, pointerEvents: isSuperuser ? 'none' : 'auto' }}>
             {categories.map(([category, items]) => (
-              <Accordion key={category} defaultExpanded disableGutters elevation={0} sx={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 2, '&:before': { display: 'none' }, mb: 1 }}>
+              <Accordion key={category} defaultExpanded disableGutters elevation={0} sx={{ border: `1px solid ${brand.hairline}`, borderRadius: 2, '&:before': { display: 'none' }, mb: 1 }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     {category}

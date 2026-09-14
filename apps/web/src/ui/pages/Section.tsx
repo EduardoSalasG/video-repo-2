@@ -128,7 +128,7 @@ export const Section = () => {
             p: 1,
             mb: 2,
             borderRadius: 4,
-            border: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: '#000000',
             overflow: 'hidden',
             display: 'flex',
             justifyContent: 'center',
@@ -170,7 +170,7 @@ export const Section = () => {
       {section.markdownContent && (
         <Paper
           elevation={0}
-          sx={{ p: 3, borderRadius: 4, border: '1px solid rgba(0,0,0,0.06)' }}
+          sx={{ p: 3, borderRadius: 4 }}
         >
           <Markdown source={section.markdownContent} />
         </Paper>

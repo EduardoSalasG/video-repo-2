@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { brand } from '../../theme';
 
-const BG = '#08070d';
-const ACCENT = '#6e4dff';
+const BG = brand.bg;
+const ACCENT = brand.accent;
 const BEAM_COLOR = '#f2f0ff';
 const BEAT = 60 / 96; // compás de salsa, ~96 BPM
 

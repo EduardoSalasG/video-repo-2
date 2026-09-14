@@ -74,8 +74,6 @@ export const Search = () => {
             p: { xs: 3, sm: 4 },
             mb: 3,
             borderRadius: 5,
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.04)',
           }}
         >
           <Typography variant="h4" component="h1" gutterBottom>
@@ -150,7 +148,7 @@ export const Search = () => {
             >
               <Card
                 elevation={0}
-                sx={{ cursor: 'pointer', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 4 }}
+                sx={{ cursor: 'pointer', borderRadius: 4 }}
                 onClick={() => navigate(`/app/sections/${result.section.id}`)}
               >
                 <CardContent>

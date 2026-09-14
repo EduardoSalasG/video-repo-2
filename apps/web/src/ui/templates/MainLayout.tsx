@@ -119,9 +119,6 @@ export const MainLayout = () => {
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: 'rgba(255, 255, 255, 0.92)',
-              backdropFilter: 'blur(20px) saturate(180%)',
-              borderTop: '1px solid rgba(0,0,0,0.08)',
               zIndex: (t) => t.zIndex.appBar,
             }}
           >

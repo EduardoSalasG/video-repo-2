@@ -27,6 +27,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import LockIcon from '@mui/icons-material/Lock';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+import { brand } from '../../theme';
 import { Typography } from '../atoms/Typography';
 import { Footer } from '../molecules/Footer';
 import { useAuth } from '../../hooks/useAuth';
@@ -125,7 +126,7 @@ export const AdminLayout = () => {
                 minWidth: 0,
                 mr: expanded ? 2 : 'auto',
                 justifyContent: 'center',
-                color: isActive(item.path) ? '#111111' : 'inherit',
+                color: isActive(item.path) ? brand.accent : 'inherit',
               }}
             >
               {item.icon}
@@ -190,7 +191,7 @@ export const AdminLayout = () => {
                         minWidth: 0,
                         mr: expanded ? 2 : 'auto',
                         justifyContent: 'center',
-                        color: isActive(item.path) ? '#111111' : 'inherit',
+                        color: isActive(item.path) ? brand.accent : 'inherit',
                       }}
                     >
                       {item.icon}
@@ -267,9 +268,9 @@ export const AdminLayout = () => {
               width: open ? DRAWER_WIDTH : COLLAPSED_WIDTH,
               boxSizing: 'border-box',
               overflowX: 'hidden',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(20px) saturate(180%)',
-              borderRight: '1px solid rgba(0,0,0,0.06)',
+              backgroundColor: 'rgba(15, 13, 24, 0.92)',
+              backdropFilter: 'blur(20px) saturate(160%)',
+              borderRight: `1px solid ${brand.hairline}`,
               display: 'flex',
               flexDirection: 'column',
             },
@@ -308,10 +309,11 @@ export const AdminLayout = () => {
                 top: 'calc(8px + env(safe-area-inset-top))',
                 left: 8,
                 zIndex: (t) => t.zIndex.drawer + 2,
-                backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(20px) saturate(180%)',
-                boxShadow: 1,
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' },
+                backgroundColor: 'rgba(15, 13, 24, 0.92)',
+                backdropFilter: 'blur(20px) saturate(160%)',
+                border: `1px solid ${brand.hairline}`,
+                color: brand.ink,
+                '&:hover': { backgroundColor: 'rgba(28, 25, 48, 0.95)' },
               }}
             >
               <MenuIcon />
@@ -327,8 +329,8 @@ export const AdminLayout = () => {
               [`& .MuiDrawer-paper`]: {
                 width: DRAWER_WIDTH,
                 boxSizing: 'border-box',
-                backgroundColor: 'rgba(255, 255, 255, 0.97)',
-                backdropFilter: 'blur(20px) saturate(180%)',
+                backgroundColor: 'rgba(15, 13, 24, 0.97)',
+                backdropFilter: 'blur(20px) saturate(160%)',
               },
             }}
           >
@@ -366,7 +368,7 @@ export const AdminLayout = () => {
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
           '&::-webkit-scrollbar': { display: 'none' },
-          backgroundColor: '#fafafa',
+          backgroundColor: brand.bg,
           transition: 'width 250ms ease',
           display: 'flex',
           flexDirection: 'column',
