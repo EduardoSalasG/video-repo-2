@@ -91,7 +91,7 @@ export const RolePermissionsMaintainer = ({ roles }: RolePermissionsMaintainerPr
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+        <Typography variant="h5" component="h2">
           Permisos por rol
         </Typography>
         <Typography variant="body2" color="text.secondary">

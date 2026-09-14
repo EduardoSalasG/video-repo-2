@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate, Outlet, useLocation, Link } from 'react-router-dom';
+import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -255,7 +256,13 @@ export const AdminLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        height: { xs: '100dvh', sm: '100vh' },
+      }}
+    >
       {!isMobile && (
         <Drawer
           variant="permanent"
@@ -299,71 +306,67 @@ export const AdminLayout = () => {
         </Drawer>
       )}
       {isMobile && (
-        <>
-          {!mobileOpen && (
+        <AppBar
+          position="static"
+          sx={{ flexShrink: 0, pt: 'env(safe-area-inset-top)' }}
+        >
+          <Toolbar sx={{ minHeight: 48 }}>
             <IconButton
+              edge="start"
+              color="inherit"
               onClick={() => setMobileOpen(true)}
               aria-label="Abrir menú"
-              sx={{
-                position: 'fixed',
-                top: 'calc(8px + env(safe-area-inset-top))',
-                left: 8,
-                zIndex: (t) => t.zIndex.drawer + 2,
-                backgroundColor: 'rgba(15, 13, 24, 0.92)',
-                backdropFilter: 'blur(20px) saturate(160%)',
-                border: `1px solid ${brand.hairline}`,
-                color: brand.ink,
-                '&:hover': { backgroundColor: 'rgba(28, 25, 48, 0.95)' },
-              }}
             >
               <MenuIcon />
             </IconButton>
-          )}
-          <Drawer
-            variant="temporary"
-            anchor="left"
-            open={mobileOpen}
-            onClose={() => setMobileOpen(false)}
-            ModalProps={{ keepMounted: true }}
+          </Toolbar>
+        </AppBar>
+      )}
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          anchor="left"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            [`& .MuiDrawer-paper`]: {
+              width: DRAWER_WIDTH,
+              boxSizing: 'border-box',
+              backgroundColor: 'rgba(15, 13, 24, 0.97)',
+              backdropFilter: 'blur(20px) saturate(160%)',
+            },
+          }}
+        >
+          <Toolbar
             sx={{
-              [`& .MuiDrawer-paper`]: {
-                width: DRAWER_WIDTH,
-                boxSizing: 'border-box',
-                backgroundColor: 'rgba(15, 13, 24, 0.97)',
-                backdropFilter: 'blur(20px) saturate(160%)',
-              },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              px: 2,
+              minHeight: 64,
             }}
           >
-            <Toolbar
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                px: 2,
-                minHeight: 64,
-              }}
-            >
-              <IconButton onClick={() => setMobileOpen(false)} size="small" aria-label="Cerrar menú" edge="start">
-                <MenuIcon />
-              </IconButton>
-              <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
-                Administración
-              </Typography>
-            </Toolbar>
-            <Divider />
-            {menuContent(true, handleNavigate)}
-          </Drawer>
-        </>
+            <IconButton onClick={() => setMobileOpen(false)} size="small" aria-label="Cerrar menú" edge="start">
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
+              Administración
+            </Typography>
+          </Toolbar>
+          <Divider />
+          {menuContent(true, handleNavigate)}
+        </Drawer>
       )}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
+          minHeight: 0,
           p: { xs: 2, sm: 3 },
-          pt: isMobile ? 'calc(96px + env(safe-area-inset-top))' : 3,
           pb: isMobile ? 'calc(24px + env(safe-area-inset-bottom))' : 3,
           width: { sm: `calc(100% - ${open ? DRAWER_WIDTH : COLLAPSED_WIDTH}px)` },
-          height: { xs: '100dvh', sm: '100vh' },
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',

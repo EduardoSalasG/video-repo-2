@@ -58,7 +58,7 @@ export const ParamMaintainer = ({ title, description, items, loading, onCreate, 
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+        <Typography variant="h5" component="h2">
           {title}
         </Typography>
         {description && (
