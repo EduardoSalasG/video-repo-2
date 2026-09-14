@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <RequireAuth requireAdmin>
+      <RequireAuth requirePermission="admin.panel.access">
         <AdminLayout />
       </RequireAuth>
     ),

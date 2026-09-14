@@ -52,6 +52,8 @@ import {
   CreateRoleInput,
   UpdateRoleInput,
   IEmailService,
+  IRolePermissionRepository,
+  PermissionRecord,
 } from './ports';
 
 export type SafeUser = Omit<User, 'passwordHash'>;
@@ -59,6 +61,67 @@ export type SafeUser = Omit<User, 'passwordHash'>;
 function stripPassword(user: User): SafeUser {
   const { passwordHash: _passwordHash, ...safe } = user;
   return safe;
+}
+
+@Injectable()
+export class PermissionService {
+  private cache: Map<string, { isActive: boolean; isSuperuser: boolean; permissions: Set<string> }> | null = null;
+
+  constructor(
+    @Inject(InjectionTokens.ROLE_PERMISSION_REPOSITORY) private readonly repo: IRolePermissionRepository,
+  ) {}
+
+  private async roleMap(): Promise<Map<string, { isActive: boolean; isSuperuser: boolean; permissions: Set<string> }>> {
+    if (!this.cache) {
+      const [flags, grants] = await Promise.all([this.repo.findAllRoleFlags(), this.repo.findAllRoleGrants()]);
+      const map = new Map(
+        flags.map((f) => [f.value, { isActive: f.isActive, isSuperuser: f.isSuperuser, permissions: new Set<string>() }]),
+      );
+      for (const grant of grants) {
+        map.get(grant.roleValue)?.permissions.add(grant.permissionValue);
+      }
+      this.cache = map;
+    }
+    return this.cache;
+  }
+
+  async can(role: Role, permission: string): Promise<boolean> {
+    const entry = (await this.roleMap()).get(role);
+    if (!entry || !entry.isActive) return false;
+    return entry.isSuperuser || entry.permissions.has(permission);
+  }
+
+  async isSuperuser(role: Role): Promise<boolean> {
+    const entry = (await this.roleMap()).get(role);
+    return Boolean(entry?.isActive && entry.isSuperuser);
+  }
+
+  /** Effective permissions for session payloads: '*' means unrestricted (superuser). */
+  async getPermissions(role: Role): Promise<string[]> {
+    const entry = (await this.roleMap()).get(role);
+    if (!entry || !entry.isActive) return [];
+    if (entry.isSuperuser) return ['*'];
+    return [...entry.permissions];
+  }
+
+  async listPermissions(): Promise<PermissionRecord[]> {
+    return this.repo.findAllPermissions();
+  }
+
+  async getRolePermissions(role: Role): Promise<{ permissions: string[]; isSuperuser: boolean }> {
+    const entry = (await this.roleMap()).get(role);
+    if (!entry) throw new NotFoundException('Role not found');
+    return { permissions: [...entry.permissions], isSuperuser: entry.isSuperuser };
+  }
+
+  async setRolePermissions(role: Role, permissions: string[], isSuperuser: boolean): Promise<void> {
+    await this.repo.setRolePermissions(role, permissions, isSuperuser);
+    this.invalidate();
+  }
+
+  invalidate(): void {
+    this.cache = null;
+  }
 }
 
 @Injectable()
@@ -70,6 +133,7 @@ export class AuthService {
     @Inject(InjectionTokens.PASSWORD_HASHER) private readonly hasher: IPasswordHasher,
     @Inject(InjectionTokens.TOKEN_SERVICE) private readonly tokenService: ITokenService,
     @Inject(InjectionTokens.EMAIL_SERVICE) private readonly email: IEmailService,
+    private readonly permissions: PermissionService,
   ) {}
 
   async register(input: CreateUserInput): Promise<SafeUser> {
@@ -87,7 +151,7 @@ export class AuthService {
     return stripPassword(user);
   }
 
-  async login(email: string, password: string): Promise<{ user: SafeUser; token: string }> {
+  async login(email: string, password: string): Promise<{ user: SafeUser; token: string; permissions: string[] }> {
     const user = await this.users.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -95,7 +159,8 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     const token = this.tokenService.sign({ sub: user.id, email: user.email, role: user.role });
-    return { user: stripPassword(user), token };
+    const permissions = await this.permissions.getPermissions(user.role);
+    return { user: stripPassword(user), token, permissions };
   }
 }
 
@@ -240,27 +305,15 @@ export class CourseAccessService {
   constructor(
     @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
+    private readonly permissions: PermissionService,
+    private readonly accessLevels: AccessLevelService,
   ) {}
 
   async requireAccess(userId: string, courseId: string, minimum: AccessLevel): Promise<void> {
     const user = await this.users.findById(userId);
-    if (user?.role === Role.ADMIN) return;
+    if (user && (await this.permissions.isSuperuser(user.role))) return;
     const granted = await this.access.findByUserAndCourse(userId, courseId);
-    if (!granted || !this.satisfies(granted.accessLevel, minimum)) {
-      throw new UnauthorizedException('Insufficient access to course');
-    }
-  }
-
-  async requireWriteOrMaintain(userId: string, courseId: string): Promise<void> {
-    const granted = await this.access.findByUserAndCourse(userId, courseId);
-    if (!granted || (granted.accessLevel !== AccessLevel.WRITE && granted.accessLevel !== AccessLevel.MAINTAIN)) {
-      throw new UnauthorizedException('Insufficient access to course');
-    }
-  }
-
-  async requireMaintain(userId: string, courseId: string): Promise<void> {
-    const granted = await this.access.findByUserAndCourse(userId, courseId);
-    if (!granted || granted.accessLevel !== AccessLevel.MAINTAIN) {
+    if (!granted || !(await this.satisfies(granted.accessLevel, minimum))) {
       throw new UnauthorizedException('Insufficient access to course');
     }
   }
@@ -277,17 +330,23 @@ export class CourseAccessService {
     courseId: string,
     level?: AccessLevel,
   ): Promise<void> {
-    if (actor.role === Role.INSTRUCTOR) {
+    const elevated =
+      (await this.permissions.isSuperuser(actor.role)) ||
+      (await this.permissions.can(actor.role, 'admin.users.manage'));
+    if (!elevated) {
       if (actor.userId === targetUserId) {
-        throw new UnauthorizedException('Instructor cannot grant access to themselves');
+        throw new UnauthorizedException('Cannot grant access to yourself');
       }
       const target = await this.users.findById(targetUserId);
-      if (!target || target.role !== Role.STUDENT) {
-        throw new UnauthorizedException('Instructor can only grant access to students');
+      const targetIsStaff = target
+        ? await this.permissions.can(target.role, 'admin.panel.access')
+        : false;
+      if (!target || targetIsStaff) {
+        throw new UnauthorizedException('Can only grant access to students');
       }
       const myAccess = await this.access.findByUserAndCourse(actor.userId, courseId);
       if (!myAccess) {
-        throw new UnauthorizedException('Instructor does not have access to this course');
+        throw new UnauthorizedException('You do not have access to this course');
       }
     }
     await this.access.grant(targetUserId, courseId, level ?? AccessLevel.READ);
@@ -316,9 +375,12 @@ export class CourseAccessService {
     await this.access.revoke(userId, courseId);
   }
 
-  private satisfies(level: AccessLevel, minimum: AccessLevel): boolean {
-    const hierarchy: AccessLevel[] = [AccessLevel.READ, AccessLevel.WRITE, AccessLevel.MAINTAIN];
-    return hierarchy.indexOf(level) >= hierarchy.indexOf(minimum);
+  private async satisfies(level: AccessLevel, minimum: AccessLevel): Promise<boolean> {
+    const [grantedOrder, minimumOrder] = await Promise.all([
+      this.accessLevels.orderOf(level),
+      this.accessLevels.orderOf(minimum),
+    ]);
+    return grantedOrder >= 0 && grantedOrder >= minimumOrder;
   }
 }
 
@@ -331,6 +393,7 @@ export class VideoService {
     @Inject(InjectionTokens.VIDEO_LABEL_REPOSITORY) private readonly videoLabels: IVideoLabelRepository,
     @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
     private readonly courseAccess: CourseAccessService,
+    private readonly permissions: PermissionService,
   ) {}
 
   async upload(sectionId: string, file: StorageFile, metadata: CreateVideoMetadataInput): Promise<{ videoFile: VideoFile; videoMetadata: VideoMetadata }> {
@@ -405,7 +468,7 @@ export class VideoService {
     user: { userId: string; role: Role },
     options: { q?: string; style?: PrimaryStyle; courseId?: string },
   ): Promise<VideoSearchResult[]> {
-    const accessibleCourseIds = user.role === Role.ADMIN
+    const accessibleCourseIds = (await this.permissions.isSuperuser(user.role))
       ? undefined
       : (await this.courseAccess.getByUser(user.userId)).map((a) => a.courseId);
 
@@ -506,10 +569,15 @@ export class DashboardService {
     @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
     @Inject(InjectionTokens.COURSE_REPOSITORY) private readonly courses: ICourseRepository,
     @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
+    private readonly permissions: PermissionService,
   ) {}
 
   async getDashboard(userId: string, role: Role): Promise<{ courses: number; users: number }> {
-    if (role === Role.ADMIN) {
+    const globalView =
+      (await this.permissions.isSuperuser(role)) ||
+      (await this.permissions.can(role, 'admin.users.manage'));
+
+    if (globalView) {
       const [courseList, userList] = await Promise.all([
         this.courses.findAll(),
         this.users.search(''),
@@ -517,7 +585,7 @@ export class DashboardService {
       return { courses: courseList.length, users: userList.length };
     }
 
-    if (role === Role.INSTRUCTOR) {
+    if (await this.permissions.can(role, 'admin.panel.access')) {
       const myAccess = await this.access.findByUser(userId);
       const courseIds = [...new Set(myAccess.map((a) => a.courseId))];
       const members = await Promise.all(courseIds.map((id) => this.access.findByCourse(id)));
@@ -683,6 +751,8 @@ export class LabelTypeService {
 
 @Injectable()
 export class AccessLevelService {
+  private orderCache: Map<string, number> | null = null;
+
   constructor(
     @Inject(InjectionTokens.ACCESS_LEVEL_REPOSITORY) private readonly accessLevels: IAccessLevelRepository,
   ) {}
@@ -691,24 +761,37 @@ export class AccessLevelService {
     return this.accessLevels.findAll();
   }
 
+  async orderOf(value: AccessLevel): Promise<number> {
+    if (!this.orderCache) {
+      const all = await this.accessLevels.findAll();
+      this.orderCache = new Map(all.map((a) => [a.value, a.orderIndex]));
+    }
+    return this.orderCache.get(value) ?? -1;
+  }
+
   async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
     if (!input.value.trim() || !input.label.trim()) {
       throw new Error('Access level value and label are required');
     }
     const existing = await this.accessLevels.findByValue(input.value);
     if (existing) throw new ConflictException('Access level already exists');
-    return this.accessLevels.create(input);
+    const created = await this.accessLevels.create(input);
+    this.orderCache = null;
+    return created;
   }
 
   async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
     const existing = await this.accessLevels.findByValue(value);
     if (!existing) throw new NotFoundException('Access level not found');
-    return this.accessLevels.update(value, input);
+    const updated = await this.accessLevels.update(value, input);
+    this.orderCache = null;
+    return updated;
   }
 
   async delete(value: AccessLevel): Promise<void> {
     const existing = await this.accessLevels.findByValue(value);
     if (!existing) throw new NotFoundException('Access level not found');
+    this.orderCache = null;
     return this.accessLevels.delete(value);
   }
 }
@@ -717,6 +800,7 @@ export class AccessLevelService {
 export class RoleService {
   constructor(
     @Inject(InjectionTokens.ROLE_REPOSITORY) private readonly roles: IRoleRepository,
+    private readonly permissions: PermissionService,
   ) {}
 
   async list(): Promise<RoleRecord[]> {
@@ -729,18 +813,23 @@ export class RoleService {
     }
     const existing = await this.roles.findByValue(input.value);
     if (existing) throw new ConflictException('Role already exists');
-    return this.roles.create(input);
+    const created = await this.roles.create(input);
+    this.permissions.invalidate();
+    return created;
   }
 
   async update(value: Role, input: UpdateRoleInput): Promise<RoleRecord> {
     const existing = await this.roles.findByValue(value);
     if (!existing) throw new NotFoundException('Role not found');
-    return this.roles.update(value, input);
+    const updated = await this.roles.update(value, input);
+    this.permissions.invalidate();
+    return updated;
   }
 
   async delete(value: Role): Promise<void> {
     const existing = await this.roles.findByValue(value);
     if (!existing) throw new NotFoundException('Role not found');
+    this.permissions.invalidate();
     return this.roles.delete(value);
   }
 }

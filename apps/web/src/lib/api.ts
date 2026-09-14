@@ -9,6 +9,7 @@ import type {
   VideoSearchResult,
   PrimaryStyleRecord,
   ParamRecord,
+  PermissionRecord,
 } from '../types';
 
 import { ApiError } from './error';
@@ -113,11 +114,12 @@ function requestFormData<T>(method: string, path: string, formData: FormData, on
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
+  put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   delete: (path: string) => request<unknown>('DELETE', path),
 
   login: async (email: string, password: string) => {
-    const data = await request<{ id: string; email: string; role: string; token: string }>(
+    const data = await request<{ id: string; email: string; role: string; token: string; permissions: string[] }>(
       'POST',
       '/auth/login',
       { email, password },
@@ -143,7 +145,7 @@ export const api = {
     }
   },
 
-  me: () => request<{ userId: string; email: string; role: string }>('GET', '/auth/me'),
+  me: () => request<{ userId: string; email: string; role: string; permissions: string[] }>('GET', '/auth/me'),
 
   getDashboard: () => request<{ courses: number; users: number }>('GET', '/admin/dashboard'),
 
@@ -296,6 +298,19 @@ export const api = {
   updateAccessLevel: (value: string, data: { label?: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ accessLevel: ParamRecord }>('PATCH', `/admin/access-levels/${encodeURIComponent(value)}`, data),
   deleteAccessLevel: (value: string) => request<void>('DELETE', `/admin/access-levels/${encodeURIComponent(value)}`),
+  getPermissions: () =>
+    request<{ permissions: PermissionRecord[] }>('GET', '/admin/permissions').then((data) => data.permissions),
+  getRolePermissions: (roleValue: string) =>
+    request<{ permissions: string[]; isSuperuser: boolean }>(
+      'GET',
+      `/admin/roles/${encodeURIComponent(roleValue)}/permissions`,
+    ),
+  setRolePermissions: (roleValue: string, permissions: string[], isSuperuser: boolean) =>
+    request<{ permissions: string[]; isSuperuser: boolean }>(
+      'PUT',
+      `/admin/roles/${encodeURIComponent(roleValue)}/permissions`,
+      { permissions, isSuperuser },
+    ),
   getRoles: () => request<{ roles: ParamRecord[] }>('GET', '/admin/roles').then((data) => data.roles),
   createRole: (data: { value: string; label: string; orderIndex?: number; isActive?: boolean }) =>
     request<{ role: ParamRecord }>('POST', '/admin/roles', data),

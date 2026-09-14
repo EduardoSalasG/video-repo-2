@@ -19,8 +19,10 @@ import { FormField } from '../molecules/FormField';
 import { UserAutocomplete } from '../molecules/UserAutocomplete';
 import { StatusSnackbar, type StatusSeverity } from '../molecules/StatusSnackbar';
 import { ParamMaintainer } from '../organisms/ParamMaintainer';
+import { RolePermissionsMaintainer } from '../organisms/RolePermissionsMaintainer';
 import { Button } from '../atoms/Button';
 import { api } from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 import { primaryStyleLabels, videoTypeLabels, difficultyLabels } from '../../lib/labels';
 import type { Course, CourseModule, Section, Role, Difficulty, PrimaryStyle, VideoType, User, CourseAccess, ParamRecord } from '../../types';
 
@@ -38,7 +40,25 @@ const TABS = [
   'parametros/tipos-etiqueta',
   'parametros/niveles-acceso',
   'parametros/roles',
+  'parametros/permisos',
 ];
+
+const TAB_PERMISSIONS = [
+  'admin.dashboard.view',
+  'content.courses.manage',
+  'content.courses.manage',
+  'content.courses.manage',
+  'content.courses.manage',
+  'content.labels.manage',
+  'admin.params.manage',
+  'admin.users.view',
+  'admin.params.manage',
+  'admin.params.manage',
+  'admin.params.manage',
+  'admin.params.manage',
+  'admin.roles.manage',
+  'admin.roles.manage',
+] as const;
 
 const getUploadMessage = (percent: number, type: 'video' | 'imagen' = 'video'): string => {
   if (percent < 25) return `Subiendo ${type}...`;
@@ -98,6 +118,7 @@ type AccessFormData = z.infer<typeof accessSchema>;
 
 export const Admin = () => {
   const { '*': tab } = useParams();
+  const { hasPerm } = useAuth();
   const activeTab = useMemo(() => {
     const current = tab ?? 'dashboard';
     const index = TABS.indexOf(current);
@@ -105,6 +126,7 @@ export const Admin = () => {
     if (current.startsWith('parametros/')) return 5;
     return 0;
   }, [tab]);
+  const canViewTab = hasPerm(TAB_PERMISSIONS[activeTab] ?? 'admin.panel.access');
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
@@ -245,8 +267,9 @@ export const Admin = () => {
   };
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    if (canViewTab && activeTab === 0) loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, canViewTab]);
 
   useEffect(() => {
     if (!moduleCourse) {
@@ -385,6 +408,7 @@ export const Admin = () => {
   };
 
   useEffect(() => {
+    if (!canViewTab) return;
     if (activeTab >= 4) {
       loadPrimaryStyles();
       loadDifficulties();
@@ -393,11 +417,14 @@ export const Admin = () => {
       loadAccessLevels();
       loadRoles();
     }
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, canViewTab]);
 
   useEffect(() => {
+    if (!canViewTab) return;
     loadAdminLabels();
-  }, [activeTab, filterLabelStyle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, filterLabelStyle, canViewTab]);
 
   const submitCourse = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1082,7 +1109,15 @@ export const Admin = () => {
       />
 
       <Box sx={{ mt: 3 }}>
-        {activeTab === 0 && (
+        {!canViewTab && (
+          <Paper sx={{ p: 3, borderRadius: 2 }}>
+            <Typography color="text.secondary">
+              No tienes permiso para ver esta sección. Contacta a un administrador si crees que es un error.
+            </Typography>
+          </Paper>
+        )}
+
+        {canViewTab && activeTab === 0 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Dashboard
@@ -1117,7 +1152,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 1 && (
+        {canViewTab && activeTab === 1 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Cursos
@@ -1203,7 +1238,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 2 && (
+        {canViewTab && activeTab === 2 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Módulos
@@ -1278,7 +1313,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 3 && (
+        {canViewTab && activeTab === 3 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Secciones
@@ -1364,7 +1399,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 4 && (
+        {canViewTab && activeTab === 4 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Subir video
@@ -1532,7 +1567,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 5 && (
+        {canViewTab && activeTab === 5 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Mantenedor de pasos
@@ -1628,7 +1663,7 @@ export const Admin = () => {
           </Stack>
         )}
 
-        {activeTab === 6 && (
+        {canViewTab && activeTab === 6 && (
           <ParamMaintainer
             title="Mantenedor de estilos"
             description="Crea, edita y desactiva estilos principales. Estos valores alimentan los selects de videos y pasos."
@@ -1640,7 +1675,7 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 8 && (
+        {canViewTab && activeTab === 8 && (
           <ParamMaintainer
             title="Mantenedor de dificultades"
             description="Crea, edita y desactiva niveles de dificultad. El orden define cómo se listan en los formularios."
@@ -1652,7 +1687,7 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 9 && (
+        {canViewTab && activeTab === 9 && (
           <ParamMaintainer
             title="Mantenedor de tipos de video"
             description="Crea, edita y desactiva tipos de video (paso, secuencia, coreografía, etc.)."
@@ -1664,7 +1699,7 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 10 && (
+        {canViewTab && activeTab === 10 && (
           <ParamMaintainer
             title="Mantenedor de tipos de etiqueta"
             description="Crea, edita y desactiva tipos de etiqueta (paso, influencia, tag, etc.)."
@@ -1676,7 +1711,7 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 11 && (
+        {canViewTab && activeTab === 11 && (
           <ParamMaintainer
             title="Mantenedor de niveles de acceso"
             description="Crea, edita y desactiva niveles de acceso (lectura, escritura, mantener, etc.)."
@@ -1688,7 +1723,7 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 12 && (
+        {canViewTab && activeTab === 12 && (
           <ParamMaintainer
             title="Mantenedor de roles"
             description="Crea, edita y desactiva roles de usuario (admin, instructor, estudiante, etc.)."
@@ -1700,7 +1735,11 @@ export const Admin = () => {
           />
         )}
 
-        {activeTab === 7 && (
+        {canViewTab && activeTab === 13 && (
+          <RolePermissionsMaintainer roles={roles} />
+        )}
+
+        {canViewTab && activeTab === 7 && (
           <Stack spacing={3}>
             <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
               Mantenedor de usuarios

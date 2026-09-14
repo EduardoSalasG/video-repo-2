@@ -13,6 +13,7 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -25,10 +26,10 @@ import { Request, Response } from 'express';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
+import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, PermissionService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
-import { CurrentUser, JwtAuthGuard, RolesGuard, CourseAccessGuard, Roles, RequiredAccess } from '../auth/guards';
+import { CurrentUser, JwtAuthGuard, PermissionsGuard, CourseAccessGuard, RequiresPermission, RequiredAccess } from '../auth/guards';
 import {
   RegisterDto,
   LoginDto,
@@ -50,7 +51,10 @@ type AuthUser = { userId: string; email: string; role: Role };
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(
+    private readonly auth: AuthService,
+    private readonly permissions: PermissionService,
+  ) {}
 
   private cookieOptions(origin?: string) {
     const isLocal = origin?.startsWith('http://localhost');
@@ -79,9 +83,9 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { user, token } = await this.auth.login(dto.email, dto.password);
+    const { user, token, permissions } = await this.auth.login(dto.email, dto.password);
     res.cookie('access_token', token, this.cookieOptions(req.headers.origin));
-    return { ...user, token };
+    return { ...user, token, permissions };
   }
 
   @Post('logout')
@@ -93,8 +97,9 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
-  me(@CurrentUser() user: AuthUser) {
-    return user;
+  async me(@CurrentUser() user: AuthUser) {
+    const permissions = await this.permissions.getPermissions(user.role);
+    return { ...user, permissions };
   }
 }
 
@@ -104,27 +109,31 @@ export class UsersController {
   constructor(
     private readonly users: UserService,
     private readonly courseAccess: CourseAccessService,
+    private readonly permissions: PermissionService,
   ) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.users.view')
   @ApiCookieAuth()
   async search(@CurrentUser() user: AuthUser, @Query('q') q: string) {
     const results = await this.users.search(q ?? '');
-    if (user.role === Role.ADMIN) return results;
+    if (await this.permissions.can(user.role, 'admin.users.manage')) return results;
     const allowedIds = await this.courseAccess.getInstructorStudentIds(user.userId);
-    return results.filter((u) => u.role === Role.STUDENT && allowedIds.has(u.id));
+    const students = await Promise.all(
+      results.map(async (u) => ((await this.permissions.can(u.role, 'admin.panel.access')) ? null : u)),
+    );
+    return students.filter((u): u is NonNullable<typeof u> => u !== null && allowedIds.has(u.id));
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
   async get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    if (user.role === Role.ADMIN || user.userId === id) {
+    if (user.userId === id || (await this.permissions.can(user.role, 'admin.users.manage'))) {
       return this.users.getById(id);
     }
-    if (user.role === Role.INSTRUCTOR) {
+    if (await this.permissions.can(user.role, 'admin.users.view')) {
       const allowedIds = await this.courseAccess.getInstructorStudentIds(user.userId);
       if (allowedIds.has(id)) {
         return this.users.getById(id);
@@ -134,22 +143,22 @@ export class UsersController {
   }
 
   @Get(':id/accesses')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.users.view')
   @ApiCookieAuth()
   async getAccesses(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     const accesses = await this.courseAccess.getByUser(id);
-    if (user.role === Role.ADMIN) return accesses;
+    if (await this.permissions.can(user.role, 'admin.users.manage')) return accesses;
     const myCourses = new Set((await this.courseAccess.getByUser(user.userId)).map((a) => a.courseId));
     return accesses.filter((a) => myCourses.has(a.courseId));
   }
 
   @Delete(':id/accesses/:courseId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('content.access.manage')
   @ApiCookieAuth()
   async revokeAccess(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('courseId') courseId: string) {
-    if (user.role === Role.INSTRUCTOR) {
+    if (!(await this.permissions.can(user.role, 'admin.users.manage'))) {
       const myAccess = await this.courseAccess.getByUser(user.userId);
       const hasCourse = myAccess.some((a) => a.courseId === courseId);
       if (!hasCourse) return { error: 'Forbidden' };
@@ -159,8 +168,8 @@ export class UsersController {
   }
 
   @Patch(':id/role')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.users.manage')
   @ApiCookieAuth()
   async updateRole(@Param('id') id: string, @Body() dto: UpdateUserRoleDto) {
     return this.users.updateRole(id, dto.role);
@@ -188,13 +197,14 @@ export class CoursesController {
     private readonly courses: CourseService,
     private readonly courseAccess: CourseAccessService,
     private readonly progress: ProgressService,
+    private readonly permissions: PermissionService,
   ) {}
 
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiCookieAuth()
   async list(@CurrentUser() user: AuthUser) {
-    if (user.role === Role.ADMIN) {
+    if (await this.permissions.isSuperuser(user.role)) {
       return this.courses.list();
     }
     const myAccess = await this.courseAccess.getByUser(user.userId);
@@ -221,8 +231,8 @@ export class CoursesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('content.courses.manage')
   @UseInterceptors(FileInterceptor('image'))
   @ApiCookieAuth()
   async create(
@@ -262,8 +272,8 @@ export class CoursesController {
   }
 
   @Post(':courseId/access')
-  @UseGuards(JwtAuthGuard, RolesGuard, CourseAccessGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard, CourseAccessGuard)
+  @RequiresPermission('content.access.manage')
   @RequiredAccess(AccessLevel.MAINTAIN)
   @ApiCookieAuth()
   async grant(
@@ -548,8 +558,8 @@ export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}
 
   @Get('dashboard')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.dashboard.view')
   @ApiCookieAuth()
   async getDashboard(@CurrentUser() user: AuthUser) {
     return this.dashboard.getDashboard(user.userId, user.role as Role);
@@ -561,8 +571,8 @@ export class LabelsController {
   constructor(private readonly labels: LabelService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('content.labels.manage')
   @ApiCookieAuth()
   async list(
     @Query('type') type: string,
@@ -574,8 +584,8 @@ export class LabelsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('content.labels.manage')
   @ApiCookieAuth()
   async create(@Body() body: { type: string; name: string; styles: string[] }) {
     const labelType = body.type || LabelType.STEP;
@@ -585,8 +595,8 @@ export class LabelsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('content.labels.manage')
   @ApiCookieAuth()
   async delete(@Param('id') id: string) {
     await this.labels.delete(id);
@@ -599,8 +609,8 @@ export class PrimaryStylesController {
   constructor(private readonly styles: StyleService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async list() {
     const styles = await this.styles.list();
@@ -608,8 +618,8 @@ export class PrimaryStylesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const style = await this.styles.create({
@@ -622,8 +632,8 @@ export class PrimaryStylesController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -634,8 +644,8 @@ export class PrimaryStylesController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.styles.delete(value);
@@ -648,8 +658,8 @@ export class DifficultiesController {
   constructor(private readonly difficulties: DifficultyService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async list() {
     const difficulties = await this.difficulties.list();
@@ -657,8 +667,8 @@ export class DifficultiesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const difficulty = await this.difficulties.create({
@@ -671,8 +681,8 @@ export class DifficultiesController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -683,8 +693,8 @@ export class DifficultiesController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.difficulties.delete(value);
@@ -697,8 +707,8 @@ export class VideoTypesController {
   constructor(private readonly videoTypes: VideoTypeService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async list() {
     const videoTypes = await this.videoTypes.list();
@@ -706,8 +716,8 @@ export class VideoTypesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const videoType = await this.videoTypes.create({
@@ -720,8 +730,8 @@ export class VideoTypesController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -732,8 +742,8 @@ export class VideoTypesController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.videoTypes.delete(value);
@@ -746,8 +756,8 @@ export class LabelTypesController {
   constructor(private readonly labelTypes: LabelTypeService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async list() {
     const labelTypes = await this.labelTypes.list();
@@ -755,8 +765,8 @@ export class LabelTypesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const labelType = await this.labelTypes.create({
@@ -769,8 +779,8 @@ export class LabelTypesController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -781,8 +791,8 @@ export class LabelTypesController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.labelTypes.delete(value);
@@ -795,8 +805,8 @@ export class AccessLevelsController {
   constructor(private readonly accessLevels: AccessLevelService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async list() {
     const accessLevels = await this.accessLevels.list();
@@ -804,8 +814,8 @@ export class AccessLevelsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const accessLevel = await this.accessLevels.create({
@@ -818,8 +828,8 @@ export class AccessLevelsController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -830,8 +840,8 @@ export class AccessLevelsController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.params.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.accessLevels.delete(value);
@@ -844,8 +854,8 @@ export class RolesController {
   constructor(private readonly rolesService: RoleService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.INSTRUCTOR)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
   @ApiCookieAuth()
   async list() {
     const roles = await this.rolesService.list();
@@ -853,8 +863,8 @@ export class RolesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
   @ApiCookieAuth()
   async create(@Body() body: { value: string; label: string; orderIndex?: number; isActive?: boolean }) {
     const role = await this.rolesService.create({
@@ -867,8 +877,8 @@ export class RolesController {
   }
 
   @Patch(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
   @ApiCookieAuth()
   async update(
     @Param('value') value: string,
@@ -879,12 +889,49 @@ export class RolesController {
   }
 
   @Delete(':value')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
   @ApiCookieAuth()
   async delete(@Param('value') value: string) {
     await this.rolesService.delete(value);
     return { ok: true };
+  }
+}
+
+@Controller('admin')
+export class PermissionsController {
+  constructor(private readonly permissions: PermissionService) {}
+
+  @Get('permissions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
+  @ApiCookieAuth()
+  async listPermissions() {
+    const permissions = await this.permissions.listPermissions();
+    return { permissions };
+  }
+
+  @Get('roles/:value/permissions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
+  @ApiCookieAuth()
+  async getRolePermissions(@Param('value') value: string) {
+    return this.permissions.getRolePermissions(value);
+  }
+
+  @Put('roles/:value/permissions')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequiresPermission('admin.roles.manage')
+  @ApiCookieAuth()
+  async setRolePermissions(
+    @Param('value') value: string,
+    @Body() body: { permissions?: string[]; isSuperuser?: boolean },
+  ) {
+    const permissionValues = Array.isArray(body.permissions)
+      ? body.permissions.filter((p): p is string => typeof p === 'string')
+      : [];
+    await this.permissions.setRolePermissions(value, permissionValues, Boolean(body.isSuperuser));
+    return this.permissions.getRolePermissions(value);
   }
 }
 

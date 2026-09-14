@@ -41,6 +41,32 @@ const defaultAccessLevels: Record<string, string> = {
   MAINTAIN: 'Mantener',
 };
 
+const defaultPermissions: { value: string; label: string; category: string }[] = [
+  { value: 'admin.panel.access', label: 'Acceder al panel de administración', category: 'Panel' },
+  { value: 'admin.dashboard.view', label: 'Ver dashboard', category: 'Panel' },
+  { value: 'admin.users.view', label: 'Ver usuarios', category: 'Usuarios' },
+  { value: 'admin.users.manage', label: 'Gestionar usuarios y roles', category: 'Usuarios' },
+  { value: 'admin.params.manage', label: 'Gestionar parámetros', category: 'Parámetros' },
+  { value: 'admin.roles.manage', label: 'Gestionar roles y permisos', category: 'Parámetros' },
+  { value: 'content.courses.manage', label: 'Crear y editar cursos', category: 'Contenido' },
+  { value: 'content.access.manage', label: 'Otorgar acceso a cursos', category: 'Contenido' },
+  { value: 'content.labels.manage', label: 'Gestionar pasos y etiquetas', category: 'Contenido' },
+];
+
+const defaultRolePermissions: Record<string, string[]> = {
+  ADMIN: defaultPermissions.map((p) => p.value),
+  INSTRUCTOR: [
+    'admin.panel.access',
+    'admin.dashboard.view',
+    'admin.users.view',
+    'admin.params.manage',
+    'content.courses.manage',
+    'content.access.manage',
+    'content.labels.manage',
+  ],
+  STUDENT: [],
+};
+
 interface SeedUser {
   email: string;
   username: string;
@@ -192,6 +218,34 @@ async function seedAccessLevels(): Promise<void> {
   }
 }
 
+async function seedPermissions(): Promise<void> {
+  let orderIndex = 0;
+  for (const permission of defaultPermissions) {
+    await prisma.permission.upsert({
+      where: { value: permission.value },
+      update: {},
+      create: { ...permission, orderIndex, isActive: true },
+    });
+    orderIndex += 1;
+    console.log(`Permission ${permission.value} seeded`);
+  }
+
+  await prisma.role.update({
+    where: { value: 'ADMIN' },
+    data: { isSuperuser: true },
+  });
+  console.log('Role ADMIN marked as superuser');
+
+  for (const [roleValue, permissions] of Object.entries(defaultRolePermissions)) {
+    if (permissions.length === 0) continue;
+    await prisma.rolePermission.createMany({
+      data: permissions.map((permissionValue) => ({ roleValue, permissionValue })),
+      skipDuplicates: true,
+    });
+    console.log(`Role ${roleValue} permissions seeded`);
+  }
+}
+
 async function seedSteps(): Promise<void> {
   const styleData: { labelId: string; style: string }[] = [];
   for (const [style, steps] of Object.entries(defaultStepsByStyle)) {
@@ -223,6 +277,7 @@ async function main(): Promise<void> {
   await seedVideoTypes();
   await seedLabelTypes();
   await seedAccessLevels();
+  await seedPermissions();
   await seedSteps();
 }
 

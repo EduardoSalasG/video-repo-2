@@ -15,7 +15,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
-  const { user } = useAuth();
+  const { user, hasPerm } = useAuth();
 
   return (
     <AppBar
@@ -75,7 +75,7 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
             >
               Buscar
             </Button>
-            {(user.role === 'ADMIN' || user.role === 'INSTRUCTOR') && (
+            {hasPerm('admin.panel.access') && (
               <Button
                 component={Link}
                 to="/admin"

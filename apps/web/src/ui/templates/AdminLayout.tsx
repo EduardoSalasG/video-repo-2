@@ -24,6 +24,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import TuneIcon from '@mui/icons-material/Tune';
+import LockIcon from '@mui/icons-material/Lock';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import { Typography } from '../atoms/Typography';
@@ -33,12 +34,12 @@ import { useAuth } from '../../hooks/useAuth';
 const DRAWER_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
 
-interface MenuItem { label: string; path: string; icon: ReactNode; }
+interface MenuItem { label: string; path: string; icon: ReactNode; perm: string; }
 interface MenuGroup { label: string; icon: ReactNode; items: MenuItem[]; }
 
 const STANDALONE_ITEMS: MenuItem[] = [
-  { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
-  { label: 'Usuarios', path: '/admin/usuarios', icon: <PeopleIcon /> },
+  { label: 'Dashboard', path: '/admin', icon: <DashboardIcon />, perm: 'admin.dashboard.view' },
+  { label: 'Usuarios', path: '/admin/usuarios', icon: <PeopleIcon />, perm: 'admin.users.view' },
 ];
 
 const MENU_GROUPS: MenuGroup[] = [
@@ -46,23 +47,24 @@ const MENU_GROUPS: MenuGroup[] = [
     label: 'Contenido',
     icon: <MenuBookIcon />,
     items: [
-      { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon /> },
-      { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon /> },
-      { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon /> },
-      { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon /> },
+      { label: 'Cursos', path: '/admin/cursos', icon: <SchoolIcon />, perm: 'content.courses.manage' },
+      { label: 'Módulos', path: '/admin/modulos', icon: <ViewModuleIcon />, perm: 'content.courses.manage' },
+      { label: 'Secciones', path: '/admin/secciones', icon: <VideoLibraryIcon />, perm: 'content.courses.manage' },
+      { label: 'Videos', path: '/admin/videos', icon: <VideoLibraryIcon />, perm: 'content.courses.manage' },
     ],
   },
   {
     label: 'Parámetros',
     icon: <TuneIcon />,
     items: [
-      { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon /> },
-      { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon /> },
-      { label: 'Dificultades', path: '/admin/parametros/dificultades', icon: <SchoolIcon /> },
-      { label: 'Tipos de video', path: '/admin/parametros/tipos-video', icon: <SchoolIcon /> },
-      { label: 'Tipos de etiqueta', path: '/admin/parametros/tipos-etiqueta', icon: <SchoolIcon /> },
-      { label: 'Niveles de acceso', path: '/admin/parametros/niveles-acceso', icon: <SchoolIcon /> },
-      { label: 'Roles', path: '/admin/parametros/roles', icon: <SchoolIcon /> },
+      { label: 'Pasos', path: '/admin/parametros/pasos', icon: <SchoolIcon />, perm: 'content.labels.manage' },
+      { label: 'Estilos', path: '/admin/parametros/estilos', icon: <SchoolIcon />, perm: 'admin.params.manage' },
+      { label: 'Dificultades', path: '/admin/parametros/dificultades', icon: <SchoolIcon />, perm: 'admin.params.manage' },
+      { label: 'Tipos de video', path: '/admin/parametros/tipos-video', icon: <SchoolIcon />, perm: 'admin.params.manage' },
+      { label: 'Tipos de etiqueta', path: '/admin/parametros/tipos-etiqueta', icon: <SchoolIcon />, perm: 'admin.params.manage' },
+      { label: 'Niveles de acceso', path: '/admin/parametros/niveles-acceso', icon: <SchoolIcon />, perm: 'admin.params.manage' },
+      { label: 'Roles', path: '/admin/parametros/roles', icon: <SchoolIcon />, perm: 'admin.roles.manage' },
+      { label: 'Permisos', path: '/admin/parametros/permisos', icon: <LockIcon />, perm: 'admin.roles.manage' },
     ],
   },
 ];
@@ -72,9 +74,14 @@ export const AdminLayout = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { user, logout } = useAuth();
+  const { user, logout, hasPerm } = useAuth();
   const [open, setOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const standaloneItems = STANDALONE_ITEMS.filter((item) => hasPerm(item.perm));
+  const menuGroups = MENU_GROUPS
+    .map((group) => ({ ...group, items: group.items.filter((item) => hasPerm(item.perm)) }))
+    .filter((group) => group.items.length > 0);
 
   const handleLogout = async () => {
     await logout();
@@ -100,7 +107,7 @@ export const AdminLayout = () => {
           '&::-webkit-scrollbar': { display: 'none' },
         }}
       >
-        {STANDALONE_ITEMS.map((item) => (
+        {standaloneItems.map((item) => (
           <ListItemButton
             key={item.path}
             selected={isActive(item.path)}
@@ -134,7 +141,7 @@ export const AdminLayout = () => {
             />
           </ListItemButton>
         ))}
-        {MENU_GROUPS.map((group) => (
+        {menuGroups.map((group) => (
           <Accordion
             key={group.label}
             defaultExpanded={expanded && group.items.some((item) => isActive(item.path))}

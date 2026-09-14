@@ -5,12 +5,12 @@ import Box from '@mui/material/Box';
 import type { ReactNode } from 'react';
 
 interface RequireAuthProps {
-  requireAdmin?: boolean;
+  requirePermission?: string;
   children?: ReactNode;
 }
 
-export const RequireAuth = ({ requireAdmin, children }: RequireAuthProps) => {
-  const { user, loading } = useAuth();
+export const RequireAuth = ({ requirePermission, children }: RequireAuthProps) => {
+  const { user, loading, hasPerm } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -25,7 +25,7 @@ export const RequireAuth = ({ requireAdmin, children }: RequireAuthProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireAdmin && user.role !== 'ADMIN' && user.role !== 'INSTRUCTOR') {
+  if (requirePermission && !hasPerm(requirePermission)) {
     return <Navigate to="/app" replace />;
   }
 

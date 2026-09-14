@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from './application/services';
+import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, PermissionService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from './application/services';
 import { InjectionTokens } from './application/tokens';
-import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController, DifficultiesController, VideoTypesController, LabelTypesController, AccessLevelsController, RolesController, ParamsController } from './infrastructure/http/controllers';
+import { AuthController, UsersController, CoursesController, ModulesController, ModuleDetailController, SectionsController, SectionDetailController, VideosController, VideoFilesController, HealthController, VideoSearchController, DashboardController, LabelsController, PrimaryStylesController, DifficultiesController, VideoTypesController, LabelTypesController, AccessLevelsController, RolesController, ParamsController, PermissionsController } from './infrastructure/http/controllers';
 import { PrismaService } from './infrastructure/persistence/prisma.service';
 import {
   PrismaUserRepository,
@@ -20,10 +20,11 @@ import {
   PrismaLabelTypeRepository,
   PrismaAccessLevelRepository,
   PrismaRoleRepository,
+  PrismaRolePermissionRepository,
   PrismaCourseAccessRepository,
   PrismaProgressRepository,
 } from './infrastructure/persistence/repositories';
-import { JwtAuthGuard, RolesGuard, CourseAccessGuard } from './infrastructure/auth/guards';
+import { JwtAuthGuard, PermissionsGuard, CourseAccessGuard } from './infrastructure/auth/guards';
 import { JwtStrategy, BcryptPasswordHasher, JwtTokenService } from './infrastructure/auth/adapters';
 import { ResendEmailService } from './infrastructure/email/resend-email.service';
 import { LocalVideoStorage } from './infrastructure/storage/local-video.storage';
@@ -61,6 +62,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     AccessLevelsController,
     RolesController,
     ParamsController,
+    PermissionsController,
   ],
   providers: [
     { provide: InjectionTokens.TOKEN_SERVICE, useClass: JwtTokenService },
@@ -83,14 +85,16 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     { provide: InjectionTokens.LABEL_TYPE_REPOSITORY, useClass: PrismaLabelTypeRepository },
     { provide: InjectionTokens.ACCESS_LEVEL_REPOSITORY, useClass: PrismaAccessLevelRepository },
     { provide: InjectionTokens.ROLE_REPOSITORY, useClass: PrismaRoleRepository },
+    { provide: InjectionTokens.ROLE_PERMISSION_REPOSITORY, useClass: PrismaRolePermissionRepository },
     { provide: InjectionTokens.COURSE_ACCESS_REPOSITORY, useClass: PrismaCourseAccessRepository },
     { provide: InjectionTokens.PROGRESS_REPOSITORY, useClass: PrismaProgressRepository },
     PrismaService,
     JwtStrategy,
     JwtAuthGuard,
-    RolesGuard,
+    PermissionsGuard,
     CourseAccessGuard,
     AuthService,
+    PermissionService,
     UserService,
     CourseService,
     CourseAccessService,

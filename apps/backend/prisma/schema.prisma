@@ -9,16 +9,44 @@ datasource db {
 }
 
 model Role {
+  value       String   @id
+  label       String
+  orderIndex  Int      @default(0)
+  isActive    Boolean  @default(true)
+  isSuperuser Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
   value      String   @id
   label      String
+  category   String
   orderIndex Int      @default(0)
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  users User[]
+  rolePermissions RolePermission[]
 
-  @@map("roles")
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleValue       String
+  permissionValue String
+  createdAt       DateTime   @default(now())
+
+  role       Role       @relation(fields: [roleValue], references: [value], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionValue], references: [value], onDelete: Cascade)
+
+  @@id([roleValue, permissionValue])
+  @@map("role_permissions")
 }
 
 model AccessLevel {

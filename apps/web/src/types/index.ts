@@ -19,6 +19,16 @@ export type VideoTypeRecord = ParamRecord;
 export type AccessLevelRecord = ParamRecord;
 export type RoleRecord = ParamRecord;
 
+export interface PermissionRecord {
+  value: string;
+  label: string;
+  category: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Course {
   id: string;
   name: string;

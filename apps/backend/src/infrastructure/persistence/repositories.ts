@@ -48,6 +48,10 @@ import {
   RoleRecord,
   CreateRoleInput,
   UpdateRoleInput,
+  IRolePermissionRepository,
+  PermissionRecord,
+  RoleGrantRow,
+  RoleFlagsRow,
 } from '../../application/ports';
 
 @Injectable()
@@ -779,6 +783,7 @@ export class PrismaRoleRepository implements IRoleRepository {
     label: string;
     orderIndex: number;
     isActive: boolean;
+    isSuperuser: boolean;
     createdAt: Date;
     updatedAt: Date;
   }): RoleRecord {
@@ -787,6 +792,7 @@ export class PrismaRoleRepository implements IRoleRepository {
       label: row.label,
       orderIndex: row.orderIndex,
       isActive: row.isActive,
+      isSuperuser: row.isSuperuser,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
@@ -826,6 +832,60 @@ export class PrismaRoleRepository implements IRoleRepository {
 
   async delete(value: Role): Promise<void> {
     await this.prisma.role.delete({ where: { value } });
+  }
+}
+
+@Injectable()
+export class PrismaRolePermissionRepository implements IRolePermissionRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private toRecord(row: {
+    value: string;
+    label: string;
+    category: string;
+    orderIndex: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): PermissionRecord {
+    return {
+      value: row.value,
+      label: row.label,
+      category: row.category,
+      orderIndex: row.orderIndex,
+      isActive: row.isActive,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  }
+
+  async findAllPermissions(): Promise<PermissionRecord[]> {
+    const rows = await this.prisma.permission.findMany({
+      orderBy: [{ orderIndex: 'asc' }, { label: 'asc' }],
+    });
+    return rows.map((row) => this.toRecord(row));
+  }
+
+  async findAllRoleGrants(): Promise<RoleGrantRow[]> {
+    return this.prisma.rolePermission.findMany({
+      select: { roleValue: true, permissionValue: true },
+    });
+  }
+
+  async findAllRoleFlags(): Promise<RoleFlagsRow[]> {
+    return this.prisma.role.findMany({
+      select: { value: true, isActive: true, isSuperuser: true },
+    });
+  }
+
+  async setRolePermissions(roleValue: Role, permissionValues: string[], isSuperuser: boolean): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.rolePermission.deleteMany({ where: { roleValue } }),
+      this.prisma.rolePermission.createMany({
+        data: permissionValues.map((permissionValue) => ({ roleValue, permissionValue })),
+      }),
+      this.prisma.role.update({ where: { value: roleValue }, data: { isSuperuser } }),
+    ]);
   }
 }
 

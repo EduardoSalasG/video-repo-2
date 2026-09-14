@@ -317,6 +317,7 @@ export interface RoleRecord {
   label: string;
   orderIndex: number;
   isActive: boolean;
+  isSuperuser: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -332,6 +333,7 @@ export interface UpdateRoleInput {
   label?: string;
   orderIndex?: number;
   isActive?: boolean;
+  isSuperuser?: boolean;
 }
 
 export interface IRoleRepository {
@@ -340,6 +342,34 @@ export interface IRoleRepository {
   create(input: CreateRoleInput): Promise<RoleRecord>;
   update(value: Role, input: UpdateRoleInput): Promise<RoleRecord>;
   delete(value: Role): Promise<void>;
+}
+
+export interface PermissionRecord {
+  value: string;
+  label: string;
+  category: string;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RoleGrantRow {
+  roleValue: string;
+  permissionValue: string;
+}
+
+export interface RoleFlagsRow {
+  value: string;
+  isActive: boolean;
+  isSuperuser: boolean;
+}
+
+export interface IRolePermissionRepository {
+  findAllPermissions(): Promise<PermissionRecord[]>;
+  findAllRoleGrants(): Promise<RoleGrantRow[]>;
+  findAllRoleFlags(): Promise<RoleFlagsRow[]>;
+  setRolePermissions(roleValue: Role, permissionValues: string[], isSuperuser: boolean): Promise<void>;
 }
 
 export interface IProgressRepository {

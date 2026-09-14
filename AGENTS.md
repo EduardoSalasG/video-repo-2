@@ -32,3 +32,4 @@ pnpm db:seed
 - UI mobile-first y accesible; reutilizar átomos/moléculas en `apps/web/src/ui`.
 - No exponer secrets, JWTs ni hashes en logs o respuestas.
 - Flujo Git: `main` solo recibe versiones estables. Toda feature/hotfix se hace en `feature/*`, se mergea a `dev` y se acumula ahí. Solo se promueve `dev` a `main` cuando se acuerde una versión estable.
+- NUNCA incluir a Devin como coautor ni firma en los commits (sin `Co-Authored-By` ni `Generated with`). Los mensajes de commit llevan solo el mensaje descriptivo.

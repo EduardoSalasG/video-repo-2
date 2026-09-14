@@ -31,7 +31,7 @@ export const MainLayout = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const shouldReduceMotion = useReducedMotion();
-  const { user } = useAuth();
+  const { hasPerm } = useAuth();
 
   const [value, setValue] = useState(0);
   const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
@@ -72,7 +72,7 @@ export const MainLayout = () => {
     ? { duration: 0 }
     : { type: 'spring' as const, bounce: 0, duration: 0.35 };
 
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR';
+  const isAdmin = hasPerm('admin.panel.access');
 
   return (
     <Box

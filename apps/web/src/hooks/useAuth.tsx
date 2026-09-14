@@ -5,6 +5,7 @@ export type AuthUser = {
   id: string;
   email: string;
   role: string;
+  permissions: string[];
 };
 
 type AuthContextValue = {
@@ -13,9 +14,15 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  hasPerm: (permission: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+export const hasPermission = (user: AuthUser | null, permission: string): boolean => {
+  if (!user) return false;
+  return user.permissions.includes('*') || user.permissions.includes(permission);
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -25,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const data = await api.me();
-      setUser({ id: data.userId, email: data.email, role: data.role });
+      setUser({ id: data.userId, email: data.email, role: data.role, permissions: data.permissions });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setUser(null);
@@ -39,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.login(email, password);
-    setUser({ id: data.id, email: data.email, role: data.role });
+    setUser({ id: data.id, email: data.email, role: data.role, permissions: data.permissions });
   }, []);
 
   const logout = useCallback(async () => {
@@ -47,12 +54,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   }, []);
 
+  const hasPerm = useCallback((permission: string) => hasPermission(user, permission), [user]);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refresh, hasPerm }}>
       {children}
     </AuthContext.Provider>
   );

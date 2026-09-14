@@ -9,7 +9,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { Role, AccessLevel } from '../../domain/enums';
-import { CourseAccessService } from '../../application/services';
+import { CourseAccessService, PermissionService } from '../../application/services';
 import { PrismaService } from '../persistence/prisma.service';
 
 interface AuthenticatedRequest extends Request {
@@ -22,7 +22,7 @@ export interface CurrentUser {
   role: Role;
 }
 
-export const Roles = (...roles: Role[]) => SetMetadata('roles', roles);
+export const RequiresPermission = (permission: string) => SetMetadata('permission', permission);
 export const RequiredAccess = (level: AccessLevel) => SetMetadata('access_level', level);
 
 export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext): CurrentUser => {
@@ -35,18 +35,20 @@ export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionConte
 export class JwtAuthGuard extends AuthGuard('jwt') {}
 
 @Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+export class PermissionsGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly permissions: PermissionService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.get<Role[] | undefined>('roles', context.getHandler());
-    if (!required || required.length === 0) return true;
+    const required = this.reflector.get<string | undefined>('permission', context.getHandler());
+    if (!required) return true;
 
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     if (!user) return false;
-    if (user.role === Role.ADMIN) return true;
-    return required.includes(user.role);
+    return this.permissions.can(user.role, required);
   }
 }
 
@@ -55,6 +57,7 @@ export class CourseAccessGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly courseAccess: CourseAccessService,
+    private readonly permissions: PermissionService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -65,7 +68,7 @@ export class CourseAccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     if (!user) return false;
-    if (user.role === Role.ADMIN) return true;
+    if (await this.permissions.isSuperuser(user.role)) return true;
 
     const courseId = await this.resolveCourseId(request.params);
     if (!courseId) return false;

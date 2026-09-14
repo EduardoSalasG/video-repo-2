@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import * as bcrypt from 'bcryptjs';
-import { IPasswordHasher, ITokenService, TokenPayload } from '../../application/ports';
+import { IPasswordHasher, ITokenService, IUserRepository, TokenPayload } from '../../application/ports';
+import { InjectionTokens } from '../../application/tokens';
 import { Role } from '../../domain/enums';
 
 interface CookieRequest extends Request {
@@ -45,7 +46,9 @@ export class JwtTokenService implements ITokenService {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(
+    @Inject(InjectionTokens.USER_REPOSITORY) private readonly users: IUserRepository,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -57,7 +60,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: TokenPayload): { userId: string; email: string; role: Role } {
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+  async validate(payload: TokenPayload): Promise<{ userId: string; email: string; role: Role }> {
+    const user = await this.users.findById(payload.sub);
+    if (!user) throw new UnauthorizedException();
+    return { userId: user.id, email: user.email, role: user.role };
   }
 }
