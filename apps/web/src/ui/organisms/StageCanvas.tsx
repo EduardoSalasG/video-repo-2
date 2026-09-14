@@ -1,18 +1,19 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const BG = '#0b0908';
-const AMBER = '#e2a84e';
+const BG = '#08070d';
+const ACCENT = '#6e4dff';
+const BEAM_COLOR = '#f2f0ff';
 const BEAT = 60 / 96; // compás de salsa, ~96 BPM
 
-// Paso básico visto desde arriba: izquierdo adelante (1), derecho en base (2),
-// izquierdo vuelve (3), pausa (4), derecho atrás (5), izquierdo en base (6),
-// derecho vuelve (7), pausa (8).
+// Paso básico visto desde arriba (adelante = -z): izquierdo adelante (1),
+// derecho en base (2), izquierdo vuelve (3), pausa (4), derecho atrás (5),
+// izquierdo en base (6), derecho vuelve (7), pausa (8).
 const STEP_MARKERS = [
-  { x: -0.34, z: -0.64, rot: -0.14, counts: [0] },
-  { x: 0.34, z: 0, rot: 0.1, counts: [1, 6] },
-  { x: -0.34, z: 0, rot: -0.1, counts: [2, 5] },
-  { x: 0.34, z: 0.64, rot: 0.14, counts: [4] },
+  { x: -0.34, z: -0.64, side: 'left' as const, rot: 0.16, counts: [0] },
+  { x: 0.34, z: 0, side: 'right' as const, rot: -0.1, counts: [1, 6] },
+  { x: -0.34, z: 0, side: 'left' as const, rot: 0.1, counts: [2, 5] },
+  { x: 0.34, z: 0.64, side: 'right' as const, rot: -0.16, counts: [4] },
 ];
 
 function makeGlowTexture(): THREE.CanvasTexture {
@@ -27,6 +28,37 @@ function makeGlowTexture(): THREE.CanvasTexture {
     gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 128, 128);
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+// Huella estilizada tipo diagrama de pasos: empeine ancho, arco marcado en el
+// lado interno, talón estrecho. `left` espeja el arco hacia la línea media.
+function makeFootTexture(side: 'left' | 'right'): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    if (side === 'left') {
+      ctx.translate(128, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.filter = 'blur(2px)';
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(64, 20);
+    ctx.bezierCurveTo(98, 20, 104, 52, 101, 84); // bola, borde externo
+    ctx.bezierCurveTo(98, 114, 82, 124, 80, 154); // mediopié externo
+    ctx.bezierCurveTo(78, 186, 92, 202, 87, 226); // talón externo
+    ctx.bezierCurveTo(83, 248, 45, 248, 41, 226); // base del talón
+    ctx.bezierCurveTo(37, 202, 48, 186, 44, 152); // talón interno
+    ctx.bezierCurveTo(41, 124, 28, 114, 27, 82); // arco interno
+    ctx.bezierCurveTo(26, 52, 30, 20, 64, 20); // bola, borde interno
+    ctx.closePath();
+    ctx.fill();
   }
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -65,6 +97,7 @@ interface BeamRig {
   cone: THREE.Mesh;
   spot: THREE.SpotLight;
   target: THREE.Object3D;
+  targetX: number;
   tilt: number;
   phase: number;
   sway: number;
@@ -102,12 +135,12 @@ export const StageCanvas = () => {
     camera.position.set(0, 3.15, 10);
     camera.lookAt(0, 0.8, -2);
 
-    scene.add(new THREE.HemisphereLight(0x3a332a, 0x0b0908, 0.5));
+    scene.add(new THREE.HemisphereLight(0x2b2745, 0x08070d, 0.5));
 
     // Piso
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(70, 70),
-      new THREE.MeshStandardMaterial({ color: '#15110c', roughness: 0.9, metalness: 0 })
+      new THREE.MeshStandardMaterial({ color: '#0f0d17', roughness: 0.9, metalness: 0 })
     );
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
@@ -131,7 +164,7 @@ export const StageCanvas = () => {
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         uniforms: {
-          uColor: { value: new THREE.Color(AMBER) },
+          uColor: { value: new THREE.Color(BEAM_COLOR) },
           uIntensity: { value: spec.intensity },
         },
         vertexShader: BEAM_SHADER.vertex,
@@ -147,12 +180,12 @@ export const StageCanvas = () => {
       target.position.set(spec.x - Math.sin(spec.tilt) * height, 0, spec.z);
       scene.add(target);
 
-      const spot = new THREE.SpotLight(AMBER, 140, 30, Math.atan(spec.radius / height) * 1.9, 0.9, 1.4);
+      const spot = new THREE.SpotLight(BEAM_COLOR, 140, 30, Math.atan(spec.radius / height) * 1.9, 0.9, 1.4);
       spot.position.set(spec.x, height, spec.z);
       spot.target = target;
       scene.add(spot);
 
-      beams.push({ cone, spot, target, tilt: spec.tilt, phase: spec.phase, sway: spec.sway });
+      beams.push({ cone, spot, target, targetX: target.position.x, tilt: spec.tilt, phase: spec.phase, sway: spec.sway });
     }
 
     // Polvo en suspensión dentro de los haces y ambiente
@@ -184,7 +217,7 @@ export const StageCanvas = () => {
       map: glowTexture,
       transparent: true,
       opacity: 0.5,
-      color: '#f0d9ae',
+      color: '#d8d5f5',
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
@@ -193,25 +226,29 @@ export const StageCanvas = () => {
     scene.add(dust);
     disposables.push(dustGeo, dustMat);
 
-    // Diagrama de paso básico sobre el piso
+    // Diagrama de paso básico sobre el piso: huellas que se encienden por tiempo
     const diagram = new THREE.Group();
     diagram.position.set(2.1, 0.02, -0.4);
     diagram.rotation.y = -0.12;
-    const stepGeo = new THREE.CircleGeometry(0.16, 24);
+    const stepGeo = new THREE.PlaneGeometry(0.3, 0.72);
+    stepGeo.rotateX(-Math.PI / 2); // queda plano; la punta del pie mira a -z
+    const footTextures = {
+      left: makeFootTexture('left'),
+      right: makeFootTexture('right'),
+    };
+    disposables.push(footTextures.left, footTextures.right);
     const markers = STEP_MARKERS.map((step) => {
       const mat = new THREE.MeshBasicMaterial({
-        map: glowTexture,
-        color: AMBER,
+        map: footTextures[step.side],
+        color: ACCENT,
         transparent: true,
         opacity: 0.14,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       });
       const mesh = new THREE.Mesh(stepGeo, mat);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.rotation.z = step.rot;
+      mesh.rotation.y = step.rot;
       mesh.position.set(step.x, 0, step.z);
-      mesh.scale.set(0.7, 1.85, 1);
       diagram.add(mesh);
       disposables.push(mat);
       return { mesh, mat, counts: step.counts, pulseAt: -10 };
@@ -255,15 +292,15 @@ export const StageCanvas = () => {
       for (const marker of markers) {
         const pulse = Math.exp(-(t - marker.pulseAt) * 3.2);
         marker.mat.opacity = 0.14 + pulse * 0.86;
-        const s = 1 + pulse * 0.28;
-        marker.mesh.scale.set(0.7 * s, 1.85 * s, 1);
+        const s = 1 + pulse * 0.18;
+        marker.mesh.scale.set(s, 1, s);
       }
 
       // Haces que barren suave, como follow-spots
       for (const beam of beams) {
-        const offset = Math.sin(t * 0.16 + beam.phase) * beam.sway;
-        beam.cone.rotation.z = beam.tilt + offset;
-        beam.target.position.x += Math.sin(t * 0.16 + beam.phase) * 0.004;
+        const offset = Math.sin(t * 0.16 + beam.phase);
+        beam.cone.rotation.z = beam.tilt + offset * beam.sway;
+        beam.target.position.x = beam.targetX + offset * 0.8;
       }
 
       // Polvo que asciende y deriva
@@ -302,14 +339,17 @@ export const StageCanvas = () => {
     });
     observer.observe(host);
 
+    const onResize = () => {
+      resize();
+      if (reduced) renderer.render(scene, camera);
+    };
+    window.addEventListener('resize', onResize);
+
     if (reduced) {
       // Una sola pasada: la escena queda quieta, el contenido manda.
       renderFrame(performance.now());
-      renderer.render(scene, camera);
-      window.addEventListener('resize', resize);
     } else {
       raf = requestAnimationFrame(loop);
-      window.addEventListener('resize', resize);
       window.addEventListener('pointermove', onPointerMove, { passive: true });
       document.addEventListener('visibilitychange', visibility);
     }
@@ -317,7 +357,7 @@ export const StageCanvas = () => {
     return () => {
       cancelAnimationFrame(raf);
       observer.disconnect();
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('pointermove', onPointerMove);
       document.removeEventListener('visibilitychange', visibility);
       for (const item of disposables) item.dispose();

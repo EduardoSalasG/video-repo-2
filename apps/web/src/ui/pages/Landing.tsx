@@ -13,11 +13,11 @@ const StageCanvas = lazy(() =>
   import('../organisms/StageCanvas').then((m) => ({ default: m.StageCanvas }))
 );
 
-const BG = '#0b0908';
-const IVORY = '#f4eee4';
-const IVORY_DIM = '#b3a898';
-const AMBER = '#e2a84e';
-const HAIRLINE = 'rgba(244, 238, 228, 0.09)';
+const BG = '#08070d';
+const IVORY = '#f0f1fa';
+const IVORY_DIM = '#a3a4c0';
+const ACCENT = '#6e4dff';
+const HAIRLINE = 'rgba(240, 241, 250, 0.09)';
 const DISPLAY = '"Bodoni Moda Variable", "Bodoni Moda", Didot, "Times New Roman", serif';
 
 const MARQUEE_ITEMS = [
@@ -102,7 +102,7 @@ const Diamond = () => (
       width: 6,
       height: 6,
       mx: 3,
-      bgcolor: AMBER,
+      bgcolor: ACCENT,
       opacity: 0.75,
       transform: 'rotate(45deg)',
       flexShrink: 0,
@@ -112,28 +112,28 @@ const Diamond = () => (
 
 const focusRing = {
   '&:focus-visible': {
-    outline: `2px solid ${AMBER}`,
+    outline: `2px solid ${ACCENT}`,
     outlineOffset: 3,
   },
 };
 
 const primaryButtonSx = {
-  bgcolor: AMBER,
-  color: '#171106',
+  bgcolor: ACCENT,
+  color: '#ffffff',
   borderRadius: 999,
   px: 3.5,
   py: 1.5,
   fontSize: '1rem',
   fontWeight: 600,
   transition: 'background-color 160ms ease, transform 120ms ease',
-  '&:hover': { bgcolor: '#f0bc6a' },
+  '&:hover': { bgcolor: '#7f61ff' },
   '&:active': { transform: 'scale(0.97)' },
   ...focusRing,
 };
 
 const ghostButtonSx = {
   color: IVORY,
-  borderColor: 'rgba(244, 238, 228, 0.3)',
+  borderColor: 'rgba(240, 241, 250, 0.3)',
   borderRadius: 999,
   px: 3.5,
   py: 1.5,
@@ -141,7 +141,7 @@ const ghostButtonSx = {
   transition: 'border-color 160ms ease, background-color 160ms ease, transform 120ms ease',
   '&:hover': {
     borderColor: IVORY,
-    bgcolor: 'rgba(244, 238, 228, 0.06)',
+    bgcolor: 'rgba(240, 241, 250, 0.06)',
   },
   '&:active': { transform: 'scale(0.97)' },
   ...focusRing,
@@ -163,7 +163,7 @@ export const Landing = () => {
         flexDirection: 'column',
         bgcolor: BG,
         color: IVORY,
-        '& ::selection': { bgcolor: AMBER, color: '#171106' },
+        '& ::selection': { bgcolor: ACCENT, color: '#ffffff' },
       }}
     >
       <Box
@@ -177,8 +177,8 @@ export const Landing = () => {
           px: 2,
           py: 1,
           borderRadius: 2,
-          bgcolor: AMBER,
-          color: '#171106',
+          bgcolor: ACCENT,
+          color: '#ffffff',
           fontSize: '0.875rem',
           fontWeight: 600,
           textDecoration: 'none',
@@ -256,7 +256,7 @@ export const Landing = () => {
             display: 'flex',
             alignItems: 'center',
             overflow: 'hidden',
-            background: `radial-gradient(ellipse 90% 60% at 70% 80%, rgba(226, 168, 78, 0.14), transparent 60%), ${BG}`,
+            background: `radial-gradient(ellipse 90% 60% at 70% 80%, rgba(110, 77, 255, 0.15), transparent 60%), ${BG}`,
           }}
         >
           <Suspense fallback={null}>
@@ -290,7 +290,7 @@ export const Landing = () => {
                   }}
                 >
                   Tu pista de baile,{' '}
-                  <Box component="em" sx={{ fontWeight: 460, color: AMBER }}>
+                  <Box component="em" sx={{ fontWeight: 460, color: ACCENT }}>
                     siempre abierta.
                   </Box>
                 </Typography>
@@ -344,7 +344,7 @@ export const Landing = () => {
               transform: 'translateX(-50%)',
               width: 1,
               height: 56,
-              background: `linear-gradient(to bottom, transparent, ${AMBER})`,
+              background: `linear-gradient(to bottom, transparent, ${ACCENT})`,
               opacity: 0.6,
               '@keyframes scrollCue': {
                 '0%': { transform: 'translateX(-50%) scaleY(0)', transformOrigin: 'top' },
@@ -439,7 +439,7 @@ export const Landing = () => {
                         fontFamily: DISPLAY,
                         fontStyle: 'italic',
                         fontSize: '2.2rem',
-                        color: AMBER,
+                        color: ACCENT,
                         lineHeight: 1,
                       }}
                     >
@@ -502,7 +502,7 @@ export const Landing = () => {
                   sx={{
                     border: `1px solid ${HAIRLINE}`,
                     borderRadius: 3,
-                    bgcolor: '#120f0a',
+                    bgcolor: '#0e0c16',
                     p: { xs: 3, sm: 4 },
                     boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
                   }}
@@ -542,7 +542,7 @@ export const Landing = () => {
                             fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'right',
-                            color: label === 'Estilo' ? AMBER : IVORY,
+                            color: label === 'Estilo' ? ACCENT : IVORY,
                           }}
                         >
                           {value}
@@ -636,7 +636,7 @@ export const Landing = () => {
           aria-labelledby="cta-final"
           sx={{
             borderTop: `1px solid ${HAIRLINE}`,
-            background: `radial-gradient(ellipse 70% 90% at 50% 110%, rgba(226, 168, 78, 0.16), transparent 65%), ${BG}`,
+            background: `radial-gradient(ellipse 70% 90% at 50% 110%, rgba(110, 77, 255, 0.17), transparent 65%), ${BG}`,
             textAlign: 'center',
           }}
         >
@@ -653,7 +653,7 @@ export const Landing = () => {
                   textWrap: 'balance',
                 }}
               >
-                La pista <Box component="em" sx={{ color: AMBER }}>te espera.</Box>
+                La pista <Box component="em" sx={{ color: ACCENT }}>te espera.</Box>
               </Typography>
               <Typography
                 sx={{ mt: 2.5, color: IVORY_DIM, fontSize: '1.05rem', lineHeight: 1.6 }}

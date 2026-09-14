@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /admin
+
+Sitemap: https://video-repo.netlify.app/sitemap.xml
