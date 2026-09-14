@@ -10,7 +10,7 @@ export const Markdown = ({ source }: MarkdownProps) => (
     {source.split('\n').map((line, index) => {
       if (line.startsWith('# ')) {
         return (
-          <Typography key={index} variant="h4" component="h1" gutterBottom>
+          <Typography key={index} variant="h4" component="h2" gutterBottom>
             {line.slice(2)}
           </Typography>
         );

@@ -164,10 +164,10 @@ export const theme = createTheme({
             borderRadius: 8,
             backgroundColor: 'transparent',
             '& fieldset': {
-              borderColor: 'rgba(240, 241, 250, 0.16)',
+              borderColor: 'rgba(240, 241, 250, 0.45)',
             },
             '&:hover fieldset': {
-              borderColor: 'rgba(240, 241, 250, 0.32)',
+              borderColor: 'rgba(240, 241, 250, 0.65)',
             },
             '&.Mui-focused fieldset': {
               borderColor: brand.accent,
@@ -191,10 +191,10 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           '& fieldset': {
-            borderColor: 'rgba(240, 241, 250, 0.16)',
+            borderColor: 'rgba(240, 241, 250, 0.45)',
           },
           '&:hover fieldset': {
-            borderColor: 'rgba(240, 241, 250, 0.32)',
+            borderColor: 'rgba(240, 241, 250, 0.65)',
           },
           '&.Mui-focused fieldset': {
             borderColor: brand.accent,
@@ -253,7 +253,7 @@ export const theme = createTheme({
           borderRadius: 8,
           color: brand.dim,
           '&.Mui-selected': {
-            color: brand.accent,
+            color: brand.accentText,
           },
         },
       },

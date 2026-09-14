@@ -1,15 +1,20 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Navigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import { FormField } from '../molecules/FormField';
+import { FormError } from '../molecules/FormError';
 import { Footer } from '../molecules/Footer';
 import { Button } from '../atoms/Button';
+import { SubmitButton } from '../atoms/SubmitButton';
 import { Typography } from '../atoms/Typography';
 import { useAuth } from '../../hooks/useAuth';
+import { useZodForm } from '../../hooks/useZodForm';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { apiErrorMessage } from '../../lib/error';
 import { brand } from '../../theme';
 
 const loginSchema = z.object({
@@ -20,38 +25,30 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export const Login = () => {
+  useDocumentTitle('Iniciar sesión');
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof LoginForm, string>>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
+  const location = useLocation();
+  const { login, user } = useAuth();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setApiError(null);
-    const result = loginSchema.safeParse({ email, password });
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors({
-        email: fieldErrors.email?.[0],
-        password: fieldErrors.password?.[0],
-      });
-      return;
-    }
-    setErrors({});
-    setSubmitting(true);
+  const { values, errors, formError, setFormError, submitting, setField, handleSubmit } =
+    useZodForm<LoginForm>(loginSchema, { email: '', password: '' });
+
+  const state = location.state as { from?: { pathname?: string }; info?: string } | null;
+  const from = state?.from?.pathname;
+  const info = state?.info;
+
+  if (user) {
+    return <Navigate to={from ?? '/app'} replace />;
+  }
+
+  const onSubmit = handleSubmit(async (data) => {
     try {
-      await login(email, password);
-      navigate('/app', { replace: true });
+      await login(data.email, data.password);
+      navigate(from ?? '/app', { replace: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al iniciar sesión';
-      setApiError(message);
-    } finally {
-      setSubmitting(false);
+      setFormError(apiErrorMessage(err, 'Error al iniciar sesión'));
     }
-  };
+  });
 
   return (
     <Box
@@ -84,40 +81,42 @@ export const Login = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Inicia sesión para continuar aprendiendo baile.
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate>
+          {info && (
+            <Alert severity="info" role="status" sx={{ mb: 2 }}>
+              {info}
+            </Alert>
+          )}
+          <Box component="form" onSubmit={onSubmit} noValidate>
             <FormField
               label="Email"
               type="email"
               autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              required
+              value={values.email}
+              onChange={(event) => setField('email', event.target.value)}
               fieldError={errors.email}
             />
             <FormField
               label="Contraseña"
               type="password"
               autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              required
+              value={values.password}
+              onChange={(event) => setField('password', event.target.value)}
               fieldError={errors.password}
             />
-            {apiError && (
-              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                {apiError}
-              </Typography>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
+            <FormError message={formError} />
+            <SubmitButton
               fullWidth
-              disabled={submitting}
+              loading={submitting}
+              loadingText="Entrando..."
               sx={{ mt: 3, py: 1.5, borderRadius: 8 }}
             >
-              {submitting ? 'Entrando...' : 'Entrar'}
-            </Button>
+              Entrar
+            </SubmitButton>
             <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}>
               ¿No tienes cuenta?{' '}
-              <Button component={Link} to="/register" size="small" sx={{ color: brand.accent }}>
+              <Button component={Link} to="/register" size="small" sx={{ color: brand.accentText }}>
                 Regístrate
               </Button>
             </Typography>

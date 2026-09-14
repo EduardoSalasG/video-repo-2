@@ -6,6 +6,7 @@ import Container from '@mui/material/Container';
 import MuiLink from '@mui/material/Link';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { brand } from '../../theme';
 
 const StageCanvas = lazy(() =>
@@ -16,6 +17,8 @@ const BG = brand.bg;
 const IVORY = brand.ink;
 const IVORY_DIM = brand.dim;
 const ACCENT = brand.accent;
+const ACCENT_HOVER = brand.accentHover;
+const ACCENT_TEXT = brand.accentText;
 const HAIRLINE = brand.hairline;
 const DISPLAY = brand.display;
 
@@ -125,7 +128,7 @@ const primaryButtonSx = {
   fontSize: '1rem',
   fontWeight: 600,
   transition: 'background-color 160ms ease, transform 120ms ease',
-  '&:hover': { bgcolor: '#7f61ff' },
+  '&:hover': { bgcolor: ACCENT_HOVER },
   '&:active': { transform: 'scale(0.97)' },
   ...focusRing,
 };
@@ -147,6 +150,7 @@ const ghostButtonSx = {
 };
 
 export const Landing = () => {
+  useDocumentTitle('');
   const reduced = useReducedMotion();
   const heroMotion = (delay: number) => ({
     initial: reduced ? false : { opacity: 0, y: 30 },
@@ -246,7 +250,7 @@ export const Landing = () => {
         </Box>
       </Box>
 
-      <Box component="main" id="contenido" sx={{ flex: 1 }}>
+      <Box component="main" id="contenido" tabIndex={-1} sx={{ flex: 1 }}>
         <Box
           component="section"
           aria-label="Presentación"
@@ -502,7 +506,7 @@ export const Landing = () => {
                   sx={{
                     border: `1px solid ${HAIRLINE}`,
                     borderRadius: 3,
-                    bgcolor: '#0e0c16',
+                    bgcolor: brand.paper,
                     p: { xs: 3, sm: 4 },
                     boxShadow: '0 24px 80px rgba(0,0,0,0.45)',
                   }}
@@ -542,7 +546,7 @@ export const Landing = () => {
                             fontSize: '0.95rem',
                             fontWeight: 500,
                             textAlign: 'right',
-                            color: label === 'Estilo' ? ACCENT : IVORY,
+                            color: label === 'Estilo' ? ACCENT_TEXT : IVORY,
                           }}
                         >
                           {value}

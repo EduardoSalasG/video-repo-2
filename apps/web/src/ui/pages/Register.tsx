@@ -1,17 +1,20 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Navigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { z } from 'zod';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import { FormField } from '../molecules/FormField';
+import { FormError } from '../molecules/FormError';
 import { Footer } from '../molecules/Footer';
 import { Button } from '../atoms/Button';
+import { SubmitButton } from '../atoms/SubmitButton';
 import { Typography } from '../atoms/Typography';
 import { useAuth } from '../../hooks/useAuth';
+import { useZodForm } from '../../hooks/useZodForm';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { api } from '../../lib/api';
-import { ApiError } from '../../lib/error';
+import { apiErrorMessage } from '../../lib/error';
 import { brand } from '../../theme';
 
 const registerSchema = z
@@ -30,65 +33,49 @@ const registerSchema = z
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
+const initialValues: RegisterForm = {
+  email: '',
+  username: '',
+  firstName: '',
+  lastName: '',
+  password: '',
+  confirmPassword: '',
+};
+
 export const Register = () => {
+  useDocumentTitle('Crear cuenta');
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [form, setForm] = useState({
-    email: '',
-    username: '',
-    firstName: '',
-    lastName: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterForm, string>>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
+  const location = useLocation();
+  const { login, user } = useAuth();
 
-  const handleChange = (field: keyof RegisterForm) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((f) => ({ ...f, [field]: event.target.value }));
-  };
+  const { values, errors, formError, setFormError, submitting, setField, handleSubmit } =
+    useZodForm<RegisterForm>(registerSchema, initialValues);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setApiError(null);
-    const result = registerSchema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors({
-        email: fieldErrors.email?.[0],
-        username: fieldErrors.username?.[0],
-        firstName: fieldErrors.firstName?.[0],
-        lastName: fieldErrors.lastName?.[0],
-        password: fieldErrors.password?.[0],
-        confirmPassword: fieldErrors.confirmPassword?.[0],
-      });
+  if (user) {
+    return <Navigate to="/app" replace />;
+  }
+
+  const onSubmit = handleSubmit(async (data) => {
+    const { confirmPassword: _confirm, ...registerData } = data;
+    try {
+      await api.register({ ...registerData, role: 'STUDENT' });
+    } catch (err) {
+      setFormError(apiErrorMessage(err, 'Error al registrarse'));
       return;
     }
-    setErrors({});
-    setSubmitting(true);
     try {
-      const { confirmPassword: _, ...registerData } = result.data;
-      await api.register({
-        ...registerData,
-        role: 'STUDENT',
-      });
       await login(registerData.email, registerData.password);
       navigate('/app', { replace: true });
-    } catch (err) {
-      let message = 'Error al registrarse';
-      if (err instanceof ApiError) {
-        const data = err.data as { message?: string | string[] } | null;
-        const raw = data?.message;
-        message = Array.isArray(raw) ? raw.join(', ') : (raw ?? err.message ?? message);
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      setApiError(message);
-    } finally {
-      setSubmitting(false);
+    } catch {
+      navigate('/login', {
+        replace: true,
+        state: {
+          info: 'Cuenta creada. Inicia sesión para continuar.',
+          from: (location.state as { from?: { pathname?: string } } | null)?.from,
+        },
+      });
     }
-  };
+  });
 
   return (
     <Box
@@ -121,69 +108,73 @@ export const Register = () => {
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Únete y empieza a aprender baile.
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Box component="form" onSubmit={onSubmit} noValidate>
             <FormField
               label="Email"
               type="email"
               autoComplete="email"
-              value={form.email}
-              onChange={handleChange('email')}
+              required
+              value={values.email}
+              onChange={(event) => setField('email', event.target.value)}
               fieldError={errors.email}
             />
             <FormField
               label="Usuario"
-              value={form.username}
-              onChange={handleChange('username')}
+              autoComplete="username"
+              required
+              value={values.username}
+              onChange={(event) => setField('username', event.target.value)}
               fieldError={errors.username}
             />
             <FormField
               label="Nombre"
-              value={form.firstName}
-              onChange={handleChange('firstName')}
+              autoComplete="given-name"
+              required
+              value={values.firstName}
+              onChange={(event) => setField('firstName', event.target.value)}
               fieldError={errors.firstName}
             />
             <FormField
               label="Apellido"
-              value={form.lastName}
-              onChange={handleChange('lastName')}
+              autoComplete="family-name"
+              required
+              value={values.lastName}
+              onChange={(event) => setField('lastName', event.target.value)}
               fieldError={errors.lastName}
             />
             <FormField
               label="Contraseña"
               type="password"
               autoComplete="new-password"
-              value={form.password}
-              onChange={handleChange('password')}
+              required
+              value={values.password}
+              onChange={(event) => setField('password', event.target.value)}
               fieldError={errors.password}
             />
             <FormField
               label="Confirmar contraseña"
               type="password"
               autoComplete="new-password"
-              value={form.confirmPassword}
-              onChange={handleChange('confirmPassword')}
+              required
+              value={values.confirmPassword}
+              onChange={(event) => setField('confirmPassword', event.target.value)}
               fieldError={errors.confirmPassword}
             />
-            {apiError && (
-              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                {apiError}
-              </Typography>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
+            <FormError message={formError} />
+            <SubmitButton
               fullWidth
-              disabled={submitting}
+              loading={submitting}
+              loadingText="Creando cuenta..."
               sx={{ mt: 3, py: 1.5, borderRadius: 8 }}
             >
-              {submitting ? 'Creando cuenta...' : 'Registrarme'}
-            </Button>
+              Registrarme
+            </SubmitButton>
             <Typography
               variant="body2"
               sx={{ mt: 3, textAlign: 'center', color: 'text.secondary' }}
             >
               ¿Ya tienes cuenta?{' '}
-              <Button component={Link} to="/login" size="small" sx={{ color: brand.accent }}>
+              <Button component={Link} to="/login" size="small" sx={{ color: brand.accentText }}>
                 Iniciar sesión
               </Button>
             </Typography>

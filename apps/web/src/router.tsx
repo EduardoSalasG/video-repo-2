@@ -10,8 +10,8 @@ import { Section } from './ui/pages/Section';
 import { Search } from './ui/pages/Search';
 import { Profile } from './ui/pages/Profile';
 import { Settings } from './ui/pages/Settings';
-import { More } from './ui/pages/More';
 import { Register } from './ui/pages/Register';
+import { NotFound } from './ui/pages/NotFound';
 import { DashboardPage } from './ui/pages/admin/DashboardPage';
 import { UsersPage } from './ui/pages/admin/UsersPage';
 import { CoursesPage } from './ui/pages/admin/CoursesPage';
@@ -49,7 +49,7 @@ export const router = createBrowserRouter([
       { path: 'search', element: <Search /> },
       { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
-      { path: 'more', element: <More /> },
+      { path: '*', element: <NotFound /> },
     ],
   },
   {
@@ -79,6 +79,6 @@ export const router = createBrowserRouter([
   },
   {
     path: '*',
-    element: <Navigate to="/" replace />,
+    element: <NotFound />,
   },
 ]);

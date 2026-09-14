@@ -22,7 +22,7 @@ import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { EntitySelect } from '../../organisms/EntitySelect';
 import { FileUploadField } from '../../organisms/FileUploadField';
-import { PageHeader } from './PageHeader';
+import { PageHeader } from '../../organisms/PageHeader';
 import type { Course, Section, VideoMetadata, Difficulty, PrimaryStyle, VideoType } from '../../../types';
 
 const videoMetadataSchema = z.object({

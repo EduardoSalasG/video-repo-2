@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 import { Link } from 'react-router-dom';
 import MuiLink from '@mui/material/Link';
-import { Typography } from '../../atoms/Typography';
-import { brand } from '../../../theme';
+import { Typography } from '../atoms/Typography';
+import { brand } from '../../theme';
 
 export interface Crumb {
   label: string;

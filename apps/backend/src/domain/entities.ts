@@ -53,6 +53,7 @@ export class Section {
   markdownContent: string | null;
   videoFileId: string | null;
   module?: CourseModule;
+  videoMetadata?: VideoMetadata | null;
   createdAt: Date;
   updatedAt: Date;
 

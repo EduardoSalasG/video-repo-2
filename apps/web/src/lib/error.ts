@@ -8,3 +8,14 @@ export class ApiError extends Error {
     this.data = data;
   }
 }
+
+export function apiErrorMessage(err: unknown, fallback = 'Error inesperado'): string {
+  if (err instanceof ApiError) {
+    const data = err.data as { message?: string | string[] } | null;
+    const raw = data?.message;
+    if (Array.isArray(raw)) return raw.join(', ');
+    if (raw) return raw;
+    return err.message || fallback;
+  }
+  return err instanceof Error ? err.message : fallback;
+}
