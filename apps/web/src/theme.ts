@@ -7,6 +7,7 @@ export const brand = {
   dim: '#a3a4c0',
   accent: '#6e4dff',
   accentHover: '#7f61ff',
+  accentText: '#9d86ff',
   hairline: 'rgba(240, 241, 250, 0.09)',
   hairlineStrong: 'rgba(240, 241, 250, 0.22)',
   display: '"Bodoni Moda Variable", "Bodoni Moda", Didot, "Times New Roman", serif',

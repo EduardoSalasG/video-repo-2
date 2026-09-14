@@ -28,10 +28,19 @@ createRoot(root).render(
       <GlobalStyles
         styles={{
           html: {
-            scrollbarWidth: 'none',
+            scrollbarWidth: 'thin',
+            scrollbarColor: `${brand.hairlineStrong} transparent`,
           },
           '::-webkit-scrollbar': {
-            display: 'none',
+            width: 8,
+            height: 8,
+          },
+          '::-webkit-scrollbar-thumb': {
+            backgroundColor: brand.hairlineStrong,
+            borderRadius: 4,
+          },
+          '::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
           },
           '.driver-popover.dance-onboarding': {
             borderRadius: '16px',

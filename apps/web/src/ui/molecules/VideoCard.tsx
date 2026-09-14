@@ -33,7 +33,7 @@ export const VideoCard = ({ course }: VideoCardProps) => {
       <Box
         component="img"
         src={course.imageUrl ? (course.imageUrl.startsWith('http') ? course.imageUrl : `${API_BASE_URL}${course.imageUrl}`) : '/icon.svg'}
-        alt={course.name}
+        alt=""
         sx={{ width: '100%', height: 180, objectFit: 'cover', borderBottom: `1px solid ${brand.hairline}` }}
       />
       <CardContent>

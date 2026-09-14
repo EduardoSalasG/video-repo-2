@@ -1,28 +1,41 @@
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
+import type { AlertColor } from '@mui/material/Alert';
 
-export type StatusSeverity = 'info' | 'success' | 'error';
+export type StatusSeverity = AlertColor;
 
 interface StatusSnackbarProps {
   open: boolean;
   message: string;
-  severity: StatusSeverity;
+  severity?: StatusSeverity;
   onClose: () => void;
 }
 
-export const StatusSnackbar = ({ open, message, severity, onClose }: StatusSnackbarProps) => (
+const AUTO_HIDE_MS: Record<StatusSeverity, number | undefined> = {
+  success: 6000,
+  info: undefined,
+  warning: 8000,
+  error: 8000,
+};
+
+export const StatusSnackbar = ({ open, message, severity = 'info', onClose }: StatusSnackbarProps) => (
   <Snackbar
     open={open}
-    autoHideDuration={severity === 'info' ? null : 6000}
-    onClose={severity === 'info' ? undefined : onClose}
+    autoHideDuration={AUTO_HIDE_MS[severity] ?? null}
+    onClose={(_event, reason) => {
+      if (reason === 'clickaway') return;
+      onClose();
+    }}
     anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-    sx={{ bottom: { xs: 'calc(72px + env(safe-area-inset-bottom))', sm: 24 } }}
   >
     <Alert
-      onClose={severity === 'info' ? undefined : onClose}
       severity={severity}
       variant="filled"
-      sx={{ width: '100%' }}
+      onClose={onClose}
+      closeText="Cerrar"
+      sx={{ width: '100%', alignItems: 'center' }}
+      role={severity === 'info' ? 'status' : 'alert'}
+      aria-live={severity === 'info' ? 'polite' : 'assertive'}
     >
       {message}
     </Alert>

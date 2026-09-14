@@ -66,9 +66,20 @@ async function request<T>(
   return handleResponse<T>(res);
 }
 
-function requestFormData<T>(method: string, path: string, formData: FormData, onProgress?: (percent: number) => void): Promise<T> {
+function requestFormData<T>(
+  method: string,
+  path: string,
+  formData: FormData,
+  onProgress?: (percent: number) => void,
+  signal?: AbortSignal,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    if (signal?.aborted) {
+      reject(new ApiError(0, null, 'Subida cancelada'));
+      return;
+    }
+    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
     xhr.open(method, `${API_URL}${path}`);
     xhr.withCredentials = true;
     const token = getToken();
@@ -157,24 +168,26 @@ export const api = {
     data: { name: string; description?: string },
     image?: File,
     onProgress?: (percent: number) => void,
+    signal?: AbortSignal,
   ) => {
     const formData = new FormData();
     formData.append('name', data.name);
     if (data.description) formData.append('description', data.description);
     if (image) formData.append('image', image);
-    return requestFormData<Course>('POST', '/courses', formData, onProgress);
+    return requestFormData<Course>('POST', '/courses', formData, onProgress, signal);
   },
   updateCourse: (
     courseId: string,
     data: { name?: string; description?: string },
     image?: File,
     onProgress?: (percent: number) => void,
+    signal?: AbortSignal,
   ) => {
     const formData = new FormData();
     if (data.name) formData.append('name', data.name);
     if (data.description !== undefined) formData.append('description', data.description ?? '');
     if (image) formData.append('image', image);
-    return requestFormData<Course>('PATCH', `/courses/${courseId}`, formData, onProgress);
+    return requestFormData<Course>('PATCH', `/courses/${courseId}`, formData, onProgress, signal);
   },
   deleteCourse: (courseId: string) => request<void>('DELETE', `/courses/${courseId}`),
 
@@ -209,6 +222,7 @@ export const api = {
     file: File,
     metadata: Omit<VideoMetadata, 'id' | 'sectionId' | 'createdAt' | 'updatedAt'>,
     onProgress?: (percent: number) => void,
+    signal?: AbortSignal,
   ) => {
     const formData = new FormData();
     formData.append('video', file);
@@ -218,6 +232,7 @@ export const api = {
       `/sections/${sectionId}/videos`,
       formData,
       onProgress,
+      signal,
     );
   },
 
@@ -246,13 +261,8 @@ export const api = {
   revokeAccess: (userId: string, courseId: string) =>
     request<void>('DELETE', `/users/${userId}/accesses/${courseId}`),
 
-  grantAccess: (courseId: string, data: { userId: string; courseId: string }) =>
+  grantAccess: (courseId: string, data: { userId: string; courseId: string; accessLevel?: string }) =>
     request<{ ok: boolean }>('POST', `/courses/${courseId}/access`, data),
-
-  getAccesses: (_courseId?: string) => {
-    void _courseId;
-    return Promise.resolve([] as CourseAccess[]);
-  },
 
   searchVideos: (params: { q?: string; style?: string; courseId?: string }) => {
     const query = new URLSearchParams();

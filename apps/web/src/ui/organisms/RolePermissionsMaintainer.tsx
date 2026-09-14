@@ -91,7 +91,7 @@ export const RolePermissionsMaintainer = ({ roles }: RolePermissionsMaintainerPr
   return (
     <Stack spacing={3}>
       <Box>
-        <Typography variant="h5" component="h2">
+        <Typography variant="h5" component="h1">
           Permisos por rol
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -133,7 +133,7 @@ export const RolePermissionsMaintainer = ({ roles }: RolePermissionsMaintainerPr
             </Typography>
           </Paper>
 
-          <Box sx={{ opacity: isSuperuser ? 0.5 : 1, pointerEvents: isSuperuser ? 'none' : 'auto' }}>
+          <Box sx={{ opacity: isSuperuser ? 0.5 : 1 }}>
             {categories.map(([category, items]) => (
               <Accordion key={category} defaultExpanded disableGutters elevation={0} sx={{ border: `1px solid ${brand.hairline}`, borderRadius: 2, '&:before': { display: 'none' }, mb: 1 }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -149,7 +149,7 @@ export const RolePermissionsMaintainer = ({ roles }: RolePermissionsMaintainerPr
                         <Checkbox
                           checked={assigned.has(permission.value)}
                           onChange={() => toggle(permission.value)}
-                          disabled={loading}
+                          disabled={loading || isSuperuser}
                         />
                       }
                       label={

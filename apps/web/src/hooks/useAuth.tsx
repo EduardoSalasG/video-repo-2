@@ -36,8 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setUser(null);
-      } else {
-        setUser(null);
       }
     } finally {
       setLoading(false);
