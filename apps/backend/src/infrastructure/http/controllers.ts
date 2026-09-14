@@ -236,6 +236,7 @@ export class CoursesController {
   @UseInterceptors(FileInterceptor('image'))
   @ApiCookieAuth()
   async create(
+    @CurrentUser() user: AuthUser,
     @Body('name') name: string,
     @Body('description') description: string | undefined,
     @UploadedFile() image: Express.Multer.File | undefined,
@@ -243,7 +244,11 @@ export class CoursesController {
     const imageFile = image
       ? { originalname: image.originalname, mimetype: image.mimetype, buffer: image.buffer, size: image.size }
       : undefined;
-    return this.courses.create({ name, description }, imageFile);
+    const course = await this.courses.create({ name, description }, imageFile);
+    if (!(await this.permissions.isSuperuser(user.role))) {
+      await this.courseAccess.grantCreatorAccess(user.userId, course.id);
+    }
+    return course;
   }
 
   @Patch(':courseId')

@@ -399,6 +399,10 @@ export class CourseAccessService {
     await this.access.grant(targetUserId, courseId, level ?? AccessLevel.READ);
   }
 
+  async grantCreatorAccess(userId: string, courseId: string): Promise<void> {
+    await this.access.grant(userId, courseId, AccessLevel.MAINTAIN);
+  }
+
   async getByUser(userId: string): Promise<CourseAccess[]> {
     return this.access.findByUser(userId);
   }
