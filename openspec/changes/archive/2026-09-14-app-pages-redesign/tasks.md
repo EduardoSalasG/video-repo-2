@@ -49,4 +49,4 @@
 
 - [x] 6.1 `pnpm verify` (web) + `pnpm build` verde
 - [x] 6.2 `impeccable detect` sobre archivos tocados, sin findings nuevos
-- [ ] 6.3 Smoke manual en dev: login→deep-link, 404 dentro/fuera de /app, búsqueda por teclado, marcar sección sin video, cambio de contraseña con Enter, video reproduce con cookie, reduced-motion
+- [x] 6.3 Smoke manual en dev: login→deep-link, 404 dentro/fuera de /app, búsqueda por teclado, marcar sección sin video, cambio de contraseña con Enter, video reproduce con cookie, reduced-motion
