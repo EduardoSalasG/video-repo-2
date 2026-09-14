@@ -33,5 +33,5 @@ pnpm db:seed
 - No exponer secrets, JWTs ni hashes en logs o respuestas.
 - Flujo Git: `main` solo recibe versiones estables. Toda feature/hotfix se hace en `feature/*`, se mergea a `dev` y se acumula ahí. Solo se promueve `dev` a `main` cuando se acuerde una versión estable.
 - Siempre volver a `dev` después de mergear/promover a `main` (no quedarse parado en `main`).
-- Después de cada push a `main`, lanzar un subagente en background para supervisar el deploy (GitHub Actions → imagen Docker → VM Oracle → health check de `https://api.video-repo.eduardosalasg.dev/api/health`).
+- Después de cada push a `main`, lanzar un subagente en background con el perfil `deploy-monitor` (`.devin/agents/deploy-monitor.md`, modelo `swe-1-7-medium`) para supervisar el deploy (GitHub Actions → imagen Docker → VM Oracle → health check de `https://api.video-repo.eduardosalasg.dev/api/health`).
 - NUNCA incluir a Devin como coautor ni firma en los commits (sin `Co-Authored-By` ni `Generated with`). Los mensajes de commit llevan solo el mensaje descriptivo.
