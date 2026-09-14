@@ -7,6 +7,7 @@ export const brand = {
   dim: '#a3a4c0',
   accent: '#6e4dff',
   accentHover: '#7f61ff',
+  accentText: '#9d86ff',
   hairline: 'rgba(240, 241, 250, 0.09)',
   hairlineStrong: 'rgba(240, 241, 250, 0.22)',
   display: '"Bodoni Moda Variable", "Bodoni Moda", Didot, "Times New Roman", serif',
@@ -179,7 +180,7 @@ export const theme = createTheme({
           '& .MuiInputLabel-root': {
             color: brand.dim,
             transform: 'translate(14px, 14px) scale(1)',
-            '&.Mui-focused, &.MuiFormLabel-filled': {
+            '&.Mui-focused, &.MuiFormLabel-filled, &.MuiInputLabel-shrink': {
               transform: 'translate(14px, -7px) scale(0.75)',
             },
           },

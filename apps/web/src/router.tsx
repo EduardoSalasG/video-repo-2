@@ -12,7 +12,15 @@ import { Profile } from './ui/pages/Profile';
 import { Settings } from './ui/pages/Settings';
 import { More } from './ui/pages/More';
 import { Register } from './ui/pages/Register';
-import { Admin } from './ui/pages/Admin';
+import { DashboardPage } from './ui/pages/admin/DashboardPage';
+import { UsersPage } from './ui/pages/admin/UsersPage';
+import { CoursesPage } from './ui/pages/admin/CoursesPage';
+import { ModulesPage } from './ui/pages/admin/ModulesPage';
+import { SectionsPage } from './ui/pages/admin/SectionsPage';
+import { VideosPage } from './ui/pages/admin/VideosPage';
+import { StepsPage } from './ui/pages/admin/StepsPage';
+import { ParamPage } from './ui/pages/admin/ParamPage';
+import { PermissionsPage } from './ui/pages/admin/PermissionsPage';
 
 export const router = createBrowserRouter([
   {
@@ -51,7 +59,23 @@ export const router = createBrowserRouter([
         <AdminLayout />
       </RequireAuth>
     ),
-    children: [{ path: '*', element: <Admin /> }],
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'usuarios', element: <UsersPage /> },
+      { path: 'cursos', element: <CoursesPage /> },
+      { path: 'modulos', element: <ModulesPage /> },
+      { path: 'secciones', element: <SectionsPage /> },
+      { path: 'videos', element: <VideosPage /> },
+      { path: 'parametros/pasos', element: <StepsPage /> },
+      { path: 'parametros/estilos', element: <ParamPage kind="estilos" /> },
+      { path: 'parametros/dificultades', element: <ParamPage kind="dificultades" /> },
+      { path: 'parametros/tipos-video', element: <ParamPage kind="tipos-video" /> },
+      { path: 'parametros/tipos-etiqueta', element: <ParamPage kind="tipos-etiqueta" /> },
+      { path: 'parametros/niveles-acceso', element: <ParamPage kind="niveles-acceso" /> },
+      { path: 'parametros/roles', element: <ParamPage kind="roles" /> },
+      { path: 'parametros/permisos', element: <PermissionsPage /> },
+      { path: '*', element: <Navigate to="/admin" replace /> },
+    ],
   },
   {
     path: '*',

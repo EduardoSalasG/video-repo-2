@@ -80,8 +80,6 @@ export const MainLayout = () => {
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        scrollbarWidth: 'none',
-        '&::-webkit-scrollbar': { display: 'none' },
       }}
     >
       {!isMobile && <Header />}
