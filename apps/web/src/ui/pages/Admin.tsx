@@ -1108,7 +1108,7 @@ export const Admin = () => {
         onClose={() => setSnackbarOpen(false)}
       />
 
-      <Box sx={{ mt: 3 }}>
+      <Box sx={{ mt: { xs: 0, sm: 3 } }}>
         {!canViewTab && (
           <Paper sx={{ p: 3, borderRadius: 2 }}>
             <Typography color="text.secondary">
@@ -1119,7 +1119,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 0 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Dashboard
             </Typography>
             {loadingDashboard ? (
@@ -1154,7 +1154,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 1 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Cursos
             </Typography>
             <Box component="form" onSubmit={submitCourse} noValidate>
@@ -1240,7 +1240,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 2 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Módulos
             </Typography>
             {renderCourseSelect(moduleCourse, setModuleCourse)}
@@ -1315,7 +1315,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 3 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Secciones
             </Typography>
             {renderCourseSelect(sectionCourse, setSectionCourse)}
@@ -1401,7 +1401,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 4 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Subir video
             </Typography>
             {renderCourseSelect(videoCourse, setVideoCourse)}
@@ -1569,7 +1569,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 5 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Mantenedor de pasos
             </Typography>
             <FormField
@@ -1741,7 +1741,7 @@ export const Admin = () => {
 
         {canViewTab && activeTab === 7 && (
           <Stack spacing={3}>
-            <Typography variant="h5" component="h2" sx={{ mt: { xs: 2.5, sm: 0 } }}>
+            <Typography variant="h5" component="h2">
               Mantenedor de usuarios
             </Typography>
             <UserAutocomplete
