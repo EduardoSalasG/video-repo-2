@@ -74,9 +74,12 @@ ui/pages/admin/
 
 1. `ConfirmDialog` en las 6 rutas destructivas: delete curso/módulo/sección/
    paso/parámetro + revocar acceso.
-2. Selector de nivel `READ/WRITE/MAINTAIN` en el form de accesos;
-   `api.grantAccess` envía `accessLevel` (verificar contrato backend;
-   `AccessLevel` ya existe en el dominio).
+2. Selector de nivel de acceso en el form de accesos. **Verificado:** el
+   backend ya acepta `accessLevel` opcional (`GrantCourseAccessDto`,
+   `CoursesController.grant` → `courseAccess.grant(...)`). Las opciones se
+   cargan de `api.getAccessLevels` (la lista ya existe en estado para el
+   mantenedor de niveles). Fix 100% frontend: extender `accessSchema`,
+   `api.grantAccess` y el form.
 3. Renderizar `accessErrors` y `roleErrors.userId`; errores de API y de
    "falta selector" van a `FormError` a nivel de formulario, nunca a un campo
    ajeno (corrige `:476, :522, :571, :586, :633`).
@@ -87,13 +90,20 @@ ui/pages/admin/
 6. `SubmitButton` en todos los forms (hoy ~8 submits son duplicables).
 7. `z.string().url()` en el schema de enlaces; `submitLink` no valida el
    schema del form de subida.
-8. Videos: listado por sección con edición de metadatos y borrado — pendiente
-   verificar endpoints (`updateVideo`/`deleteVideo` no existen en `api.ts`;
-   si el backend no los expone, se reporta como gap y se omite el listado de
-   edición, quedando solo vista de videos existentes si hay endpoint GET).
-9. Usuarios: listado paginado/buscable además del autocomplete.
-10. Tab Usuarios: condicionar mutaciones a `admin.users.manage` (el seed ya
-    lo define) — hoy `admin.users.view` permite cambiar rol.
+8. Videos: **gap de backend confirmado** — `VideosController` solo expone
+   `upload` y `link`; no hay update/delete. En esta fase la vista muestra el
+   video existente por sección (vía `GET /sections/:id`, que incluye video y
+   metadatos) en modo solo-lectura; edición/borrado queda como sub-tarea de
+   backend documentada, fuera de este change.
+9. Usuarios: listado viable sin backend — `GET /users?q=` con q vacío
+   devuelve los 20 usuarios más recientes (`UserRepository.search`,
+   `take: 20`). Se muestra como lista inicial + búsqueda por autocomplete.
+10. Tab Usuarios: condicionar mutaciones a los permisos reales del backend —
+    `admin.users.manage` para `PATCH /users/:id/role` y
+    `content.access.manage` para grant/revoke (`controllers.ts:55,69`). Hoy
+    `admin.users.view` ofrece acciones que el servidor rechaza.
+11. Eliminar `api.getAccesses` — stub muerto que devuelve `[]`; el endpoint
+    real `GET /users/:id/accesses` ya se consume vía `api.getUserAccesses`.
 
 ## C. Accesibilidad (WCAG 2.2 AA)
 
