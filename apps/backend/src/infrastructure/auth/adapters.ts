@@ -18,12 +18,6 @@ function cookieExtractor(req: Request): string | null {
   return token ?? null;
 }
 
-function streamQueryExtractor(req: Request): string | null {
-  if (!req.path.endsWith('/stream')) return null;
-  const token = req.query?.access_token;
-  return typeof token === 'string' ? token : null;
-}
-
 @Injectable()
 export class BcryptPasswordHasher implements IPasswordHasher {
   async hash(password: string): Promise<string> {
@@ -53,7 +47,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         ExtractJwt.fromAuthHeaderAsBearerToken(),
         cookieExtractor,
-        streamQueryExtractor,
       ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET ?? 'change-me',

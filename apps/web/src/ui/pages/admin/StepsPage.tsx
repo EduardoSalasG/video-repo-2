@@ -23,7 +23,7 @@ import { IconButton } from '../../atoms/IconButton';
 import { FormField } from '../../molecules/FormField';
 import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
-import { PageHeader } from './PageHeader';
+import { PageHeader } from '../../organisms/PageHeader';
 import type { PrimaryStyle } from '../../../types';
 
 interface AdminLabel {

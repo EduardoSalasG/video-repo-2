@@ -214,8 +214,15 @@ export class PrismaSectionRepository implements ISectionRepository {
     const rows = await this.prisma.section.findMany({
       where: { moduleId },
       orderBy: { orderIndex: 'asc' },
+      include: { videoMetadata: true },
     });
-    return rows.map((row) => new Section(row));
+    return rows.map(
+      (row) =>
+        new Section({
+          ...row,
+          videoMetadata: row.videoMetadata ? new VideoMetadata(row.videoMetadata) : null,
+        }),
+    );
   }
 
   async findByVideoFileId(videoFileId: string): Promise<Section | null> {

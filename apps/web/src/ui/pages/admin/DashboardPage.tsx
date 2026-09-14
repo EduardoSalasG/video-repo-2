@@ -8,7 +8,7 @@ import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
 import { RequirePerm } from '../../templates/RequirePerm';
 import { Typography } from '../../atoms/Typography';
 import { Button } from '../../atoms/Button';
-import { PageHeader } from './PageHeader';
+import { PageHeader } from '../../organisms/PageHeader';
 
 export const DashboardPage = () => {
   useDocumentTitle('Dashboard · Administración');

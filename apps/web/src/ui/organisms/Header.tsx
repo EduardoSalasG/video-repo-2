@@ -1,57 +1,53 @@
+import { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
+import Box from '@mui/material/Box';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
+import Divider from '@mui/material/Divider';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
-import { Link } from 'react-router-dom';
+import { IconButton } from '../atoms/IconButton';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { brand } from '../../theme';
 
-interface HeaderProps {
-  onMenu?: () => void;
-  title?: string;
-}
+export const Header = () => {
+  const { user, hasPerm, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
-export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
-  const { user, hasPerm } = useAuth();
+  const navButtonSx = (active: boolean) => ({
+    color: brand.ink,
+    fontWeight: 600,
+    display: { xs: 'none', sm: 'inline-flex' },
+    ...(active && { color: brand.accentText }),
+  });
+
+  const handleLogout = async () => {
+    setMenuAnchor(null);
+    await logout();
+    navigate('/', { replace: true });
+  };
+
+  const handleNavigate = (path: string) => {
+    setMenuAnchor(null);
+    navigate(path);
+  };
 
   return (
     <AppBar position="sticky">
       <Toolbar sx={{ gap: 1 }}>
-        {onMenu && (
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={onMenu}
-            aria-label="Abrir menú"
-          >
-            <MenuIcon />
-          </IconButton>
-        )}
-        {user ? (
-          <Link to="/app" style={{ textDecoration: 'none', flexGrow: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: brand.ink,
-                fontFamily: brand.display,
-                fontStyle: 'italic',
-                fontWeight: 500,
-                fontSize: '1.25rem',
-                letterSpacing: '0.01em',
-              }}
-            >
-              {title}
-            </Typography>
-          </Link>
-        ) : (
+        <Link to="/app" style={{ textDecoration: 'none', flexGrow: 1 }}>
           <Typography
             variant="h6"
             sx={{
-              flexGrow: 1,
               color: brand.ink,
               fontFamily: brand.display,
               fontStyle: 'italic',
@@ -60,67 +56,87 @@ export const Header = ({ onMenu, title = 'Dance Platform' }: HeaderProps) => {
               letterSpacing: '0.01em',
             }}
           >
-            {title}
+            Dance Platform
           </Typography>
-        )}
-        {user ? (
-          <>
-            <Button
-              component={Link}
-              to="/app"
-              color="inherit"
-              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
-            >
-              Biblioteca
-            </Button>
-            <Button
-              component={Link}
-              to="/app/search"
-              color="inherit"
-              startIcon={<SearchIcon />}
-              data-tour="nav-search"
-              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
-            >
-              Buscar
-            </Button>
-            {hasPerm('admin.panel.access') && (
-              <Button
-                component={Link}
-                to="/admin"
-                color="inherit"
-                sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
-              >
-                Administración
-              </Button>
-            )}
-            <Button
-              component={Link}
-              to="/app/profile"
-              color="inherit"
-              startIcon={<PersonIcon />}
-              data-tour="nav-profile"
-              sx={{ color: brand.ink, fontWeight: 600, display: { xs: 'none', sm: 'inline-flex' } }}
-            >
-              Perfil
-            </Button>
-            <Typography
-              variant="body2"
-              sx={{ mr: 2, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}
-            >
-              {user.email}
-            </Typography>
-          </>
-        ) : (
+        </Link>
+        <Box component="nav" aria-label="Navegación principal" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Button
-            variant="contained"
             component={Link}
-            to="/login"
-            size="small"
-            sx={{ borderRadius: 8, px: 2 }}
+            to="/app"
+            color="inherit"
+            aria-current={location.pathname === '/app' ? 'page' : undefined}
+            sx={navButtonSx(location.pathname === '/app')}
           >
-            Entrar
+            Biblioteca
           </Button>
-        )}
+          <Button
+            component={Link}
+            to="/app/search"
+            color="inherit"
+            startIcon={<SearchIcon />}
+            data-tour="nav-search"
+            aria-current={location.pathname === '/app/search' ? 'page' : undefined}
+            sx={navButtonSx(location.pathname === '/app/search')}
+          >
+            Buscar
+          </Button>
+          {hasPerm('admin.panel.access') && (
+            <Button
+              component={Link}
+              to="/admin"
+              color="inherit"
+              sx={navButtonSx(false)}
+            >
+              Administración
+            </Button>
+          )}
+          <IconButton
+            aria-label="Menú de cuenta"
+            aria-haspopup="menu"
+            aria-expanded={menuAnchor ? 'true' : 'false'}
+            aria-controls={menuAnchor ? 'account-menu' : undefined}
+            onClick={(event) => setMenuAnchor(event.currentTarget)}
+            sx={{ color: brand.ink }}
+          >
+            <PersonIcon />
+          </IconButton>
+          <Menu
+            id="account-menu"
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem disabled sx={{ opacity: '1 !important' }}>
+              <Typography variant="body2" color="text.secondary">
+                {user?.email}
+              </Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem
+              onClick={() => handleNavigate('/app/profile')}
+              aria-current={location.pathname === '/app/profile' ? 'page' : undefined}
+            >
+              <PersonIcon fontSize="small" sx={{ mr: 1 }} /> Perfil
+            </MenuItem>
+            <MenuItem
+              onClick={() => handleNavigate('/app/settings')}
+              aria-current={location.pathname === '/app/settings' ? 'page' : undefined}
+            >
+              <SettingsIcon fontSize="small" sx={{ mr: 1 }} /> Configuración
+            </MenuItem>
+            {hasPerm('admin.panel.access') && (
+              <MenuItem onClick={() => handleNavigate('/admin')}>
+                <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 1 }} /> Administración
+              </MenuItem>
+            )}
+            <Divider />
+            <MenuItem onClick={handleLogout}>
+              <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Cerrar sesión
+            </MenuItem>
+          </Menu>
+        </Box>
       </Toolbar>
     </AppBar>
   );

@@ -24,7 +24,7 @@ import { FormField } from '../../molecules/FormField';
 import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { EntitySelect } from '../../organisms/EntitySelect';
-import { PageHeader } from './PageHeader';
+import { PageHeader } from '../../organisms/PageHeader';
 import type { Course, CourseModule } from '../../../types';
 
 const moduleSchema = z.object({

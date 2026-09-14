@@ -29,9 +29,19 @@ const clearToken = () => {
   if (typeof localStorage !== 'undefined') localStorage.removeItem(TOKEN_KEY);
 };
 
+let unauthorizedListener: (() => void) | null = null;
+export const onUnauthorized = (listener: (() => void) | null) => {
+  unauthorizedListener = listener;
+};
+
+const notifyUnauthorized = () => {
+  clearToken();
+  unauthorizedListener?.();
+};
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
-    clearToken();
+    notifyUnauthorized();
     throw new ApiError(401, null, 'No autenticado');
   }
   if (!res.ok) {
@@ -106,7 +116,7 @@ function requestFormData<T>(
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(response as T);
       } else if (xhr.status === 401) {
-        clearToken();
+        notifyUnauthorized();
         reject(new ApiError(401, response, 'No autenticado'));
       } else {
         const data = (response as { message?: string | string[] } | null) ?? null;
@@ -211,11 +221,7 @@ export const api = {
   deleteSection: (sectionId: string) => request<void>('DELETE', `/sections/${sectionId}`),
 
   getVideoUrl: (videoFileId: string) => request<{ url: string }>('GET', `/video-files/${videoFileId}`),
-  getVideoStreamUrl: (videoFileId: string) => {
-    const token = getToken();
-    const base = `${API_URL}/videos/${videoFileId}/stream`;
-    return token ? `${base}?access_token=${encodeURIComponent(token)}` : base;
-  },
+  getVideoStreamUrl: (videoFileId: string) => `${API_URL}/videos/${videoFileId}/stream`,
 
   uploadVideo: (
     sectionId: string,

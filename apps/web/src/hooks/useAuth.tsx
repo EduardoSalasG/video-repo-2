@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, ApiError } from '../lib/api';
+import { api, ApiError, onUnauthorized } from '../lib/api';
 
 export type AuthUser = {
   id: string;
@@ -48,8 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const logout = useCallback(async () => {
-    await api.logout();
-    setUser(null);
+    try {
+      await api.logout();
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const hasPerm = useCallback((permission: string) => hasPermission(user, permission), [user]);
@@ -57,6 +60,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    onUnauthorized(() => setUser(null));
+    return () => onUnauthorized(null);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, refresh, hasPerm }}>
