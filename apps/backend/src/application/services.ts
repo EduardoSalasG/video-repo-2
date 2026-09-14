@@ -301,6 +301,53 @@ export class SectionService {
 }
 
 @Injectable()
+export class AccessLevelService {
+  private orderCache: Map<string, number> | null = null;
+
+  constructor(
+    @Inject(InjectionTokens.ACCESS_LEVEL_REPOSITORY) private readonly accessLevels: IAccessLevelRepository,
+  ) {}
+
+  async list(): Promise<AccessLevelRecord[]> {
+    return this.accessLevels.findAll();
+  }
+
+  async orderOf(value: AccessLevel): Promise<number> {
+    if (!this.orderCache) {
+      const all = await this.accessLevels.findAll();
+      this.orderCache = new Map(all.map((a) => [a.value, a.orderIndex]));
+    }
+    return this.orderCache.get(value) ?? -1;
+  }
+
+  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
+    if (!input.value.trim() || !input.label.trim()) {
+      throw new Error('Access level value and label are required');
+    }
+    const existing = await this.accessLevels.findByValue(input.value);
+    if (existing) throw new ConflictException('Access level already exists');
+    const created = await this.accessLevels.create(input);
+    this.orderCache = null;
+    return created;
+  }
+
+  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    const updated = await this.accessLevels.update(value, input);
+    this.orderCache = null;
+    return updated;
+  }
+
+  async delete(value: AccessLevel): Promise<void> {
+    const existing = await this.accessLevels.findByValue(value);
+    if (!existing) throw new NotFoundException('Access level not found');
+    this.orderCache = null;
+    return this.accessLevels.delete(value);
+  }
+}
+
+@Injectable()
 export class CourseAccessService {
   constructor(
     @Inject(InjectionTokens.COURSE_ACCESS_REPOSITORY) private readonly access: ICourseAccessRepository,
@@ -746,53 +793,6 @@ export class LabelTypeService {
     const existing = await this.labelTypes.findByValue(value);
     if (!existing) throw new NotFoundException('Label type not found');
     return this.labelTypes.delete(value);
-  }
-}
-
-@Injectable()
-export class AccessLevelService {
-  private orderCache: Map<string, number> | null = null;
-
-  constructor(
-    @Inject(InjectionTokens.ACCESS_LEVEL_REPOSITORY) private readonly accessLevels: IAccessLevelRepository,
-  ) {}
-
-  async list(): Promise<AccessLevelRecord[]> {
-    return this.accessLevels.findAll();
-  }
-
-  async orderOf(value: AccessLevel): Promise<number> {
-    if (!this.orderCache) {
-      const all = await this.accessLevels.findAll();
-      this.orderCache = new Map(all.map((a) => [a.value, a.orderIndex]));
-    }
-    return this.orderCache.get(value) ?? -1;
-  }
-
-  async create(input: CreateAccessLevelInput): Promise<AccessLevelRecord> {
-    if (!input.value.trim() || !input.label.trim()) {
-      throw new Error('Access level value and label are required');
-    }
-    const existing = await this.accessLevels.findByValue(input.value);
-    if (existing) throw new ConflictException('Access level already exists');
-    const created = await this.accessLevels.create(input);
-    this.orderCache = null;
-    return created;
-  }
-
-  async update(value: AccessLevel, input: UpdateAccessLevelInput): Promise<AccessLevelRecord> {
-    const existing = await this.accessLevels.findByValue(value);
-    if (!existing) throw new NotFoundException('Access level not found');
-    const updated = await this.accessLevels.update(value, input);
-    this.orderCache = null;
-    return updated;
-  }
-
-  async delete(value: AccessLevel): Promise<void> {
-    const existing = await this.accessLevels.findByValue(value);
-    if (!existing) throw new NotFoundException('Access level not found');
-    this.orderCache = null;
-    return this.accessLevels.delete(value);
   }
 }
 
