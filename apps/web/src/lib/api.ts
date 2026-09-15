@@ -15,7 +15,8 @@ import type {
 import { ApiError } from './error';
 
 const rawApiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:3000/api';
-const isLocal = typeof location !== 'undefined' && location.hostname === 'localhost';
+const isLocal =
+  typeof location !== 'undefined' && ['localhost', '127.0.0.1'].includes(location.hostname);
 const API_URL = (isLocal ? 'http://localhost:3000/api' : rawApiUrl).replace(/\/$/, '');
 export const API_BASE_URL = API_URL.replace(/\/api\/?$/, '');
 

@@ -42,3 +42,9 @@ prisma/*.db
 
 # Misc
 *.tsbuildinfo
+
+# Agent/tool local config (skills centralizadas via skills.sh)
+.devin/skills/
+.claude/
+.agents/
+skills-lock.json

@@ -25,7 +25,7 @@ export const Library = () => {
         </Typography>
       </motion.div>
       {loading && (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }} aria-busy="true">
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }} aria-busy="true">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} variant="rounded" height={140} sx={{ borderRadius: 3 }} />
           ))}

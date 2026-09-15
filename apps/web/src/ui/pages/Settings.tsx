@@ -20,6 +20,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useStatusSnackbar } from '../../hooks/useStatusSnackbar';
 import { api } from '../../lib/api';
 import { apiErrorMessage } from '../../lib/error';
+import { version } from '../../../package.json';
 
 const passwordSchema = z
   .object({
@@ -167,6 +168,14 @@ export const Settings = () => {
           </Button>
         </Box>
       </Paper>
+
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: 'block', textAlign: 'center', mt: 4 }}
+      >
+        v{version}
+      </Typography>
       <StatusSnackbar {...snackbar.snackbar} />
     </Box>
   );
