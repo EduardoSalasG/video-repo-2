@@ -7,6 +7,8 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-15
+
 ### Added
 
 - Versión de la app visible al pie de la vista de Configuración.
@@ -15,6 +17,12 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 - Build del frontend con `manualChunks` (react/mui/framer-motion separados del bundle principal para mejor caching y carga paralela).
 - Configuración de Prisma migrada de `package.json#prisma` (deprecado) a `prisma.config.ts`.
+- `.devin/skills/`, `.claude/`, `.agents/` y `skills-lock.json` excluidos del repo (config local de agentes; las skills se gestionan centralizadas).
+
+### Fixed
+
+- La app trataba `VITE_API_URL` como destino al abrirse por `127.0.0.1` en local; ahora `127.0.0.1` cuenta como origen local.
+- Desborde horizontal en listados con grid (Biblioteca, Landing): las columnas usan `minmax(0, 1fr)` para que las tarjetas con `noWrap` no fuercen el ancho.
 
 ## [1.1.0] - 2026-09-15
 
