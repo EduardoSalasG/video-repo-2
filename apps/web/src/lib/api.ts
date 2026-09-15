@@ -48,7 +48,8 @@ async function handleResponse<T>(res: Response): Promise<T> {
     const data = await res.json().catch(() => ({}));
     throw new ApiError(res.status, data, data.message ?? `HTTP ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : null) as T;
 }
 
 async function request<T>(
@@ -209,6 +210,8 @@ export const api = {
   updateModule: (moduleId: string, data: { title?: string; description?: string; orderIndex?: number }) =>
     request<CourseModule>('PATCH', `/modules/${moduleId}`, data),
   deleteModule: (moduleId: string) => request<void>('DELETE', `/modules/${moduleId}`),
+  reorderModules: (courseId: string, orderedIds: string[]) =>
+    request<CourseModule[]>('PATCH', `/courses/${courseId}/modules/reorder`, { orderedIds }),
 
   getSections: (moduleId: string) => request<Section[]>('GET', `/modules/${moduleId}/sections`),
   createSection: (moduleId: string, data: { title: string; description?: string; orderIndex?: number; markdownContent?: string }) =>
@@ -219,6 +222,8 @@ export const api = {
   updateSection: (sectionId: string, data: { title?: string; description?: string; orderIndex?: number; markdownContent?: string }) =>
     request<Section>('PATCH', `/sections/${sectionId}`, data),
   deleteSection: (sectionId: string) => request<void>('DELETE', `/sections/${sectionId}`),
+  reorderSections: (moduleId: string, orderedIds: string[]) =>
+    request<Section[]>('PATCH', `/modules/${moduleId}/sections/reorder`, { orderedIds }),
 
   getVideoUrl: (videoFileId: string) => request<{ url: string }>('GET', `/video-files/${videoFileId}`),
   getVideoStreamUrl: (videoFileId: string) => `${API_URL}/videos/${videoFileId}/stream`,

@@ -18,7 +18,7 @@ import { SubmitButton } from '../atoms/SubmitButton';
 import { EntitySelect } from '../organisms/EntitySelect';
 import { api } from '../../lib/api';
 import { apiErrorMessage } from '../../lib/error';
-import { useApiResource } from '../../hooks/useApiResource';
+import { useCourses } from '../../hooks/useCascadeSelects';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useParamLabels } from '../../hooks/useParamLabels';
 import { primaryStyleLabels } from '../../lib/labels';
@@ -36,7 +36,7 @@ export const Search = () => {
   const style = searchParams.get('style') ?? '';
   const courseId = searchParams.get('courseId') ?? '';
 
-  const { data: courses } = useApiResource(() => api.getCourses(), [], []);
+  const { data: courses } = useCourses();
   const { params, getLabel } = useParamLabels();
   const [results, setResults] = useState<VideoSearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);

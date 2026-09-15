@@ -2,15 +2,12 @@ import { useState } from 'react';
 import { z } from 'zod';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Skeleton from '@mui/material/Skeleton';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import { api } from '../../../lib/api';
-import { useApiResource } from '../../../hooks/useApiResource';
-import { useCourseModules, useModuleSections } from '../../../hooks/useCascadeSelects';
+import { useCourses, useCourseModules, useModuleSections } from '../../../hooks/useCascadeSelects';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { useStatusSnackbar } from '../../../hooks/useStatusSnackbar';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -25,20 +22,20 @@ import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { EntitySelect } from '../../organisms/EntitySelect';
 import { PageHeader } from '../../organisms/PageHeader';
-import type { Course, Section } from '../../../types';
+import { SortableList, SortableListItem } from '../../organisms/SortableList';
+import type { Section } from '../../../types';
 
 const sectionSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
   description: z.string().optional(),
-  orderIndex: z.coerce.number().int().optional(),
   markdownContent: z.string().optional(),
 });
 
 export const SectionsPage = () => {
   useDocumentTitle('Secciones · Administración');
-  const { snackbar, showSuccess } = useStatusSnackbar();
+  const { snackbar, showSuccess, showError } = useStatusSnackbar();
   const { confirm, dialog } = useConfirm();
-  const { data: courses, loading: loadingCourses } = useApiResource(() => api.getCourses(), [], [] as Course[]);
+  const { data: courses, loading: loadingCourses } = useCourses();
   const [courseId, setCourseId] = useState('');
   const [moduleId, setModuleId] = useState('');
   const { modules, loading: loadingModules } = useCourseModules(courseId);
@@ -49,7 +46,6 @@ export const SectionsPage = () => {
   const form = useZodForm(sectionSchema, {
     title: '',
     description: '',
-    orderIndex: undefined as number | undefined,
     markdownContent: '',
   });
 
@@ -61,7 +57,6 @@ export const SectionsPage = () => {
     form.setValues({
       title: section.title,
       description: section.description ?? '',
-      orderIndex: section.orderIndex,
       markdownContent: section.markdownContent ?? '',
     });
   };
@@ -86,7 +81,7 @@ export const SectionsPage = () => {
           showSuccess('Sección actualizada');
         } else {
           const created = await api.createSection(moduleId, data);
-          setSections((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+          setSections((prev) => [...prev, created]);
           showSuccess('Sección creada');
         }
         cancelEdit();
@@ -118,12 +113,25 @@ export const SectionsPage = () => {
     );
   };
 
+  const handleReorder = async (reordered: Section[]) => {
+    const previous = sections;
+    setSections(reordered);
+    try {
+      const saved = await api.reorderSections(moduleId, reordered.map((s) => s.id));
+      setSections(saved);
+    } catch (err) {
+      setSections(previous);
+      const message = err instanceof Error ? err.message : 'No se pudo guardar el orden';
+      showError(`No se pudo guardar el orden: ${message}`);
+    }
+  };
+
   return (
     <RequirePerm permission="content.courses.manage">
       <Stack spacing={3} component="section" aria-labelledby="admin-sections-heading">
         <PageHeader
           title="Secciones"
-          description="Elige un curso y un módulo para gestionar sus secciones."
+          description="Elige un curso y un módulo para gestionar sus secciones. Arrastra el icono de cada sección para cambiar el orden."
           crumbs={[
             { label: 'Contenido' },
             { label: 'Secciones' },
@@ -178,15 +186,6 @@ export const SectionsPage = () => {
                 fieldError={form.errors.description}
               />
               <FormField
-                label="Orden"
-                type="number"
-                value={form.values.orderIndex ?? ''}
-                onChange={(e) =>
-                  form.setField('orderIndex', e.target.value ? Number(e.target.value) : undefined)
-                }
-                fieldError={form.errors.orderIndex}
-              />
-              <FormField
                 label="Contenido markdown"
                 multiline
                 rows={4}
@@ -224,10 +223,12 @@ export const SectionsPage = () => {
               </Paper>
             ) : (
               <Paper sx={{ borderRadius: 2 }}>
-                <List>
-                  {sections.map((section) => (
-                    <ListItem
+                <SortableList items={sections} onReorder={(next) => void handleReorder(next)}>
+                  {sections.map((section, index) => (
+                    <SortableListItem
                       key={section.id}
+                      id={section.id}
+                      dragLabel={`Reordenar ${section.title}`}
                       secondaryAction={
                         <Stack direction="row" spacing={0.5}>
                           <IconButton
@@ -248,13 +249,13 @@ export const SectionsPage = () => {
                       }
                     >
                       <ListItemText
-                        primary={section.title}
+                        primary={`${index + 1}. ${section.title}`}
                         secondary={section.videoFileId ? 'Tiene video asociado' : 'Sin video'}
                         sx={{ pr: 12 }}
                       />
-                    </ListItem>
+                    </SortableListItem>
                   ))}
-                </List>
+                </SortableList>
               </Paper>
             )}
           </>

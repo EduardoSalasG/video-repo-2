@@ -4,6 +4,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import type { ReactNode } from 'react';
 import { Button } from '../atoms/Button';
 
@@ -13,6 +14,7 @@ interface ConfirmDialogProps {
   description: ReactNode;
   confirmLabel?: string;
   pending?: boolean;
+  error?: string | null;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -23,6 +25,7 @@ export const ConfirmDialog = ({
   description,
   confirmLabel = 'Eliminar',
   pending,
+  error,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) => (
@@ -30,6 +33,11 @@ export const ConfirmDialog = ({
     <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
     <DialogContent>
       <DialogContentText>{description}</DialogContentText>
+      {error && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {error}
+        </Alert>
+      )}
     </DialogContent>
     <DialogActions sx={{ px: 3, pb: 2 }}>
       <Button variant="outlined" onClick={onClose} disabled={pending}>
