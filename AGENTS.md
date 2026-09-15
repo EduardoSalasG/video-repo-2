@@ -39,3 +39,18 @@ Los seeds comparten `prisma/seed.common.ts`. `prisma/seed.ts` es el entry de dev
 - Paralelizar trabajos con subagentes cuando sea posible (tareas independientes, sin estado compartido ni dependencias secuenciales).
 - Después de cada push a `main`, lanzar un subagente en background con el perfil `deploy-monitor` (`.devin/agents/deploy-monitor.md`, modelo `swe-1-7-medium`) para supervisar el deploy (GitHub Actions → imagen Docker → VM Oracle → health check de `https://api.video-repo.eduardosalasg.dev/api/health`).
 - NUNCA incluir a Devin como coautor ni firma en los commits (sin `Co-Authored-By` ni `Generated with`). Los mensajes de commit llevan solo el mensaje descriptivo.
+
+## Versionamiento y releases
+
+- SemVer `MAJOR.MINOR.PATCH`: MAJOR = cambio incompatible de API, datos, autenticación o comportamiento público (requiere migración); MINOR = funcionalidad nueva compatible hacia atrás; PATCH = corrección, seguridad, mantenimiento o documentación compatible. Prereleases deliberados: `-alpha.N`, `-beta.N`, `-rc.N`.
+- Compuerta de release (antes de `dev → main`):
+  1. Definir el incremento SemVer según el cambio acumulado en `dev`.
+  2. Actualizar conjuntamente: versión en manifiestos, `CHANGELOG.md`, notas de release, documentación/Swagger/diagramas si cambian contratos, y versión visible del frontend.
+  3. Ejecutar pruebas, build, QA y revisión de documentación.
+  4. Tag Git anotado `vMAJOR.MINOR.PATCH` en el commit exacto de `main` que se despliega.
+  5. Notas de release con: versión, tag, SHA, fecha, migraciones, riesgos y resultado de validaciones.
+  6. Tras el push a `main`: supervisar CI/CD/deploy/health checks y sincronizar `main` de vuelta a `dev`.
+- `CHANGELOG.md` en raíz siguiendo Keep a Changelog (`Unreleased`, `Added`, `Changed`, `Fixed`, `Security`, `Deprecated`, `Removed`). Al publicar, mover lo relevante a `## [X.Y.Z] - YYYY-MM-DD`. El changelog no reemplaza specs ni commits.
+- OpenSpec: cada cambio no trivial comienza con propuesta, specs, diseño y tareas OpenSpec; al implementar, marcar checkboxes solo cuando comportamiento, pruebas y docs estén completos; al cerrar una release, archivar los cambios OpenSpec y sincronizar las specs base.
+- Rollback: nunca re-desplegar un SHA informal ni mover tags publicados. Re-desplegar el artefacto inmutable del último tag sano, ejecutar health checks y QA mínima, documentar motivo/tag origen-destino/impacto/hora. Migraciones no reversibles → corrección hacia adelante o restauración documentada.
+- Calidad: usar Codebase Memory antes de explorar estructura o impacto; Superpowers para discovery, diseño, TDD, debugging, plan y verificación; OpenSpec después de aprobar el plan y antes de implementar; frontend con Impeccable + Apple Design, mobile-first y accesible; mantener la documentación viva con cada cambio.
