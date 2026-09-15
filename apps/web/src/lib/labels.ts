@@ -46,6 +46,14 @@ export type ParamKind =
   | 'accessLevel'
   | 'role';
 
+export function humanizeParamValue(value: string): string {
+  return value
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export const fallbackParamLabels: Record<ParamKind, Record<string, string>> = {
   primaryStyle: primaryStyleLabels,
   difficulty: difficultyLabels,

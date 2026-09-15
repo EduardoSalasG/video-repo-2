@@ -39,6 +39,7 @@ import {
   UpdateModuleDto,
   CreateSectionDto,
   UpdateSectionDto,
+  ReorderDto,
   CreateVideoMetadataDto,
   LinkVideoDto,
   GrantCourseAccessDto,
@@ -311,6 +312,14 @@ export class ModulesController {
   async create(@Param('courseId') courseId: string, @Body() dto: CreateModuleDto) {
     return this.modules.create({ ...dto, courseId });
   }
+
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.MAINTAIN)
+  @ApiCookieAuth()
+  async reorder(@Param('courseId') courseId: string, @Body() dto: ReorderDto) {
+    return this.modules.reorder(courseId, dto.orderedIds);
+  }
 }
 
 @ApiTags('modules')
@@ -362,6 +371,14 @@ export class SectionsController {
   @ApiCookieAuth()
   async create(@Param('moduleId') moduleId: string, @Body() dto: CreateSectionDto) {
     return this.sections.create({ ...dto, moduleId });
+  }
+
+  @Patch('reorder')
+  @UseGuards(JwtAuthGuard, CourseAccessGuard)
+  @RequiredAccess(AccessLevel.MAINTAIN)
+  @ApiCookieAuth()
+  async reorder(@Param('moduleId') moduleId: string, @Body() dto: ReorderDto) {
+    return this.sections.reorder(moduleId, dto.orderedIds);
   }
 }
 

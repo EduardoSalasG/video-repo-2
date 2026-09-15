@@ -2,15 +2,12 @@ import { useState } from 'react';
 import { z } from 'zod';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Skeleton from '@mui/material/Skeleton';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import { api } from '../../../lib/api';
-import { useApiResource } from '../../../hooks/useApiResource';
-import { useCourseModules } from '../../../hooks/useCascadeSelects';
+import { useCourses, useCourseModules } from '../../../hooks/useCascadeSelects';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { useStatusSnackbar } from '../../../hooks/useStatusSnackbar';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -25,24 +22,24 @@ import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { EntitySelect } from '../../organisms/EntitySelect';
 import { PageHeader } from '../../organisms/PageHeader';
-import type { Course, CourseModule } from '../../../types';
+import { SortableList, SortableListItem } from '../../organisms/SortableList';
+import type { CourseModule } from '../../../types';
 
 const moduleSchema = z.object({
   title: z.string().min(1, 'El título es obligatorio'),
   description: z.string().optional(),
-  orderIndex: z.coerce.number().int().optional(),
 });
 
 export const ModulesPage = () => {
   useDocumentTitle('Módulos · Administración');
-  const { snackbar, showSuccess } = useStatusSnackbar();
+  const { snackbar, showSuccess, showError } = useStatusSnackbar();
   const { confirm, dialog } = useConfirm();
-  const { data: courses, loading: loadingCourses } = useApiResource(() => api.getCourses(), [], [] as Course[]);
+  const { data: courses, loading: loadingCourses } = useCourses();
   const [courseId, setCourseId] = useState('');
   const { modules, setModules, loading: loadingModules, error: modulesError } = useCourseModules(courseId);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const form = useZodForm(moduleSchema, { title: '', description: '', orderIndex: undefined as number | undefined });
+  const form = useZodForm(moduleSchema, { title: '', description: '' });
   const [courseError, setCourseError] = useState<string | null>(null);
 
   const selectedCourse = courses.find((c) => c.id === courseId);
@@ -52,7 +49,6 @@ export const ModulesPage = () => {
     form.setValues({
       title: module.title,
       description: module.description ?? '',
-      orderIndex: module.orderIndex,
     });
   };
 
@@ -76,7 +72,7 @@ export const ModulesPage = () => {
           showSuccess('Módulo actualizado');
         } else {
           const created = await api.createModule(courseId, data);
-          setModules((prev) => [...prev, created].sort((a, b) => a.title.localeCompare(b.title)));
+          setModules((prev) => [...prev, created]);
           showSuccess('Módulo creado');
         }
         cancelEdit();
@@ -108,12 +104,25 @@ export const ModulesPage = () => {
     );
   };
 
+  const handleReorder = async (reordered: CourseModule[]) => {
+    const previous = modules;
+    setModules(reordered);
+    try {
+      const saved = await api.reorderModules(courseId, reordered.map((m) => m.id));
+      setModules(saved);
+    } catch (err) {
+      setModules(previous);
+      const message = err instanceof Error ? err.message : 'No se pudo guardar el orden';
+      showError(`No se pudo guardar el orden: ${message}`);
+    }
+  };
+
   return (
     <RequirePerm permission="content.courses.manage">
       <Stack spacing={3} component="section" aria-labelledby="admin-modules-heading">
         <PageHeader
           title="Módulos"
-          description="Elige un curso para gestionar sus módulos."
+          description="Elige un curso para gestionar sus módulos. Arrastra el icono de cada módulo para cambiar el orden."
           crumbs={[
             { label: 'Contenido' },
             { label: 'Módulos' },
@@ -152,15 +161,6 @@ export const ModulesPage = () => {
                 onChange={(e) => form.setField('description', e.target.value)}
                 fieldError={form.errors.description}
               />
-              <FormField
-                label="Orden"
-                type="number"
-                value={form.values.orderIndex ?? ''}
-                onChange={(e) =>
-                  form.setField('orderIndex', e.target.value ? Number(e.target.value) : undefined)
-                }
-                fieldError={form.errors.orderIndex}
-              />
               <FormError message={form.formError} />
               <SubmitButton fullWidth sx={{ mt: 2 }} loading={form.submitting}>
                 {editingId ? 'Guardar cambios' : 'Crear módulo'}
@@ -191,10 +191,12 @@ export const ModulesPage = () => {
               </Paper>
             ) : (
               <Paper sx={{ borderRadius: 2 }}>
-                <List>
-                  {modules.map((module) => (
-                    <ListItem
+                <SortableList items={modules} onReorder={(next) => void handleReorder(next)}>
+                  {modules.map((module, index) => (
+                    <SortableListItem
                       key={module.id}
+                      id={module.id}
+                      dragLabel={`Reordenar ${module.title}`}
                       secondaryAction={
                         <Stack direction="row" spacing={0.5}>
                           <IconButton
@@ -215,14 +217,14 @@ export const ModulesPage = () => {
                       }
                     >
                       <ListItemText
-                        primary={module.title}
+                        primary={`${index + 1}. ${module.title}`}
                         secondary={module.description ?? undefined}
                         secondaryTypographyProps={{ noWrap: true }}
                         sx={{ pr: 12 }}
                       />
-                    </ListItem>
+                    </SortableListItem>
                   ))}
-                </List>
+                </SortableList>
               </Paper>
             )}
           </>

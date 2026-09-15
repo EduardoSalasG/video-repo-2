@@ -4,19 +4,13 @@ import Skeleton from '@mui/material/Skeleton';
 import { Typography } from '../atoms/Typography';
 import { Button } from '../atoms/Button';
 import { CourseList } from '../organisms/CourseList';
-import { api } from '../../lib/api';
-import { useApiResource } from '../../hooks/useApiResource';
+import { useCourses } from '../../hooks/useCascadeSelects';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useLibraryOnboarding } from '../../hooks/useLibraryOnboarding';
-import type { Course } from '../../types';
 
 export const Library = () => {
   useDocumentTitle('Biblioteca');
-  const { data: courses, loading, error, reload } = useApiResource<Course[]>(
-    () => api.getCourses().then((data) => [...data].sort((a, b) => a.name.localeCompare(b.name))),
-    [],
-    [],
-  );
+  const { data: courses, loading, error, reload } = useCourses();
 
   useLibraryOnboarding(!loading && !error);
 

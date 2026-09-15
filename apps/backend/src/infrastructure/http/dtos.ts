@@ -107,6 +107,12 @@ export class CreateSectionDto {
   markdownContent?: string;
 }
 
+export class ReorderDto {
+  @IsArray()
+  @IsUUID('4', { each: true })
+  orderedIds: string[];
+}
+
 export class UpdateSectionDto {
   @IsString()
   @MinLength(1)

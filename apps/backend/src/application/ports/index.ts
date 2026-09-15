@@ -101,6 +101,7 @@ export interface IModuleRepository {
   create(input: CreateModuleInput): Promise<CourseModule>;
   update(id: string, input: UpdateModuleInput): Promise<CourseModule>;
   delete(id: string): Promise<void>;
+  reorder(orderedIds: string[]): Promise<void>;
 }
 
 export interface ISectionRepository {
@@ -111,6 +112,7 @@ export interface ISectionRepository {
   update(id: string, input: UpdateSectionInput): Promise<Section>;
   delete(id: string): Promise<void>;
   attachVideoFile(sectionId: string, videoFileId: string): Promise<Section>;
+  reorder(orderedIds: string[]): Promise<void>;
 }
 
 export interface IVideoFileRepository {

@@ -14,6 +14,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import { api } from '../../../lib/api';
 import { useApiResource } from '../../../hooks/useApiResource';
+import { useCourses } from '../../../hooks/useCascadeSelects';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { useStatusSnackbar } from '../../../hooks/useStatusSnackbar';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -29,7 +30,7 @@ import { FormField } from '../../molecules/FormField';
 import { FormError } from '../../molecules/FormError';
 import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { PageHeader } from '../../organisms/PageHeader';
-import type { Course, CourseAccess, User, Role } from '../../../types';
+import type { CourseAccess, User, Role } from '../../../types';
 
 const roleSchema = z.object({
   role: z.string().min(1, 'Selecciona un rol'),
@@ -67,7 +68,7 @@ export const UsersPage = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const { data: courses } = useApiResource(() => api.getCourses(), [], [] as Course[]);
+  const { data: courses } = useCourses();
 
   const [selectedId, setSelectedId] = useState('');
   const [selected, setSelected] = useState<User | null>(null);
