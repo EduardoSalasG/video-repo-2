@@ -21,8 +21,11 @@
 ```bash
 pnpm stack:up
 pnpm db:deploy
-pnpm db:seed
+pnpm db:seed        # dev: base + usuarios de prueba + contenido demo
+pnpm db:seed:prod   # prod: solo base (roles, params, permisos, steps, admin)
 ```
+
+Los seeds comparten `prisma/seed.common.ts`. `prisma/seed.ts` es el entry de dev (incluye `seed.demo.ts` con cursos/videos de prueba); `prisma/seed.prod.ts` es el que corre el deploy en producción.
 
 ## Reglas
 
