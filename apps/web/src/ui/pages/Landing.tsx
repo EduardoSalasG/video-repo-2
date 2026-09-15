@@ -429,7 +429,7 @@ export const Landing = () => {
               sx={{
                 mt: { xs: 5, sm: 7 },
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(3, minmax(0, 1fr))' },
                 gap: { xs: 4, sm: 5 },
               }}
             >
@@ -473,7 +473,7 @@ export const Landing = () => {
               sx={{
                 py: { xs: 9, sm: 13 },
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
                 gap: { xs: 6, md: 10 },
                 alignItems: 'center',
               }}
@@ -568,7 +568,7 @@ export const Landing = () => {
               sx={{
                 py: { xs: 9, sm: 13 },
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' },
                 gap: { xs: 6, md: 10 },
               }}
             >
