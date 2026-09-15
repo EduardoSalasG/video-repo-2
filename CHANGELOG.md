@@ -11,6 +11,11 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 - Versión de la app visible al pie de la vista de Configuración.
 
+### Changed
+
+- Build del frontend con `manualChunks` (react/mui/framer-motion separados del bundle principal para mejor caching y carga paralela).
+- Configuración de Prisma migrada de `package.json#prisma` (deprecado) a `prisma.config.ts`.
+
 ## [1.1.0] - 2026-09-15
 
 ### Added
