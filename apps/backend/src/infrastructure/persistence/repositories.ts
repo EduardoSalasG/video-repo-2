@@ -167,17 +167,24 @@ export class PrismaModuleRepository implements IModuleRepository {
   async findByCourseId(courseId: string): Promise<CourseModule[]> {
     const rows = await this.prisma.module.findMany({
       where: { courseId },
-      orderBy: { orderIndex: 'asc' },
+      orderBy: [{ orderIndex: 'asc' }, { createdAt: 'asc' }],
     });
     return rows.map((row) => new CourseModule(row));
   }
 
   async create(input: CreateModuleInput): Promise<CourseModule> {
+    const nextIndex =
+      input.orderIndex ??
+      ((await this.prisma.module.aggregate({
+        where: { courseId: input.courseId },
+        _max: { orderIndex: true },
+      }))._max.orderIndex ??
+        -1) + 1;
     const module = await this.prisma.module.create({
       data: {
         title: input.title,
         description: input.description ?? null,
-        orderIndex: input.orderIndex ?? 0,
+        orderIndex: nextIndex,
         courseId: input.courseId,
       },
     });
@@ -199,6 +206,14 @@ export class PrismaModuleRepository implements IModuleRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.module.delete({ where: { id } });
   }
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    await this.prisma.$transaction(
+      orderedIds.map((id, index) =>
+        this.prisma.module.update({ where: { id }, data: { orderIndex: index } }),
+      ),
+    );
+  }
 }
 
 @Injectable()
@@ -213,7 +228,7 @@ export class PrismaSectionRepository implements ISectionRepository {
   async findByModuleId(moduleId: string): Promise<Section[]> {
     const rows = await this.prisma.section.findMany({
       where: { moduleId },
-      orderBy: { orderIndex: 'asc' },
+      orderBy: [{ orderIndex: 'asc' }, { createdAt: 'asc' }],
       include: { videoMetadata: true },
     });
     return rows.map(
@@ -239,11 +254,18 @@ export class PrismaSectionRepository implements ISectionRepository {
   }
 
   async create(input: CreateSectionInput): Promise<Section> {
+    const nextIndex =
+      input.orderIndex ??
+      ((await this.prisma.section.aggregate({
+        where: { moduleId: input.moduleId },
+        _max: { orderIndex: true },
+      }))._max.orderIndex ??
+        -1) + 1;
     const section = await this.prisma.section.create({
       data: {
         title: input.title,
         description: input.description ?? null,
-        orderIndex: input.orderIndex ?? 0,
+        orderIndex: nextIndex,
         moduleId: input.moduleId,
         markdownContent: input.markdownContent ?? null,
       },
@@ -274,6 +296,14 @@ export class PrismaSectionRepository implements ISectionRepository {
       data: { videoFileId },
     });
     return new Section(section);
+  }
+
+  async reorder(orderedIds: string[]): Promise<void> {
+    await this.prisma.$transaction(
+      orderedIds.map((id, index) =>
+        this.prisma.section.update({ where: { id }, data: { orderIndex: index } }),
+      ),
+    );
   }
 }
 

@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import type { CourseModule, Section } from '../types';
+import { useApiResource } from './useApiResource';
+import type { Course, CourseModule, Section } from '../types';
+
+const byOrderIndex = <T extends { orderIndex: number; title?: string }>(a: T, b: T) =>
+  a.orderIndex - b.orderIndex || (a.title ?? '').localeCompare(b.title ?? '', 'es', { sensitivity: 'base' });
+
+export function useCourses() {
+  return useApiResource(
+    () =>
+      api
+        .getCourses()
+        .then((data) => [...data].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))),
+    [],
+    [] as Course[],
+  );
+}
 
 export function useCourseModules(courseId: string) {
   const [modules, setModules] = useState<CourseModule[]>([]);
@@ -17,7 +32,7 @@ export function useCourseModules(courseId: string) {
     setError(null);
     api
       .getModules(courseId)
-      .then((data) => setModules([...data].sort((a, b) => a.title.localeCompare(b.title))))
+      .then((data) => setModules([...data].sort(byOrderIndex)))
       .catch((err: unknown) => {
         setModules([]);
         setError(err instanceof Error ? err.message : 'Error al cargar módulos');
@@ -43,7 +58,7 @@ export function useModuleSections(moduleId: string) {
     setError(null);
     api
       .getSections(moduleId)
-      .then((data) => setSections([...data].sort((a, b) => a.title.localeCompare(b.title))))
+      .then((data) => setSections([...data].sort(byOrderIndex)))
       .catch((err: unknown) => {
         setSections([]);
         setError(err instanceof Error ? err.message : 'Error al cargar secciones');

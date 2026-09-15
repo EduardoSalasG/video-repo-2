@@ -7,7 +7,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Skeleton from '@mui/material/Skeleton';
 import { api } from '../../../lib/api';
-import { useApiResource } from '../../../hooks/useApiResource';
+import { useCourses } from '../../../hooks/useCascadeSelects';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { useStatusSnackbar } from '../../../hooks/useStatusSnackbar';
 import { useConfirm } from '../../../hooks/useConfirm';
@@ -35,11 +35,7 @@ export const CoursesPage = () => {
   useDocumentTitle('Cursos · Administración');
   const { snackbar, showSuccess } = useStatusSnackbar();
   const { confirm, dialog } = useConfirm();
-  const { data: courses, loading, error, reload, setData: setCourses } = useApiResource(
-    () => api.getCourses().then((list) => [...list].sort((a, b) => a.name.localeCompare(b.name))),
-    [],
-    [] as Course[],
-  );
+  const { data: courses, loading, error, reload, setData: setCourses } = useCourses();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [image, setImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);

@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Role, AccessLevel, PrimaryStyle, LabelType, Difficulty, VideoType } from '../domain/enums';
 import { User, Course, CourseModule, Section, VideoFile, VideoMetadata, CourseAccess, UserSectionProgress } from '../domain/entities';
 import { InjectionTokens } from './tokens';
@@ -250,6 +250,21 @@ export class ModuleService {
     return this.modules.delete(id);
   }
 
+  async reorder(courseId: string, orderedIds: string[]): Promise<CourseModule[]> {
+    await this.ensureCourseExists(courseId);
+    const existing = await this.modules.findByCourseId(courseId);
+    const existingIds = new Set(existing.map((m) => m.id));
+    if (
+      orderedIds.length !== existingIds.size ||
+      new Set(orderedIds).size !== orderedIds.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new BadRequestException('orderedIds must contain each module of the course exactly once');
+    }
+    await this.modules.reorder(orderedIds);
+    return this.modules.findByCourseId(courseId);
+  }
+
   private async ensureCourseExists(courseId: string): Promise<void> {
     const course = await this.courses.findById(courseId);
     if (!course) throw new NotFoundException('Course not found');
@@ -292,6 +307,21 @@ export class SectionService {
   async delete(id: string): Promise<void> {
     await this.getById(id);
     return this.sections.delete(id);
+  }
+
+  async reorder(moduleId: string, orderedIds: string[]): Promise<Section[]> {
+    await this.ensureModuleExists(moduleId);
+    const existing = await this.sections.findByModuleId(moduleId);
+    const existingIds = new Set(existing.map((s) => s.id));
+    if (
+      orderedIds.length !== existingIds.size ||
+      new Set(orderedIds).size !== orderedIds.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new BadRequestException('orderedIds must contain each section of the module exactly once');
+    }
+    await this.sections.reorder(orderedIds);
+    return this.sections.findByModuleId(moduleId);
   }
 
   private async ensureModuleExists(moduleId: string): Promise<void> {

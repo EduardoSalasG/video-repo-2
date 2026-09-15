@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { fallbackParamLabels, type ParamKind } from '../lib/labels';
+import { fallbackParamLabels, humanizeParamValue, type ParamKind } from '../lib/labels';
 import type { ParamRecord } from '../types';
 
 type ParamLists = Record<ParamKind, ParamRecord[]>;
@@ -58,7 +58,8 @@ export function useParamLabels() {
   const getLabel = (kind: ParamKind, value: string | undefined | null) => {
     if (!value) return '';
     const record = params[kind].find((item) => item.value === value);
-    return record?.label ?? fallbackParamLabels[kind][value] ?? value;
+    const label = record?.label ?? fallbackParamLabels[kind][value];
+    return label && label !== value ? label : humanizeParamValue(value);
   };
 
   return { params, getLabel };

@@ -8,8 +8,7 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import CloseIcon from '@mui/icons-material/Close';
 import { api } from '../../../lib/api';
-import { useApiResource } from '../../../hooks/useApiResource';
-import { useCourseModules, useModuleSections } from '../../../hooks/useCascadeSelects';
+import { useCourses, useCourseModules, useModuleSections } from '../../../hooks/useCascadeSelects';
 import { useZodForm } from '../../../hooks/useZodForm';
 import { useStatusSnackbar } from '../../../hooks/useStatusSnackbar';
 import { useDocumentTitle } from '../../../hooks/useDocumentTitle';
@@ -23,7 +22,7 @@ import { StatusSnackbar } from '../../molecules/StatusSnackbar';
 import { EntitySelect } from '../../organisms/EntitySelect';
 import { FileUploadField } from '../../organisms/FileUploadField';
 import { PageHeader } from '../../organisms/PageHeader';
-import type { Course, Section, VideoMetadata, Difficulty, PrimaryStyle, VideoType } from '../../../types';
+import type { Section, VideoMetadata, Difficulty, PrimaryStyle, VideoType } from '../../../types';
 
 const videoMetadataSchema = z.object({
   difficulty: z.string().min(1, 'La dificultad es obligatoria'),
@@ -54,7 +53,7 @@ export const VideosPage = () => {
   const { snackbar, showSuccess, showError } = useStatusSnackbar();
   const { params, getLabel } = useParamLabels();
 
-  const { data: courses, loading: loadingCourses } = useApiResource(() => api.getCourses(), [], [] as Course[]);
+  const { data: courses, loading: loadingCourses } = useCourses();
   const [courseId, setCourseId] = useState('');
   const [moduleId, setModuleId] = useState('');
   const [sectionId, setSectionId] = useState('');
