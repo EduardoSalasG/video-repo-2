@@ -7,6 +7,12 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-16
+
+### Fixed
+
+- Pantalla en blanco en producción: el `manualChunks` en forma de objeto generaba imports circulares entre los chunks `react`/`mui`/`motion` (el runtime de react quedaba dentro del chunk `mui`), y la evaluación de módulos fallaba con `Cannot read properties of undefined (reading 'createContext')`. Ahora `manualChunks` usa forma función que garantiza un grafo acíclico (`vendor` → `mui`/`motion` → `index`).
+
 ## [1.2.0] - 2026-09-15
 
 ### Added
