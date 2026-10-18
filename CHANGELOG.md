@@ -7,6 +7,18 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-17
+
+### Added
+
+- Redirección automática a `/app` al visitar `/`, `/login` o `/register` con sesión activa.
+- Botones «Anterior» / «Siguiente» en la página de sección para navegar entre las secciones del módulo.
+- Página dedicada «Cambiar contraseña» en `/app/settings/password`, con migas de regreso a Configuración.
+
+### Changed
+
+- Configuración: la sección de contraseña ahora muestra solo el título con acceso a la página dedicada.
+
 ## [1.2.2] - 2026-10-17
 
 ### Fixed
