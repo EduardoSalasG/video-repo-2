@@ -34,7 +34,7 @@ Los seeds comparten `prisma/seed.common.ts`. `prisma/seed.ts` es el entry de dev
 - Cualquier cambio de esquema requiere `prisma migrate dev`.
 - UI mobile-first y accesible; reutilizar átomos/moléculas en `apps/web/src/ui`.
 - No exponer secrets, JWTs ni hashes en logs o respuestas.
-- Flujo Git: `main` solo recibe versiones estables. Toda feature/hotfix se hace en `feature/*`, se mergea a `dev` y se acumula ahí. Solo se promueve `dev` a `main` cuando se acuerde una versión estable.
+- Flujo Git: `main` solo recibe versiones estables. Toda feature/hotfix se hace en `feature/*`, se mergea a `dev` y se acumula ahí. Solo se promueve `dev` a `main` cuando el usuario lo indique expresamente (versionamiento + release a petición suya; nunca promover ni bump de versión por iniciativa propia).
 - Siempre volver a `dev` después de mergear/promover a `main` (no quedarse parado en `main`).
 - Paralelizar trabajos con subagentes cuando sea posible (tareas independientes, sin estado compartido ni dependencias secuenciales).
 - Después de cada push a `main`, lanzar un subagente en background con el perfil `deploy-monitor` (`.devin/agents/deploy-monitor.md`, modelo `swe-1-7-medium`) para supervisar el deploy (GitHub Actions → imagen Docker → VM Oracle → health check de `https://api.video-repo.eduardosalasg.dev/api/health`).
@@ -42,6 +42,7 @@ Los seeds comparten `prisma/seed.common.ts`. `prisma/seed.ts` es el entry de dev
 
 ## Versionamiento y releases
 
+- Los cambios se acumulan en `dev`. El usuario decide cuándo versionar y promover a `main`; hasta entonces, trabajar en `dev` sin crear tags ni releases.
 - SemVer `MAJOR.MINOR.PATCH`: MAJOR = cambio incompatible de API, datos, autenticación o comportamiento público (requiere migración); MINOR = funcionalidad nueva compatible hacia atrás; PATCH = corrección, seguridad, mantenimiento o documentación compatible. Prereleases deliberados: `-alpha.N`, `-beta.N`, `-rc.N`.
 - Compuerta de release (antes de `dev → main`):
   1. Definir el incremento SemVer según el cambio acumulado en `dev`.
