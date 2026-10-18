@@ -7,6 +7,12 @@ y el versionado sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-10-17
+
+### Fixed
+
+- Los videos no se reproducían en el teléfono: el elemento `<video>` no puede enviar el header `Authorization`, así que el stream dependía exclusivamente de la cookie `access_token`, que los navegadores móviles bloquean al ser third-party (frontend en `*.netlify.app` y API en otro dominio). Ahora `GET /api/videos/:id/stream-token` emite un ticket firmado de corta duración (4 h por defecto, configurable con `STREAM_TICKET_EXPIRES_IN`) ligado al video y al usuario, y el frontend lo adjunta como query param en el `src` del video. Si la reproducción falla, la vista de sección reintenta una vez con un ticket fresco.
+
 ## [1.2.1] - 2026-09-16
 
 ### Fixed
