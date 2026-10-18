@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   SetMetadata,
   createParamDecorator,
@@ -8,8 +9,11 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
+import { lastValueFrom } from 'rxjs';
 import { Role, AccessLevel } from '../../domain/enums';
 import { CourseAccessService, PermissionService } from '../../application/services';
+import { ITokenService } from '../../application/ports';
+import { InjectionTokens } from '../../application/tokens';
 import { PrismaService } from '../persistence/prisma.service';
 
 interface AuthenticatedRequest extends Request {
@@ -33,6 +37,28 @@ export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionConte
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}
+
+@Injectable()
+export class VideoStreamAuthGuard extends AuthGuard('jwt') {
+  constructor(
+    @Inject(InjectionTokens.TOKEN_SERVICE) private readonly tokens: ITokenService,
+  ) {
+    super();
+  }
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const ticket = typeof request.query.ticket === 'string' ? request.query.ticket : undefined;
+    if (ticket) {
+      const payload = this.tokens.verifyStreamTicket(ticket);
+      if (!payload || payload.videoFileId !== request.params.id) return false;
+      request.user = { userId: payload.userId, email: payload.email, role: payload.role };
+      return true;
+    }
+    const result = await super.canActivate(context);
+    return typeof result === 'boolean' ? result : lastValueFrom(result);
+  }
+}
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {

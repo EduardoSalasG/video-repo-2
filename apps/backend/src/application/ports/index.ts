@@ -397,8 +397,17 @@ export interface TokenPayload {
   role: Role;
 }
 
+export interface StreamTicket {
+  videoFileId: string;
+  userId: string;
+  email: string;
+  role: Role;
+}
+
 export interface ITokenService {
   sign(payload: TokenPayload): string;
+  signStreamTicket(ticket: StreamTicket): string;
+  verifyStreamTicket(token: string): StreamTicket | null;
 }
 
 export interface IEmailService {

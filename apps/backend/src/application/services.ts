@@ -473,6 +473,7 @@ export class VideoService {
     @Inject(InjectionTokens.VIDEO_METADATA_REPOSITORY) private readonly videoMetadata: IVideoMetadataRepository,
     @Inject(InjectionTokens.VIDEO_LABEL_REPOSITORY) private readonly videoLabels: IVideoLabelRepository,
     @Inject(InjectionTokens.SECTION_REPOSITORY) private readonly sections: ISectionRepository,
+    @Inject(InjectionTokens.TOKEN_SERVICE) private readonly tokens: ITokenService,
     private readonly courseAccess: CourseAccessService,
     private readonly permissions: PermissionService,
   ) {}
@@ -523,6 +524,25 @@ export class VideoService {
     if (!file) throw new NotFoundException('Video file not found');
     if (file.url) return file.url;
     return this.storage.getUrl(file.storageKey);
+  }
+
+  async issueStreamTicket(user: { userId: string; email: string; role: Role }, videoFileId: string): Promise<{ ticket: string }> {
+    const file = await this.videoFiles.findById(videoFileId);
+    if (!file) throw new NotFoundException('Video file not found');
+
+    const section = await this.sections.findByVideoFileId(videoFileId);
+    if (!section || !section.module) throw new NotFoundException('Video section not found');
+
+    await this.courseAccess.requireAccess(user.userId, section.module.courseId, AccessLevel.READ);
+
+    return {
+      ticket: this.tokens.signStreamTicket({
+        videoFileId,
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+      }),
+    };
   }
 
   async stream(userId: string, videoFileId: string): Promise<{ type: 'url'; url: string } | { type: 'internal'; storageKey: string; mimeType: string }> {

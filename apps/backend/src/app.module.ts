@@ -24,7 +24,7 @@ import {
   PrismaCourseAccessRepository,
   PrismaProgressRepository,
 } from './infrastructure/persistence/repositories';
-import { JwtAuthGuard, PermissionsGuard, CourseAccessGuard } from './infrastructure/auth/guards';
+import { JwtAuthGuard, VideoStreamAuthGuard, PermissionsGuard, CourseAccessGuard } from './infrastructure/auth/guards';
 import { JwtStrategy, BcryptPasswordHasher, JwtTokenService } from './infrastructure/auth/adapters';
 import { ResendEmailService } from './infrastructure/email/resend-email.service';
 import { LocalVideoStorage } from './infrastructure/storage/local-video.storage';
@@ -91,6 +91,7 @@ import { S3VideoStorage } from './infrastructure/storage/s3-video.storage';
     PrismaService,
     JwtStrategy,
     JwtAuthGuard,
+    VideoStreamAuthGuard,
     PermissionsGuard,
     CourseAccessGuard,
     AuthService,

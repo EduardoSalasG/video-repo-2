@@ -227,7 +227,10 @@ export const api = {
     request<Section[]>('PATCH', `/modules/${moduleId}/sections/reorder`, { orderedIds }),
 
   getVideoUrl: (videoFileId: string) => request<{ url: string }>('GET', `/video-files/${videoFileId}`),
-  getVideoStreamUrl: (videoFileId: string) => `${API_URL}/videos/${videoFileId}/stream`,
+  getVideoStreamUrl: async (videoFileId: string) => {
+    const { ticket } = await request<{ ticket: string }>('GET', `/videos/${videoFileId}/stream-token`);
+    return `${API_URL}/videos/${videoFileId}/stream?ticket=${encodeURIComponent(ticket)}`;
+  },
 
   uploadVideo: (
     sectionId: string,
