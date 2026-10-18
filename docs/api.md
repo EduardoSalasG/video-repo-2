@@ -124,7 +124,8 @@ La API del backend está documentada automáticamente con Swagger en `/api/docs`
 |--------|------|-------------|-------------------|
 | `POST` | `/api/sections/:sectionId/videos` | Subir video y metadatos | MAINTAIN en el curso |
 | `POST` | `/api/sections/:sectionId/videos/link` | Vincular video por URL | MAINTAIN en el curso |
-| `GET` | `/api/videos/:id/stream` | Stream protegido del video (X-Accel-Redirect / redirect) | READ en el curso |
+| `GET` | `/api/videos/:id/stream-token` | Emite un ticket firmado de corta duración para el stream | READ en el curso |
+| `GET` | `/api/videos/:id/stream?ticket=...` | Stream protegido del video (X-Accel-Redirect / redirect) | Ticket o cookie/JWT + READ en el curso |
 | `GET` | `/api/videos/search?tags=salsa,on2` | Buscar videos cuyos metadatos contengan al menos uno de los tags (operador `hasSome`) | Autenticado (JWT) |
 
 Este endpoint espera `multipart/form-data` con:
@@ -148,10 +149,25 @@ Este endpoint espera `multipart/form-data` con:
 
 #### Stream de video
 
+El elemento `<video>` del navegador no puede enviar el header `Authorization`, por lo que el stream acepta un **ticket firmado de corta duración** como alternativa a la cookie `access_token`. El cliente primero solicita el ticket (autenticado con Bearer/cookie) y luego lo pasa como query param en el `src` del video. El ticket está ligado al `videoFileId` y al usuario; expira a las 4 h (`STREAM_TICKET_EXPIRES_IN`).
+
+**Request (ticket):**
+
+```http
+GET /api/videos/550e8400-e29b-41d4-a716-446655440000/stream-token
+Authorization: Bearer <jwt>
+```
+
+**Response (200 OK):**
+
+```json
+{ "ticket": "eyJhbGciOi..." }
+```
+
 **Request:**
 
 ```http
-GET /api/videos/550e8400-e29b-41d4-a716-446655440000/stream
+GET /api/videos/550e8400-e29b-41d4-a716-446655440000/stream?ticket=eyJhbGciOi...
 ```
 
 **Response (200 OK):**

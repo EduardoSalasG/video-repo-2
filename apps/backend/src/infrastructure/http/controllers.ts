@@ -29,7 +29,7 @@ import { validate } from 'class-validator';
 import { AccessLevelService, AuthService, CourseService, CourseAccessService, DashboardService, DifficultyService, LabelService, LabelTypeService, ModuleService, PermissionService, ProgressService, RoleService, SectionService, StyleService, UserService, VideoService, VideoTypeService } from '../../application/services';
 import { Course } from '../../domain/entities';
 import { Role, AccessLevel, PrimaryStyle, LabelType } from '../../domain/enums';
-import { CurrentUser, JwtAuthGuard, PermissionsGuard, CourseAccessGuard, RequiresPermission, RequiredAccess } from '../auth/guards';
+import { CurrentUser, JwtAuthGuard, VideoStreamAuthGuard, PermissionsGuard, CourseAccessGuard, RequiresPermission, RequiredAccess } from '../auth/guards';
 import {
   RegisterDto,
   LoginDto,
@@ -551,8 +551,15 @@ export class VideoSearchController {
     return { labels };
   }
 
-  @Get(':id/stream')
+  @Get(':id/stream-token')
   @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  async streamToken(@CurrentUser() user: AuthUser, @Param('id') videoFileId: string) {
+    return this.videos.issueStreamTicket(user, videoFileId);
+  }
+
+  @Get(':id/stream')
+  @UseGuards(VideoStreamAuthGuard)
   @ApiCookieAuth()
   async stream(
     @CurrentUser() user: AuthUser,

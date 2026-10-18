@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
@@ -34,11 +34,14 @@ export const Section = () => {
   const { getLabel } = useParamLabels();
   const snackbar = useStatusSnackbar();
   const [markingDone, setMarkingDone] = useState(false);
+  const [retryStreamUrl, setRetryStreamUrl] = useState<string | null>(null);
+
+  useEffect(() => setRetryStreamUrl(null), [sectionId]);
 
   const { data, loading, error, reload, setData } = useApiResource<SectionData | null>(
     async () => {
       const section = await api.getSection(sectionId!);
-      const videoUrl = section.videoFileId ? api.getVideoStreamUrl(section.videoFileId) : null;
+      const videoUrl = section.videoFileId ? await api.getVideoStreamUrl(section.videoFileId) : null;
       const [progress, metadata] = await Promise.all([
         api.getSectionProgress(sectionId!).catch(() => ({ completed: false })),
         api.getSectionMetadata(sectionId!).catch(() => null),
@@ -151,11 +154,19 @@ export const Section = () => {
             }}
           >
             <video
-              src={videoUrl}
+              key={section.videoFileId}
+              src={retryStreamUrl ?? videoUrl}
               controls
               playsInline
               preload="metadata"
               crossOrigin="use-credentials"
+              onError={() => {
+                if (retryStreamUrl || !section.videoFileId) return;
+                void api
+                  .getVideoStreamUrl(section.videoFileId)
+                  .then(setRetryStreamUrl)
+                  .catch(() => undefined);
+              }}
               onEnded={() => void markCompleted()}
               aria-label={`Video de ${section.title}`}
               style={{ borderRadius: 8, display: 'block', maxWidth: '100%', maxHeight: '70vh' }}
