@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Box from '@mui/material/Box';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -27,6 +29,7 @@ interface SectionData {
   videoUrl: string | null;
   metadata: VideoMetadata | null;
   completed: boolean;
+  siblings: SectionType[];
 }
 
 export const Section = () => {
@@ -48,6 +51,7 @@ export const Section = () => {
       ]);
       const mod = await api.getModule(section.moduleId).catch(() => null);
       const course = mod ? await api.getCourse(mod.courseId).catch(() => null) : null;
+      const siblings = await api.getSections(section.moduleId).catch(() => []);
       return {
         section,
         module: mod,
@@ -55,6 +59,7 @@ export const Section = () => {
         videoUrl,
         metadata: metadata ?? section.videoMetadata ?? null,
         completed: progress.completed,
+        siblings,
       };
     },
     [sectionId],
@@ -105,7 +110,12 @@ export const Section = () => {
     );
   }
 
-  const { section, module, course, videoUrl, metadata, completed } = data;
+  const { section, module, course, videoUrl, metadata, completed, siblings } = data;
+
+  const currentIndex = siblings.findIndex((s) => s.id === section.id);
+  const prevSection = currentIndex > 0 ? siblings[currentIndex - 1] : null;
+  const nextSection =
+    currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
 
   return (
     <Box>
@@ -172,6 +182,35 @@ export const Section = () => {
               style={{ borderRadius: 8, display: 'block', maxWidth: '100%', maxHeight: '70vh' }}
             />
           </Paper>
+        )}
+
+        {(prevSection || nextSection) && (
+          <Box
+            component="nav"
+            aria-label="Navegación entre secciones"
+            sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 2 }}
+          >
+            <Button
+              to={prevSection ? `/app/sections/${prevSection.id}` : undefined}
+              variant="outlined"
+              size="small"
+              startIcon={<ChevronLeftIcon />}
+              disabled={!prevSection}
+              aria-label={prevSection ? `Sección anterior: ${prevSection.title}` : 'Sin sección anterior'}
+            >
+              Anterior
+            </Button>
+            <Button
+              to={nextSection ? `/app/sections/${nextSection.id}` : undefined}
+              variant="outlined"
+              size="small"
+              endIcon={<ChevronRightIcon />}
+              disabled={!nextSection}
+              aria-label={nextSection ? `Sección siguiente: ${nextSection.title}` : 'Sin sección siguiente'}
+            >
+              Siguiente
+            </Button>
+          </Box>
         )}
 
         {metadata && (

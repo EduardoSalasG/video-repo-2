@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from './ui/templates/MainLayout';
 import { AdminLayout } from './ui/templates/AdminLayout';
 import { RequireAuth } from './ui/templates/RequireAuth';
+import { RedirectIfAuthenticated } from './ui/templates/RedirectIfAuthenticated';
 import { Landing } from './ui/pages/Landing';
 import { Login } from './ui/pages/Login';
 import { Library } from './ui/pages/Library';
@@ -10,6 +11,7 @@ import { Section } from './ui/pages/Section';
 import { Search } from './ui/pages/Search';
 import { Profile } from './ui/pages/Profile';
 import { Settings } from './ui/pages/Settings';
+import { ChangePassword } from './ui/pages/ChangePassword';
 import { Register } from './ui/pages/Register';
 import { NotFound } from './ui/pages/NotFound';
 import { DashboardPage } from './ui/pages/admin/DashboardPage';
@@ -25,15 +27,27 @@ import { PermissionsPage } from './ui/pages/admin/PermissionsPage';
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Landing />,
+    element: (
+      <RedirectIfAuthenticated>
+        <Landing />
+      </RedirectIfAuthenticated>
+    ),
   },
   {
     path: '/login',
-    element: <Login />,
+    element: (
+      <RedirectIfAuthenticated>
+        <Login />
+      </RedirectIfAuthenticated>
+    ),
   },
   {
     path: '/register',
-    element: <Register />,
+    element: (
+      <RedirectIfAuthenticated>
+        <Register />
+      </RedirectIfAuthenticated>
+    ),
   },
   {
     path: '/app',
@@ -49,6 +63,7 @@ export const router = createBrowserRouter([
       { path: 'search', element: <Search /> },
       { path: 'profile', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
+      { path: 'settings/password', element: <ChangePassword /> },
       { path: '*', element: <NotFound /> },
     ],
   },
